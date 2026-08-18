@@ -193,6 +193,7 @@ export async function saveUserTaskToFirestore(userId: string, task: Task): Promi
     }, { merge: true });
   } catch (err) {
     console.warn('Firestore save task note:', err);
+    throw err;
   }
 }
 
@@ -202,6 +203,7 @@ export async function deleteUserTaskFromFirestore(userId: string, taskId: string
     await deleteDoc(taskRef);
   } catch (err) {
     console.warn('Firestore delete task note:', err);
+    throw err;
   }
 }
 
