@@ -200,7 +200,6 @@ export default function App() {
           const pending = pendingWritesRef.current;
           const deletes = pendingDeletesRef.current;
           if (pending.size === 0 && deletes.size === 0) {
-            console.log('[DoIT] Subscription: no pending writes, using Firestore data (' + userTasks.length + ' tasks)');
             storage.saveTasks(userTasks, currentUser.uid);
             setLastSyncTime(new Date().toISOString());
             return userTasks;
@@ -212,7 +211,6 @@ export default function App() {
             firestoreMap.set(id, localTask);
           }
           const merged = Array.from(firestoreMap.values());
-          console.log('[DoIT] Subscription: merged ' + pending.size + ' pending + ' + userTasks.length + ' Firestore = ' + merged.length + ' tasks');
           storage.saveTasks(merged, currentUser.uid);
           setLastSyncTime(new Date().toISOString());
           return merged;
@@ -460,7 +458,6 @@ export default function App() {
   };
 
   const handleSaveTask = (taskData: Partial<Task>) => {
-    console.log('[DoIT] handleSaveTask called', { editingTask: !!editingTask, canSyncToFirestore, uid: currentUser?.uid });
     if (editingTask) {
       // Update existing
       const updated: Task = { ...editingTask, ...taskData } as Task;
@@ -493,16 +490,13 @@ export default function App() {
         isUrgent: taskData.isUrgent ?? false,
         order: tasks.length + 1
       };
-      console.log('[DoIT] Creating new task', { id: newTask.id, title: newTask.title, canSyncToFirestore });
       setTasks(prev => [newTask, ...prev]);
 
       if (canSyncToFirestore) {
         pendingWritesRef.current.set(newTask.id, newTask);
         saveUserTaskToFirestore(currentUser!.uid, newTask)
-          .then(() => { console.log('[DoIT] Firestore write SUCCESS', newTask.id); pendingWritesRef.current.delete(newTask.id); })
-          .catch((err) => { console.error('[DoIT] Firestore write FAILED', newTask.id, err); });
-      } else {
-        console.warn('[DoIT] Skipping Firestore write - canSyncToFirestore is false');
+          .then(() => { pendingWritesRef.current.delete(newTask.id); })
+          .catch(console.error);
       }
 
       if (newTask.priority === 'urgent') {

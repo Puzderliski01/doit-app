@@ -183,14 +183,27 @@ export function subscribeToUserTasks(userId: string, onUpdate: (tasks: Task[]) =
 }
 
 // Task CRUD in Firestore
+function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) continue;
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      cleaned[key] = stripUndefined(value as Record<string, unknown>);
+    } else {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+}
+
 export async function saveUserTaskToFirestore(userId: string, task: Task): Promise<void> {
   try {
     const taskRef = doc(db, 'users', userId, 'tasks', task.id);
-    await setDoc(taskRef, {
+    await setDoc(taskRef, stripUndefined({
       ...task,
       userId,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    } as Record<string, unknown>), { merge: true });
   } catch (err) {
     console.warn('Firestore save task note:', err);
     throw err;
