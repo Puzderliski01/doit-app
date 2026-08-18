@@ -3,7 +3,7 @@
  * Ultra-luxurious, high-performance task management application.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Task, 
   Category, 
@@ -166,6 +166,10 @@ export default function App() {
   // Whether the current user can sync to Firestore (only real Firebase-authenticated users)
   const canSyncToFirestore = currentUser && !(currentUser as AuthUser).isGuest && !(currentUser as AuthUser).isLocal;
 
+  // Track pending local writes that haven't been confirmed by Firestore yet
+  const pendingWritesRef = useRef<Map<string, Task>>(new Map());
+  const pendingDeletesRef = useRef<Set<string>>(new Set());
+
   // Real-time Firestore Sync for Authenticated User (Disabled in Guest & Local Mode)
   useEffect(() => {
     if (!currentUser) {
@@ -193,10 +197,20 @@ export default function App() {
       currentUser.uid,
       (userTasks) => {
         setTasks(prev => {
-          // Preserve any locally-added tasks that haven't been synced to Firestore yet
-          const firestoreIds = new Set(userTasks.map(t => t.id));
-          const pendingTasks = prev.filter(localTask => !firestoreIds.has(localTask.id));
-          const merged = [...pendingTasks, ...userTasks];
+          const pending = pendingWritesRef.current;
+          const deletes = pendingDeletesRef.current;
+          if (pending.size === 0 && deletes.size === 0) {
+            storage.saveTasks(userTasks, currentUser.uid);
+            setLastSyncTime(new Date().toISOString());
+            return userTasks;
+          }
+          // Start with Firestore data, excluding any pending deletes
+          const firestoreMap = new Map(userTasks.filter(t => !deletes.has(t.id)).map(t => [t.id, t]));
+          // Overlay pending writes (new + edited tasks)
+          for (const [id, localTask] of pending) {
+            firestoreMap.set(id, localTask);
+          }
+          const merged = Array.from(firestoreMap.values());
           storage.saveTasks(merged, currentUser.uid);
           setLastSyncTime(new Date().toISOString());
           return merged;
@@ -436,7 +450,10 @@ export default function App() {
 
     setTasks(prev => prev.map(t => t.id === task.id ? updatedTask : t));
     if (canSyncToFirestore) {
-      saveUserTaskToFirestore(currentUser!.uid, updatedTask).catch(console.error);
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
     }
   };
 
@@ -446,7 +463,10 @@ export default function App() {
       const updated: Task = { ...editingTask, ...taskData } as Task;
       setTasks(prev => prev.map(t => t.id === editingTask.id ? updated : t));
       if (canSyncToFirestore) {
-        saveUserTaskToFirestore(currentUser!.uid, updated).catch(console.error);
+        pendingWritesRef.current.set(updated.id, updated);
+        saveUserTaskToFirestore(currentUser!.uid, updated)
+          .then(() => { pendingWritesRef.current.delete(updated.id); })
+          .catch(console.error);
       }
     } else {
       // Create new
@@ -473,7 +493,10 @@ export default function App() {
       setTasks(prev => [newTask, ...prev]);
 
       if (canSyncToFirestore) {
-        saveUserTaskToFirestore(currentUser!.uid, newTask).catch(console.error);
+        pendingWritesRef.current.set(newTask.id, newTask);
+        saveUserTaskToFirestore(currentUser!.uid, newTask)
+          .then(() => { pendingWritesRef.current.delete(newTask.id); })
+          .catch(console.error);
       }
 
       if (newTask.priority === 'urgent') {
@@ -493,7 +516,10 @@ export default function App() {
   const handleDeleteTask = (taskId: string) => {
     setTasks(prev => prev.filter(t => t.id !== taskId));
     if (canSyncToFirestore) {
-      deleteUserTaskFromFirestore(currentUser!.uid, taskId).catch(console.error);
+      pendingDeletesRef.current.add(taskId);
+      deleteUserTaskFromFirestore(currentUser!.uid, taskId)
+        .then(() => { pendingDeletesRef.current.delete(taskId); })
+        .catch(console.error);
     }
   };
 
@@ -510,7 +536,10 @@ export default function App() {
     };
     setTasks(prev => [duplicated, ...prev]);
     if (canSyncToFirestore) {
-      saveUserTaskToFirestore(currentUser!.uid, duplicated).catch(console.error);
+      pendingWritesRef.current.set(duplicated.id, duplicated);
+      saveUserTaskToFirestore(currentUser!.uid, duplicated)
+        .then(() => { pendingWritesRef.current.delete(duplicated.id); })
+        .catch(console.error);
     }
   };
 
@@ -529,7 +558,10 @@ export default function App() {
       return t;
     }));
     if (canSyncToFirestore && updatedTask) {
-      saveUserTaskToFirestore(currentUser!.uid, updatedTask).catch(console.error);
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
     }
   };
 
@@ -569,7 +601,10 @@ export default function App() {
     }));
 
     if (canSyncToFirestore && updatedTask) {
-      saveUserTaskToFirestore(currentUser!.uid, updatedTask).catch(console.error);
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
     }
   };
 
@@ -582,7 +617,10 @@ export default function App() {
       return t;
     }));
     if (canSyncToFirestore) {
-      saveUserTaskToFirestore(currentUser!.uid, updated).catch(console.error);
+      pendingWritesRef.current.set(updated.id, updated);
+      saveUserTaskToFirestore(currentUser!.uid, updated)
+        .then(() => { pendingWritesRef.current.delete(updated.id); })
+        .catch(console.error);
     }
   };
 
@@ -615,7 +653,10 @@ export default function App() {
     };
     setTasks(prev => [newTask, ...prev]);
     if (canSyncToFirestore) {
-      saveUserTaskToFirestore(currentUser!.uid, newTask).catch(console.error);
+      pendingWritesRef.current.set(newTask.id, newTask);
+      saveUserTaskToFirestore(currentUser!.uid, newTask)
+        .then(() => { pendingWritesRef.current.delete(newTask.id); })
+        .catch(console.error);
     }
   };
 
