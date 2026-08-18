@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "theme": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLoginAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "User personal task",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "estimatedMinutes": { "type": "number" },
+        "recurring": { "type": "object" },
+        "subtasks": { "type": "array" },
+        "tags": { "type": "array" },
+        "reminderEmail": { "type": "string" },
+        "reminderMinutesBefore": { "type": "number" },
+        "reminderSent": { "type": "boolean" },
+        "isImportant": { "type": "boolean" },
+        "isUrgent": { "type": "boolean" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "priority", "completed", "createdAt", "dueDate"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "User category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "type": "string" },
+        "iconName": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "name", "color", "iconName"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "In-app notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "read": { "type": "boolean" },
+        "taskId": { "type": "string" }
+      },
+      "required": ["id", "type", "title", "message", "timestamp", "read"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "entity": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "entity": "Task",
+      "description": "Personal task document"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "entity": "Category",
+      "description": "Personal category document"
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "entity": "AppNotification",
+      "description": "Personal notifications"
+    }
+  }
+}
