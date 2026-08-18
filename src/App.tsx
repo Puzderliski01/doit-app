@@ -87,6 +87,7 @@ export default function App() {
   });
   const [categories, setCategories] = useState<Category[]>(() => storage.getCategories());
   const [theme, setTheme] = useState<'dark' | 'light'>(() => storage.getTheme());
+  const isLight = theme === 'light';
   const [currentView, setCurrentView] = useState<ViewMode>('list');
   // Persist theme and apply light class to document
   useEffect(() => {
@@ -99,6 +100,12 @@ export default function App() {
       document.body.classList.remove('light');
     }
   }, [theme]);
+
+  // Request browser notification permission on mount
+  useEffect(() => {
+    notificationEngine.requestPermission();
+  }, []);
+
   const [userEmail, setUserEmail] = useState<string>(() => {
     const localUser = getLocalAuthSession();
     return localUser?.email || storage.getUserEmail();
@@ -185,9 +192,15 @@ export default function App() {
     const unsubscribeTasks = subscribeToUserTasks(
       currentUser.uid,
       (userTasks) => {
-        setTasks(userTasks);
-        storage.saveTasks(userTasks, currentUser.uid);
-        setLastSyncTime(new Date().toISOString());
+        setTasks(prev => {
+          // Preserve any locally-added tasks that haven't been synced to Firestore yet
+          const firestoreIds = new Set(userTasks.map(t => t.id));
+          const pendingTasks = prev.filter(localTask => !firestoreIds.has(localTask.id));
+          const merged = [...pendingTasks, ...userTasks];
+          storage.saveTasks(merged, currentUser.uid);
+          setLastSyncTime(new Date().toISOString());
+          return merged;
+        });
       },
       (err) => {
         console.warn('Firestore user tasks subscription note:', err);
@@ -812,26 +825,26 @@ export default function App() {
               />
 
               {/* Filter & Toolbar Area */}
-              <div className="p-5 rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl space-y-4 shadow-xl">
+              <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/[0.03]'}`}>
                 
                 {/* Top Row: Search & Sort */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   
                   {/* Search input */}
                   <div className="relative flex-1 max-w-md">
-                    <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+                    <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                     <input
                       id="main-search-input"
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search tasks, notes, or tags... (Press '/' to focus)"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${isLight ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'}`}
                     />
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-white/40 hover:text-white cursor-pointer"
+                        className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-xs cursor-pointer ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-white/40 hover:text-white'}`}
                       >
                         Clear
                       </button>
@@ -840,21 +853,21 @@ export default function App() {
 
                   {/* Right: Sort options */}
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs">
-                      <ArrowUpDown className="w-3.5 h-3.5 text-white/40" />
-                      <span className="text-white/40 text-[10px] font-bold uppercase tracking-wider">Sort:</span>
+                    <div className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                      <ArrowUpDown className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
+                      <span className={`${isLight ? 'text-slate-400' : 'text-white/40'} text-[10px] font-bold uppercase tracking-wider`}>Sort:</span>
                       <select
                         value={sortBy}
                         onChange={(e) => {
                           haptic.lightTap();
                           setSortBy(e.target.value as 'dueDate' | 'priority' | 'createdAt' | 'title');
                         }}
-                        className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
+                        className={`bg-transparent text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'text-slate-700' : 'text-white'}`}
                       >
-                        <option value="dueDate" className="bg-[#121216]">Deadline</option>
-                        <option value="priority" className="bg-[#121216]">Priority</option>
-                        <option value="createdAt" className="bg-[#121216]">Created</option>
-                        <option value="title" className="bg-[#121216]">Alphabetical</option>
+                        <option value="dueDate" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Deadline</option>
+                        <option value="priority" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Priority</option>
+                        <option value="createdAt" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Created</option>
+                        <option value="title" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Alphabetical</option>
                       </select>
                     </div>
 
@@ -863,7 +876,7 @@ export default function App() {
                         haptic.lightTap();
                         setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                       }}
-                      className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-xs font-bold transition-colors cursor-pointer"
+                      className={`p-2.5 rounded-2xl border text-xs font-bold transition-colors cursor-pointer ${isLight ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60 hover:text-white'}`}
                       title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                     >
                       {sortOrder === 'asc' ? '↑' : '↓'}
@@ -873,7 +886,7 @@ export default function App() {
                 </div>
 
                 {/* Bottom Row: Status Filter Chips & Priority Filters */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
+                <div className={`flex flex-wrap items-center justify-between gap-3 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
                   
                   {/* Status pills */}
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -892,13 +905,23 @@ export default function App() {
                         }}
                         className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                           statusFilter === item.id
-                            ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.25)]'
-                            : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
+                            ? isLight
+                              ? 'bg-slate-900 text-white font-bold shadow-[0_0_15px_rgba(0,0,0,0.15)]'
+                              : 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.25)]'
+                            : isLight
+                              ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
+                              : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
                         }`}
                       >
                         <span>{item.label}</span>
                         <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                          statusFilter === item.id ? 'bg-black text-white font-black' : 'bg-white/10 text-white/60'
+                          statusFilter === item.id
+                            ? isLight
+                              ? 'bg-white text-slate-900 font-black'
+                              : 'bg-black text-white font-black'
+                            : isLight
+                              ? 'bg-slate-200 text-slate-600'
+                              : 'bg-white/10 text-white/60'
                         }`}>
                           {item.count}
                         </span>
@@ -916,13 +939,13 @@ export default function App() {
                         haptic.lightTap();
                         setPriorityFilter(e.target.value as Priority | 'all');
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-white/80 focus:outline-none cursor-pointer"
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
                     >
-                      <option value="all" className="bg-[#121216]">All Priorities</option>
-                      <option value="urgent" className="bg-[#121216]">Urgent Priority</option>
-                      <option value="high" className="bg-[#121216]">High Priority</option>
-                      <option value="medium" className="bg-[#121216]">Medium Priority</option>
-                      <option value="low" className="bg-[#121216]">Low Priority</option>
+                      <option value="all" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>All Priorities</option>
+                      <option value="urgent" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Urgent Priority</option>
+                      <option value="high" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>High Priority</option>
+                      <option value="medium" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Medium Priority</option>
+                      <option value="low" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Low Priority</option>
                     </select>
 
                     {/* Category Selector */}
@@ -932,11 +955,11 @@ export default function App() {
                         haptic.lightTap();
                         setCategoryFilter(e.target.value);
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-white/80 focus:outline-none cursor-pointer"
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
                     >
-                      <option value="all" className="bg-[#121216]">All Domains</option>
+                      <option value="all" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>All Domains</option>
                       {categories.map(c => (
-                        <option key={c.id} value={c.id} className="bg-[#121216]">{c.name}</option>
+                        <option key={c.id} value={c.id} className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>{c.name}</option>
                       ))}
                     </select>
 
