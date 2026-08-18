@@ -156,7 +156,7 @@ export const CalendarTimeline: React.FC<CalendarTimelineProps> = ({
                 haptic.lightTap();
                 setSelectedOffsetDays(prev => prev + (index - 3));
               }}
-              className={`p-3.5 sm:p-4 rounded-3xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
+              className={`min-h-[72px] p-3 sm:p-4 rounded-3xl border flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isSelected
                   ? 'bg-gradient-to-tr from-orange-500 to-amber-300 border-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] scale-[1.03] font-bold'
                   : isLight
@@ -234,7 +234,7 @@ export const CalendarTimeline: React.FC<CalendarTimelineProps> = ({
                     <div className="flex items-center gap-3.5">
                       <button
                         onClick={() => onToggleComplete(task)}
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs cursor-pointer transition-colors ${
+                        className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs cursor-pointer transition-colors ${
                           task.completed
                             ? 'bg-emerald-500 border-emerald-400 text-black'
                             : isLight ? 'border-slate-300 hover:border-orange-500' : 'border-white/30 hover:border-orange-400'

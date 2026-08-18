@@ -119,13 +119,18 @@ eas submit -p android --latest
 eas submit -p ios --latest`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full max-w-4xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden my-8 bg-[#0a0a0c]/95 backdrop-blur-2xl text-white"
+        className="w-full sm:max-w-4xl sm:rounded-3xl rounded-t-3xl border border-white/10 shadow-2xl overflow-hidden mb-0 sm:my-8 bg-[#0a0a0c]/95 backdrop-blur-2xl text-white"
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 sm:px-8 py-5 border-b border-white/10 bg-white/[0.02]">
           <div className="flex items-center gap-3.5">

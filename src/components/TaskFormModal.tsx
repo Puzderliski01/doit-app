@@ -153,17 +153,22 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/80 backdrop-blur-xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className={`w-full max-w-2xl rounded-3xl border shadow-2xl overflow-hidden my-8 backdrop-blur-2xl ${
+        className={`w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-0 sm:my-8 backdrop-blur-2xl ${
           isLight
             ? 'bg-white border-slate-200 text-slate-900 shadow-[0_8px_40px_rgba(0,0,0,0.12)]'
             : 'bg-[#0a0a0c]/95 border-white/10 text-white'
         }`}
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className={`w-10 h-1 rounded-full ${isLight ? 'bg-slate-300' : 'bg-white/20'}`} />
+        </div>
+
         {/* Header */}
         <div className={`flex items-center justify-between px-6 sm:px-8 py-5 border-b backdrop-blur-xl ${
           isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.02]'
@@ -196,7 +201,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className={`p-6 sm:p-8 space-y-5 max-h-[75vh] overflow-y-auto ${
+        <form onSubmit={handleSubmit} className={`p-5 sm:p-8 space-y-5 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto ${
           isLight ? 'bg-white' : ''
         }`}>
           
@@ -548,13 +553,13 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className={`flex items-center justify-end gap-3 pt-5 border-t ${
-            isLight ? 'border-slate-200' : 'border-white/10'
+          <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-5 border-t sticky bottom-0 ${
+            isLight ? 'bg-white border-slate-200' : 'bg-[#0a0a0c]/95 border-white/10'
           }`}>
             <button
               type="button"
               onClick={() => { haptic.lightTap(); onClose(); }}
-              className={`px-5 py-2.5 rounded-full border font-bold text-xs transition-colors cursor-pointer ${
+              className={`px-5 py-3 sm:py-2.5 rounded-full border font-bold text-xs transition-colors cursor-pointer ${
                 isLight
                   ? 'border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   : 'border-white/10 text-white/60 hover:text-white hover:bg-white/10'
@@ -565,7 +570,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             <button
               id="btn-save-task"
               type="submit"
-              className={`px-6 py-2.5 rounded-full font-bold text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-6 py-3 sm:py-2.5 rounded-full font-bold text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 isLight
                   ? 'bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.35)]'
                   : 'bg-white text-black'

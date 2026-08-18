@@ -200,7 +200,7 @@ export const EisenhowerMatrix: React.FC<EisenhowerMatrixProps> = ({
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <button
                             onClick={() => onToggleComplete(task)}
-                            className={`mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer ${
+                            className={`mt-0.5 w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer ${
                               isLight ? 'border-slate-300 hover:border-orange-500' : 'border-white/20 hover:border-orange-400'
                             }`}
                           >
@@ -241,7 +241,7 @@ export const EisenhowerMatrix: React.FC<EisenhowerMatrixProps> = ({
                               else if (quad.id === 'q3') onMoveQuadrant(task, false, false, 'low');
                               else onMoveQuadrant(task, true, true, 'urgent');
                             }}
-                            className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                            className={`min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
                               isLight ? 'text-slate-400 hover:text-slate-800 hover:bg-slate-100' : 'text-white/30 hover:text-white hover:bg-white/10'
                             }`}
                           >

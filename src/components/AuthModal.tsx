@@ -183,13 +183,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/75 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full max-w-md bg-[#121215] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-white overflow-hidden"
+        className="w-full sm:max-w-md bg-[#121215] border border-white/15 sm:rounded-3xl rounded-t-3xl p-6 sm:p-8 shadow-2xl relative text-white overflow-hidden"
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center -mt-2 mb-2">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Glow accent */}
         <div className="absolute -top-24 -left-24 w-52 h-52 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-52 h-52 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />

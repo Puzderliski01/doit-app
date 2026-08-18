@@ -22,6 +22,7 @@ import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
 
 import { Navbar } from './components/Navbar';
+import { MobileNav } from './components/MobileNav';
 import { TaskCard } from './components/TaskCard';
 import { QuickAddBar } from './components/QuickAddBar';
 import { TaskFormModal } from './components/TaskFormModal';
@@ -852,7 +853,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* Main Content Workspace */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacer">
           
           {/* VIEW 1: ALL TASKS / LIST VIEW */}
           {currentView === 'list' && (
@@ -1249,6 +1250,13 @@ export default function App() {
           notifications={activeToasts}
           onDismiss={handleDismissToast}
           onAction={handleToastAction}
+        />
+
+        {/* Bottom Mobile Navigation */}
+        <MobileNav
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          theme={theme}
         />
 
       </div>

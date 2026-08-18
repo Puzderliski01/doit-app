@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <header className={`sticky top-0 z-40 transition-colors duration-200 border-b backdrop-blur-xl ${
+    <header className={`sticky top-0 z-40 transition-colors duration-200 border-b backdrop-blur-xl safe-area-top ${
       isLight 
         ? 'bg-white/90 border-slate-200 text-slate-800 shadow-[0_2px_15px_rgba(0,0,0,0.04)]' 
         : 'bg-black/60 border-white/10 text-[#e0e0e0]'
@@ -161,7 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               haptic.mediumClick();
               onOpenNotifications();
             }}
-            className={`relative p-2.5 border rounded-full transition-all cursor-pointer ${
+            className={`relative min-w-[44px] min-h-[44px] flex items-center justify-center border rounded-full transition-all cursor-pointer ${
               isLight 
                 ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 hover:text-slate-900' 
                 : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
@@ -183,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               haptic.lightTap();
               onToggleTheme();
             }}
-            className={`p-2.5 border rounded-full transition-all cursor-pointer ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center border rounded-full transition-all cursor-pointer ${
               isLight 
                 ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100 hover:text-amber-700 shadow-sm' 
                 : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
