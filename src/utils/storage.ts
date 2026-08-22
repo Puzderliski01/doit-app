@@ -43,7 +43,7 @@ export function getInitialTasks(): Task[] {
       isUrgent: true,
       isImportant: true,
       tags: ['Release', 'Mobile', 'Security'],
-      reminderEmail: 's.puzderliski@gmail.com',
+      reminderEmail: '',
       reminderMinutesBefore: 30,
       reminderSent: false,
       order: 1,
@@ -203,9 +203,9 @@ export const storage = {
 
   getUserEmail(): string {
     try {
-      return localStorage.getItem(STORAGE_KEYS.USER_EMAIL) || 's.puzderliski@gmail.com';
+      return localStorage.getItem(STORAGE_KEYS.USER_EMAIL) || '';
     } catch {
-      return 's.puzderliski@gmail.com';
+      return '';
     }
   },
 

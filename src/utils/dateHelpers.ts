@@ -59,7 +59,7 @@ export function formatDeadlineRelative(dueDateStr: string, completed: boolean): 
     return { text: `Overdue by ${absDays}d`, status: 'overdue' };
   }
 
-  if (diffHours <= 0) {
+  if (diffHours < 1) {
     const diffMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
     return { text: `Due in ${diffMinutes}m`, status: 'today' };
   }

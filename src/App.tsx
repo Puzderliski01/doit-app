@@ -3,14 +3,14 @@
  * Ultra-luxurious, high-performance task management application.
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Task, 
-  Category, 
-  Priority, 
-  ViewMode, 
-  FilterStatus, 
-  NotificationLog, 
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import {
+  Task,
+  Category,
+  Priority,
+  ViewMode,
+  FilterStatus,
+  NotificationLog,
   AppNotification,
   RecurringType,
   AuthUser
@@ -25,15 +25,18 @@ import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
 import { TaskCard } from './components/TaskCard';
 import { QuickAddBar } from './components/QuickAddBar';
-import { TaskFormModal } from './components/TaskFormModal';
-import { EisenhowerMatrix } from './components/EisenhowerMatrix';
-import { CalendarTimeline } from './components/CalendarTimeline';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
-import { NotificationCenterModal } from './components/NotificationCenterModal';
-import { DeploymentDocsModal } from './components/DeploymentDocsModal';
 import { NotificationToastContainer } from './components/NotificationToastContainer';
-import { AuthModal } from './components/AuthModal';
 import { LoginPage } from './components/LoginPage';
+import { OfflineIndicator } from './components/OfflineIndicator';
+
+// Lazy load heavy components that aren't immediately visible
+const TaskFormModal = lazy(() => import('./components/TaskFormModal').then(m => ({ default: m.TaskFormModal })));
+const EisenhowerMatrix = lazy(() => import('./components/EisenhowerMatrix').then(m => ({ default: m.EisenhowerMatrix })));
+const CalendarTimeline = lazy(() => import('./components/CalendarTimeline').then(m => ({ default: m.CalendarTimeline })));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
+const NotificationCenterModal = lazy(() => import('./components/NotificationCenterModal').then(m => ({ default: m.NotificationCenterModal })));
+const DeploymentDocsModal = lazy(() => import('./components/DeploymentDocsModal').then(m => ({ default: m.DeploymentDocsModal })));
+const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
 
 import { 
   auth,
@@ -87,7 +90,17 @@ export default function App() {
     return localUser ? storage.getTasks(localUser.uid) : [];
   });
   const [categories, setCategories] = useState<Category[]>(() => storage.getCategories());
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => storage.getTheme());
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const stored = storage.getTheme();
+    // If no stored preference, detect system preference
+    if (!stored || stored === 'dark') {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return prefersDark ? 'dark' : 'light';
+      }
+    }
+    return stored;
+  });
   const isLight = theme === 'light';
   const [currentView, setCurrentView] = useState<ViewMode>('list');
   // Persist theme and apply light class to document
@@ -178,8 +191,8 @@ export default function App() {
       return;
     }
 
-    const isGuest = (currentUser as AuthUser).isGuest;
-    const isLocal = (currentUser as AuthUser).isLocal;
+    const isGuest = (currentUser as AuthUser).isGuest ?? false;
+    const isLocal = (currentUser as AuthUser).isLocal ?? false;
 
     // In Guest Mode or Local Mode, load only from local storage
     if (isGuest || isLocal) {
@@ -245,7 +258,7 @@ export default function App() {
       unsubscribeCats();
       unsubscribeNotifs();
     };
-  }, [currentUser?.uid, (currentUser as AuthUser)?.isGuest]);
+  }, [currentUser?.uid]);
 
   // Sync to localStorage as offline cache for current user / guest
   useEffect(() => {
@@ -771,7 +784,10 @@ export default function App() {
     <div className={`min-h-screen text-white selection:bg-orange-500/30 selection:text-white transition-colors duration-200 relative overflow-x-hidden ${
       theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#050508]'
     }`}>
-      
+
+      {/* Offline Indicator */}
+      <OfflineIndicator isOnline={isOnline} theme={theme} />
+
       {/* Background ambient lighting */}
       {theme === 'dark' && (
         <>
@@ -1082,48 +1098,54 @@ export default function App() {
 
           {/* VIEW 2: EISENHOWER DECISION MATRIX */}
           {currentView === 'matrix' && (
-            <EisenhowerMatrix
-              tasks={tasks}
-              categories={categories}
-              theme={theme}
-              onToggleComplete={handleToggleComplete}
-              onEditTask={(t) => {
-                setEditingTask(t);
-                setIsTaskModalOpen(true);
-              }}
-              onMoveQuadrant={handleMoveQuadrant}
-              onOpenNewTask={() => {
-                setEditingTask(null);
-                setIsTaskModalOpen(true);
-              }}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              <EisenhowerMatrix
+                tasks={tasks}
+                categories={categories}
+                theme={theme}
+                onToggleComplete={handleToggleComplete}
+                onEditTask={(t) => {
+                  setEditingTask(t);
+                  setIsTaskModalOpen(true);
+                }}
+                onMoveQuadrant={handleMoveQuadrant}
+                onOpenNewTask={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
+              />
+            </Suspense>
           )}
 
           {/* VIEW 3: TIMELINE & CALENDAR */}
           {currentView === 'calendar' && (
-            <CalendarTimeline
-              tasks={tasks}
-              categories={categories}
-              theme={theme}
-              onToggleComplete={handleToggleComplete}
-              onEditTask={(t) => {
-                setEditingTask(t);
-                setIsTaskModalOpen(true);
-              }}
-              onOpenNewTask={() => {
-                setEditingTask(null);
-                setIsTaskModalOpen(true);
-              }}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              <CalendarTimeline
+                tasks={tasks}
+                categories={categories}
+                theme={theme}
+                onToggleComplete={handleToggleComplete}
+                onEditTask={(t) => {
+                  setEditingTask(t);
+                  setIsTaskModalOpen(true);
+                }}
+                onOpenNewTask={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
+              />
+            </Suspense>
           )}
 
           {/* VIEW 4: INSIGHTS & ANALYTICS */}
           {currentView === 'analytics' && (
-            <AnalyticsDashboard
-              tasks={tasks}
-              categories={categories}
-              theme={theme}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              <AnalyticsDashboard
+                tasks={tasks}
+                categories={categories}
+                theme={theme}
+              />
+            </Suspense>
           )}
 
           {/* VIEW 5: BUILD & NATIVE APP STORE DOCS */}
@@ -1184,66 +1206,74 @@ export default function App() {
         </main>
 
         {/* Task Creation & Editing Modal */}
-        <TaskFormModal
-          isOpen={isTaskModalOpen}
-          onClose={() => {
-            setIsTaskModalOpen(false);
-            setEditingTask(null);
-          }}
-          onSave={handleSaveTask}
-          categories={categories}
-          initialTask={editingTask}
-          theme={theme}
-        />
+        <Suspense fallback={null}>
+          <TaskFormModal
+            isOpen={isTaskModalOpen}
+            onClose={() => {
+              setIsTaskModalOpen(false);
+              setEditingTask(null);
+            }}
+            onSave={handleSaveTask}
+            categories={categories}
+            initialTask={editingTask}
+            theme={theme}
+          />
+        </Suspense>
 
         {/* Notification & Email Dispatch Center Modal */}
-        <NotificationCenterModal
-          isOpen={isNotifModalOpen}
-          onClose={() => setIsNotifModalOpen(false)}
-          logs={notificationLogs}
-          tasks={tasks}
-          appNotifications={appNotifications}
-          userEmail={userEmail}
-          onUpdateEmail={setUserEmail}
-          onClearLogs={() => {
-            notificationEngine.saveLogs([]);
-            setNotificationLogs([]);
-          }}
-          onClearAppNotifications={handleClearAllAppNotifications}
-          onDeleteNotification={handleDeleteNotification}
-          onMarkAllRead={handleMarkAllRead}
-          onTriggerAppNotification={triggerAppNotification}
-          onSendTestReminder={handleTriggerTestEmail}
-          theme={theme}
-        />
+        <Suspense fallback={null}>
+          <NotificationCenterModal
+            isOpen={isNotifModalOpen}
+            onClose={() => setIsNotifModalOpen(false)}
+            logs={notificationLogs}
+            tasks={tasks}
+            appNotifications={appNotifications}
+            userEmail={userEmail}
+            onUpdateEmail={setUserEmail}
+            onClearLogs={() => {
+              notificationEngine.saveLogs([]);
+              setNotificationLogs([]);
+            }}
+            onClearAppNotifications={handleClearAllAppNotifications}
+            onDeleteNotification={handleDeleteNotification}
+            onMarkAllRead={handleMarkAllRead}
+            onTriggerAppNotification={triggerAppNotification}
+            onSendTestReminder={handleTriggerTestEmail}
+            theme={theme}
+          />
+        </Suspense>
 
         {/* Build & Store Deployment Documentation Modal */}
-        <DeploymentDocsModal
-          isOpen={isDocsModalOpen}
-          onClose={() => setIsDocsModalOpen(false)}
-          theme={theme}
-        />
+        <Suspense fallback={null}>
+          <DeploymentDocsModal
+            isOpen={isDocsModalOpen}
+            onClose={() => setIsDocsModalOpen(false)}
+            theme={theme}
+          />
+        </Suspense>
 
         {/* Firebase Authentication Modal (Google / Email Login & Signup) */}
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          onAuthSuccess={(user) => {
-            if ((currentUser as AuthUser)?.isGuest && tasks.length > 0) {
-              // Seamlessly upload local guest tasks to the user's new Firestore account
-              tasks.forEach((task) => {
-                saveUserTaskToFirestore(user.uid, task).catch(console.error);
-              });
-              storage.saveTasks(tasks, user.uid);
-            }
-            saveLocalAuthSession(user);
-            setCurrentUser(user);
-            if (user.email) setUserEmail(user.email);
-            setIsAuthModalOpen(false);
-          }}
-        />
+        <Suspense fallback={null}>
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onAuthSuccess={(user) => {
+              if ((currentUser as AuthUser)?.isGuest && tasks.length > 0) {
+                // Seamlessly upload local guest tasks to the user's new Firestore account
+                tasks.forEach((task) => {
+                  saveUserTaskToFirestore(user.uid, task).catch(console.error);
+                });
+                storage.saveTasks(tasks, user.uid);
+              }
+              saveLocalAuthSession(user);
+              setCurrentUser(user);
+              if (user.email) setUserEmail(user.email);
+              setIsAuthModalOpen(false);
+            }}
+          />
+        </Suspense>
 
         {/* In-App Floating Toast Notifications (Live alerts only, never historical unread spam) */}
         <NotificationToastContainer
