@@ -306,39 +306,29 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
   const completedSets = entry.sets.filter((s) => s.completed);
   const setCount = completedSets.length;
 
-  // Base XP per completed set
-  xp += setCount * 2;
+  if (setCount === 0) return 0;
 
-  // Total reps matter — more reps = more effort
-  const totalReps = completedSets.reduce((sum, s) => sum + s.reps, 0);
-  xp += Math.floor(totalReps * 0.5);
+  // XP per set: each rep counts progressively more
+  // 1 rep = 1 XP, 2 reps = 3 XP, 5 reps = 15 XP, 10 reps = 55 XP
+  for (const set of completedSets) {
+    if (set.reps <= 0) continue;
+    const repXP = (set.reps * (set.reps + 1)) / 2;
+    const weightBonus = set.weight > 0 ? Math.floor(set.weight * Math.sqrt(set.weight) / 5) : 0;
+    xp += Math.floor(repXP + weightBonus);
+  }
 
-  // Volume (weight × reps) — scales with load
+  // Volume milestones (weight × reps)
   const volume = entry.totalVolume;
-  if (volume > 0) {
-    xp += Math.floor(volume / 50);
-  }
+  if (volume >= 500) xp += 10;
+  if (volume >= 2000) xp += 20;
+  if (volume >= 5000) xp += 40;
+  if (volume >= 10000) xp += 80;
 
-  // 1RM bonus — heavier = more impressive
-  if (entry.estimatedOneRepMax > 0) {
-    xp += Math.floor(entry.estimatedOneRepMax / 5);
-  }
+  // High set count bonus
+  if (setCount >= 5) xp += 10;
+  if (setCount >= 8) xp += 25;
 
-  // High-rep bonus (sets of 12+ are endurance work)
-  const highRepSets = completedSets.filter((s) => s.reps >= 12).length;
-  xp += highRepSets * 3;
-
-  // Volume milestones
-  if (volume >= 1000) xp += 15;
-  if (volume >= 5000) xp += 25;
-  if (volume >= 10000) xp += 50;
-
-  // Set count bonuses
-  if (setCount >= 4) xp += 5;
-  if (setCount >= 6) xp += 10;
-  if (setCount >= 8) xp += 20;
-
-  return Math.max(xp, 2);
+  return Math.max(xp, 0);
 }
 
 export function calculateStreak(lastWorkoutDate: string | null): number {
