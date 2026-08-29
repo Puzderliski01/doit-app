@@ -89,7 +89,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setIsImportant(true);
       setIsUrgent(false);
     }
-  }, [initialTask, isOpen, categories]);
+  }, [initialTask, isOpen]);
 
   if (!isOpen) return null;
 

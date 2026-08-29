@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Priority, RecurringType, Category } from '../types';
 import { 
   Plus, 
@@ -40,6 +40,13 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const [dueOption, setDueOption] = useState<'today' | 'tomorrow' | 'nextWeek' | 'custom'>('today');
   const [customDate, setCustomDate] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Sync categoryId when categories prop changes (e.g., from Firestore)
+  useEffect(() => {
+    if (categories.length > 0 && !categories.find(c => c.id === categoryId)) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categories]);
 
   const getComputedDueDate = (): string => {
     const now = new Date();

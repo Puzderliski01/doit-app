@@ -295,6 +295,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       strokeWidth={2.5} 
                       showText={false}
                       isTaskCompleted={task.completed}
+                      theme={theme}
                     />
                     <span>{completedSubtasksCount}/{totalSubtasksCount}</span>
                   </button>
@@ -343,6 +344,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         size={38}
                         strokeWidth={3.5}
                         isTaskCompleted={task.completed}
+                        theme={theme}
                         className="transition-transform group-hover/subhead:scale-105"
                       />
                       
@@ -428,6 +430,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 size={34}
                 strokeWidth={3}
                 isTaskCompleted={task.completed}
+                theme={theme}
                 onClick={(e) => {
                   e.stopPropagation();
                   haptic.lightTap();

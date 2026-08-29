@@ -11,6 +11,7 @@ interface RadialProgressRingProps {
   isTaskCompleted?: boolean;
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
+  theme?: 'dark' | 'light';
 }
 
 export const RadialProgressRing: React.FC<RadialProgressRingProps> = ({
@@ -21,7 +22,8 @@ export const RadialProgressRing: React.FC<RadialProgressRingProps> = ({
   showText = true,
   isTaskCompleted = false,
   onClick,
-  className = ''
+  className = '',
+  theme = 'dark'
 }) => {
   if (total <= 0) return null;
 
@@ -33,6 +35,8 @@ export const RadialProgressRing: React.FC<RadialProgressRingProps> = ({
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   const uniqueGradientId = `progress-grad-${size}-${Math.random().toString(36).substring(2, 6)}`;
+
+  const isLight = theme === 'light';
 
   return (
     <div 
@@ -80,7 +84,7 @@ export const RadialProgressRing: React.FC<RadialProgressRingProps> = ({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255, 255, 255, 0.08)"
+          stroke={isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)'}
           strokeWidth={strokeWidth}
         />
 

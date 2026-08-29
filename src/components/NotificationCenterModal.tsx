@@ -101,18 +101,18 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     switch (type) {
       case 'overdue':
       case 'urgent_priority':
-        return <AlertTriangle className="w-4 h-4 text-red-400" />;
+        return <AlertTriangle className={`w-4 h-4 ${isLight ? 'text-red-500' : 'text-red-400'}`} />;
       case 'subtask_complete':
       case 'achievement':
-        return <Sparkles className="w-4 h-4 text-amber-400" />;
+        return <Sparkles className={`w-4 h-4 ${isLight ? 'text-amber-500' : 'text-amber-400'}`} />;
       case 'deadline':
-        return <Clock className="w-4 h-4 text-orange-400" />;
+        return <Clock className={`w-4 h-4 ${isLight ? 'text-orange-500' : 'text-orange-400'}`} />;
       case 'sync':
-        return <Wifi className="w-4 h-4 text-cyan-400" />;
+        return <Wifi className={`w-4 h-4 ${isLight ? 'text-cyan-500' : 'text-cyan-400'}`} />;
       case 'daily_briefing':
-        return <Flame className="w-4 h-4 text-orange-400" />;
+        return <Flame className={`w-4 h-4 ${isLight ? 'text-orange-500' : 'text-orange-400'}`} />;
       default:
-        return <Bell className="w-4 h-4 text-white/80" />;
+        return <Bell className={`w-4 h-4 ${isLight ? 'text-slate-600' : 'text-white/80'}`} />;
     }
   };
 

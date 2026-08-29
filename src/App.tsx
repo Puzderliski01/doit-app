@@ -1270,6 +1270,7 @@ export default function App() {
             onClose={() => setIsAuthModalOpen(false)}
             currentUser={currentUser}
             onLogout={handleLogout}
+            theme={theme}
             onAuthSuccess={(user) => {
               if ((currentUser as AuthUser)?.isGuest && tasks.length > 0) {
                 // Seamlessly upload local guest tasks to the user's new Firestore account

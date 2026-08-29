@@ -34,6 +34,7 @@ interface AuthModalProps {
   currentUser: AuthUser | User | null;
   onAuthSuccess?: (user: AuthUser) => void;
   onLogout?: () => void;
+  theme: 'dark' | 'light';
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -41,7 +42,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   currentUser,
   onAuthSuccess,
-  onLogout
+  onLogout,
+  theme
 }) => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -53,6 +55,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const isLight = theme === 'light';
 
   const handleInstantWorkspaceLogin = (customEmail?: string, customName?: string) => {
     const chosenEmail = customEmail || email || 's.puzderliski@gmail.com';
@@ -183,26 +187,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/75 backdrop-blur-md">
+    <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-md ${
+      isLight ? 'bg-black/40' : 'bg-black/75'
+    }`}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full sm:max-w-md bg-[#121215] border border-white/15 sm:rounded-3xl rounded-t-3xl p-6 sm:p-8 shadow-2xl relative text-white overflow-hidden"
+        className={`w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden ${
+          isLight
+            ? 'bg-white border border-slate-200 text-slate-900 shadow-[0_8px_40px_rgba(0,0,0,0.12)]'
+            : 'bg-[#121215] border border-white/15 text-white'
+        }`}
       >
         {/* Mobile drag handle */}
         <div className="sm:hidden flex justify-center -mt-2 mb-2">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+          <div className={`w-10 h-1 rounded-full ${isLight ? 'bg-slate-300' : 'bg-white/20'}`} />
         </div>
 
         {/* Glow accent */}
-        <div className="absolute -top-24 -left-24 w-52 h-52 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-52 h-52 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className={`absolute -top-24 -left-24 w-52 h-52 rounded-full blur-3xl pointer-events-none ${
+          isLight ? 'bg-amber-200/30' : 'bg-amber-500/20'
+        }`} />
+        <div className={`absolute -bottom-24 -right-24 w-52 h-52 rounded-full blur-3xl pointer-events-none ${
+          isLight ? 'bg-orange-200/30' : 'bg-orange-500/20'
+        }`} />
 
         {/* Close Button */}
         <button
           onClick={() => { haptic.lightTap(); onClose(); }}
-          className="absolute top-5 right-5 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          className={`absolute top-5 right-5 p-2 rounded-full transition-colors ${
+            isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700' : 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white'
+          }`}
           title="Close Dialog"
         >
           <X className="w-5 h-5" />
@@ -210,14 +226,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
-            <ShieldCheck className="w-5 h-5 text-black stroke-[2.5]" />
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+            isLight ? 'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/20' : 'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/30'
+          }`}>
+            <ShieldCheck className={`w-5 h-5 stroke-[2.5] ${isLight ? 'text-white' : 'text-black'}`} />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white">
+            <h2 className={`text-xl font-bold tracking-tight ${
+              isLight ? 'text-slate-900' : 'text-white'
+            }`}>
               {currentUser ? 'Your Personal Account' : (mode === 'signin' ? 'Sign In to Your Workspace' : 'Create Personal Account')}
             </h2>
-            <p className="text-xs text-white/50">
+            <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
               {currentUser 
                 ? 'Only you can view and modify your private tasks.' 
                 : 'Log in so you only see your personal tasks in real-time.'}
@@ -228,7 +248,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Already Logged In View */}
         {currentUser && !currentUser.isGuest ? (
           <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-4">
+            <div className={`p-4 rounded-2xl border flex items-center gap-4 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'
+            }`}>
               {currentUser.photoURL ? (
                 <img 
                   src={currentUser.photoURL} 
@@ -242,10 +264,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white truncate text-sm">
+                <p className={`font-semibold truncate text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {currentUser.displayName || 'Authenticated User'}
                 </p>
-                <p className="text-xs text-white/60 truncate font-mono">
+                <p className={`text-xs truncate font-mono ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
                   {currentUser.email || 'Private Account'}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1 text-[11px] text-emerald-400">
@@ -255,14 +277,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
+            <div className={`p-4 rounded-2xl border text-xs leading-relaxed ${
+              isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-500/10 border-amber-500/20 text-amber-200/90'
+            }`}>
               🔒 <strong>Personal Workspace Protection:</strong> Your tasks, categories, and subtasks are tied directly to your unique ID (<code>{currentUser.uid.slice(0, 14)}...</code>). All devices signed in with this account sync in real-time.
             </div>
 
             <button
               onClick={handleLogout}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-sm font-semibold transition-all cursor-pointer disabled:opacity-50"
+              className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl border text-sm font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                isLight ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30'
+              }`}
             >
               <LogOut className="w-4 h-4" />
               <span>Sign Out & Back to Login Page</span>
@@ -272,7 +298,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           /* Sign In / Sign Up Form */
           <div className="space-y-4">
             {currentUser?.isGuest && (
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2.5 text-xs text-amber-300">
+              <div className={`p-3 rounded-2xl border flex items-center gap-2.5 text-xs ${
+                isLight ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-amber-500/10 border-amber-500/25 text-amber-300'
+              }`}>
                 <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>You are in <strong>Guest Mode</strong>. Sign in below to sync your tasks to the cloud across all devices.</span>
               </div>
@@ -284,7 +312,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               id="btn-google-auth"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-white/90 text-black font-semibold text-sm transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50"
+              className={`w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl font-semibold text-sm transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50 ${
+                isLight ? 'bg-white hover:bg-white/95 text-black border border-slate-200' : 'bg-white hover:bg-white/90 text-black'
+              }`}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -308,22 +338,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
 
             <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 h-px bg-white/10"></div>
-              <span className="text-[11px] uppercase tracking-wider text-white/40 font-mono">or email login</span>
-              <div className="flex-1 h-px bg-white/10"></div>
+              <div className={`flex-1 h-px ${isLight ? 'bg-slate-200' : 'bg-white/10'}`} />
+              <span className={`text-[11px] uppercase tracking-wider font-mono ${isLight ? 'text-slate-400' : 'text-white/40'}`}>or email login</span>
+              <div className={`flex-1 h-px ${isLight ? 'bg-slate-200' : 'bg-white/10'}`} />
             </div>
 
             {/* Notifications / Errors */}
             {error && (
-              <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 space-y-2">
+              <div className={`p-3.5 rounded-2xl border text-xs space-y-2 ${
+                isLight ? 'bg-red-50 border-red-200 text-red-700' : 'bg-red-500/10 border-red-500/30 text-red-300'
+              }`}>
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>
                 </div>
                 
                 {/* Direct 1-Click bypass fallback */}
-                <div className="pt-2 border-t border-red-500/20 flex flex-col gap-1.5">
-                  <p className="text-[11px] text-white/70">
+                <div className={`pt-2 border-t flex flex-col gap-1.5 ${
+                  isLight ? 'border-red-200' : 'border-red-500/20'
+                }`}>
+                  <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-white/70'}`}>
                     Bypass provider settings and enter your personal workspace immediately:
                   </p>
                   <button
@@ -339,7 +373,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {successMsg && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-300">
+              <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
+                isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              }`}>
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <span>{successMsg}</span>
               </div>
@@ -348,39 +384,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleSubmit} className="space-y-3.5">
               {mode === 'signup' && (
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1">Your Full Name</label>
+                  <label className={`block text-xs font-medium mb-1 ${isLight ? 'text-slate-600' : 'text-white/70'}`}>Your Full Name</label>
                   <div className="relative">
-                    <UserIcon className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <UserIcon className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                     <input
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="e.g. S. Puzderliski"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500 transition-colors"
+                      className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors ${
+                        isLight ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400' : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                      }`}
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Email Address</label>
+                <label className={`block text-xs font-medium mb-1 ${isLight ? 'text-slate-600' : 'text-white/70'}`}>Email Address</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="s.puzderliski@gmail.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500 transition-colors"
+                    className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors ${
+                      isLight ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400' : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1">Password</label>
+                <label className={`block text-xs font-medium mb-1 ${isLight ? 'text-slate-600' : 'text-white/70'}`}>Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                   <input
                     type="password"
                     required
@@ -388,7 +428,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500 transition-colors"
+                    className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors ${
+                      isLight ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400' : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                    }`}
                   />
                 </div>
               </div>
@@ -408,7 +450,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => { haptic.lightTap(); setMode('signup'); setError(null); }}
-                  className="text-xs text-amber-400/90 hover:text-amber-300 transition-colors cursor-pointer"
+                  className={`text-xs transition-colors cursor-pointer ${
+                    isLight ? 'text-amber-600 hover:text-amber-700' : 'text-amber-400/90 hover:text-amber-300'
+                  }`}
                 >
                   Don't have an account yet? <span className="underline font-semibold">Sign Up</span>
                 </button>
@@ -416,7 +460,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => { haptic.lightTap(); setMode('signin'); setError(null); }}
-                  className="text-xs text-amber-400/90 hover:text-amber-300 transition-colors cursor-pointer"
+                  className={`text-xs transition-colors cursor-pointer ${
+                    isLight ? 'text-amber-600 hover:text-amber-700' : 'text-amber-400/90 hover:text-amber-300'
+                  }`}
                 >
                   Already registered? <span className="underline font-semibold">Sign In</span>
                 </button>
@@ -426,7 +472,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleInstantWorkspaceLogin('s.puzderliski@gmail.com', 'S. Puzderliski')}
-                className="text-[11px] text-white/40 hover:text-white/80 transition-colors flex items-center gap-1.5 mt-1 cursor-pointer"
+                className={`text-[11px] transition-colors flex items-center gap-1.5 mt-1 cursor-pointer ${
+                  isLight ? 'text-slate-400 hover:text-slate-700' : 'text-white/40 hover:text-white/80'
+                }`}
               >
                 <Zap className="w-3 h-3 text-amber-400" />
                 <span>1-Click Launch Personal Workspace (s.puzderliski@gmail.com)</span>
