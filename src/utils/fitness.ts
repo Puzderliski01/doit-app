@@ -308,21 +308,41 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
 
   if (setCount === 0) return 0;
 
-  // XP per set: each rep counts progressively more
-  // 1 rep = 1 XP, 2 reps = 3 XP, 5 reps = 15 XP, 10 reps = 55 XP
-  for (const set of completedSets) {
-    if (set.reps <= 0) continue;
-    const repXP = (set.reps * (set.reps + 1)) / 2;
-    const weightBonus = set.weight > 0 ? Math.floor(set.weight * Math.sqrt(set.weight) / 5) : 0;
-    xp += Math.floor(repXP + weightBonus);
-  }
+  const hasWeight = completedSets.some((s) => s.weight > 0);
 
-  // Volume milestones (weight × reps)
-  const volume = entry.totalVolume;
-  if (volume >= 500) xp += 10;
-  if (volume >= 2000) xp += 20;
-  if (volume >= 5000) xp += 40;
-  if (volume >= 10000) xp += 80;
+  if (hasWeight) {
+    // WEIGHTED EXERCISES: XP = volume (weight × reps) + 1RM bonus
+    // Each set: weight × reps gives base XP, heavier = exponentially more
+    for (const set of completedSets) {
+      if (set.reps <= 0 || set.weight <= 0) continue;
+      const setVolume = set.weight * set.reps;
+      // Volume XP: each kg*rep gives ~0.3 XP, but scales up with weight
+      const volumeXP = Math.floor(set.weight * set.reps * (1 + set.weight / 200));
+      // 1RM estimate for this set
+      const set1RM = calculateOneRepMax(set.weight, set.reps);
+      const oneRMXP = Math.floor(set1RM / 10);
+      xp += volumeXP + oneRMXP;
+    }
+    // Volume milestones
+    const volume = entry.totalVolume;
+    if (volume >= 1000) xp += 20;
+    if (volume >= 5000) xp += 50;
+    if (volume >= 10000) xp += 100;
+    if (volume >= 25000) xp += 200;
+  } else {
+    // BODYWEIGHT EXERCISES: XP = reps (progressive per rep)
+    // Each rep counts progressively more: 1=1, 2=3, 5=15, 10=55
+    for (const set of completedSets) {
+      if (set.reps <= 0) continue;
+      const repXP = (set.reps * (set.reps + 1)) / 2;
+      xp += Math.floor(repXP);
+    }
+    // Rep milestones
+    const totalReps = completedSets.reduce((sum, s) => sum + s.reps, 0);
+    if (totalReps >= 50) xp += 10;
+    if (totalReps >= 100) xp += 25;
+    if (totalReps >= 200) xp += 50;
+  }
 
   // High set count bonus
   if (setCount >= 5) xp += 10;
