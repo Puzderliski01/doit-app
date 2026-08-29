@@ -49,7 +49,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
   const isLight = theme === 'light';
   const [step, setStep] = useState(0);
   const [isFitness, setIsFitness] = useState<boolean | null>(null);
-  const [goal, setGoal] = useState<string>('');
+  const [goals, setGoals] = useState<string[]>([]);
   const [experience, setExperience] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [bodyWeight, setBodyWeight] = useState('');
@@ -63,16 +63,22 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
       weightUnit,
       bodyWeight: bodyWeight ? parseFloat(bodyWeight) : undefined,
       heightCm: height ? parseFloat(height) : undefined,
-      goal: goal as 'lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance' | undefined,
+      goals: goals as ('lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance')[],
       experienceLevel: experience as 'beginner' | 'intermediate' | 'advanced' | undefined,
     });
   };
 
   const canProceed = () => {
     if (step === 0) return isFitness !== null;
-    if (step === 1) return goal !== '';
+    if (step === 1) return goals.length > 0;
     if (step === 2) return experience !== '';
     return true;
+  };
+
+  const toggleGoal = (goalId: string) => {
+    setGoals((prev) =>
+      prev.includes(goalId) ? prev.filter((g) => g !== goalId) : [...prev, goalId]
+    );
   };
 
   return (
@@ -161,34 +167,42 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
             <div className="space-y-6">
               <div>
                 <h2 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  What's your goal?
+                  What are your goals?
                 </h2>
                 <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
-                  This helps us personalize your experience
+                  Select one or more goals
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
-                {GOALS.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => setGoal(g.id)}
-                    className={`p-3.5 rounded-2xl border-2 text-left transition-all ${
-                      goal === g.id
-                        ? 'border-amber-500 bg-amber-500/10'
-                        : isLight
-                        ? 'border-slate-200 hover:border-slate-300 bg-slate-50'
-                        : 'border-white/10 hover:border-white/20 bg-white/5'
-                    }`}
-                  >
-                    <span className="text-xl">{g.icon}</span>
-                    <p className={`text-xs font-bold mt-1.5 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>
-                      {g.label}
-                    </p>
-                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
-                      {g.desc}
-                    </p>
-                  </button>
-                ))}
+                {GOALS.map((g) => {
+                  const selected = goals.includes(g.id);
+                  return (
+                    <button
+                      key={g.id}
+                      onClick={() => toggleGoal(g.id)}
+                      className={`p-3.5 rounded-2xl border-2 text-left transition-all relative ${
+                        selected
+                          ? 'border-amber-500 bg-amber-500/10'
+                          : isLight
+                          ? 'border-slate-200 hover:border-slate-300 bg-slate-50'
+                          : 'border-white/10 hover:border-white/20 bg-white/5'
+                      }`}
+                    >
+                      {selected && (
+                        <div className="absolute top-2 right-2">
+                          <Check className="w-4 h-4 text-amber-400" />
+                        </div>
+                      )}
+                      <span className="text-xl">{g.icon}</span>
+                      <p className={`text-xs font-bold mt-1.5 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>
+                        {g.label}
+                      </p>
+                      <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+                        {g.desc}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

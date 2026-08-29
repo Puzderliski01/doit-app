@@ -195,7 +195,7 @@ export interface UserProfile {
   bodyWeight?: number;
   heightCm?: number;
   dateOfBirth?: string;
-  goal?: 'lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance';
+  goals?: ('lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance')[];
   experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
   onboardingCompleted: boolean;
 }
