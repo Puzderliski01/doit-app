@@ -13,13 +13,16 @@ import {
   NotificationLog,
   AppNotification,
   RecurringType,
-  AuthUser
+  AuthUser,
+  FitnessEntry,
+  UserProfile,
 } from './types';
 import { storage } from './utils/storage';
 import { haptic } from './utils/haptics';
 import { isOverdue, isDueToday, isDueThisWeek } from './utils/dateHelpers';
 import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
+import { DEFAULT_USER_PROFILE, updateFitnessStats } from './utils/fitness';
 
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -37,6 +40,9 @@ const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard').
 const NotificationCenterModal = lazy(() => import('./components/NotificationCenterModal').then(m => ({ default: m.NotificationCenterModal })));
 const DeploymentDocsModal = lazy(() => import('./components/DeploymentDocsModal').then(m => ({ default: m.DeploymentDocsModal })));
 const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
+const FitnessDashboard = lazy(() => import('./components/FitnessDashboard').then(m => ({ default: m.FitnessDashboard })));
+const ExerciseLogModal = lazy(() => import('./components/ExerciseLogModal').then(m => ({ default: m.ExerciseLogModal })));
+const FitnessOnboarding = lazy(() => import('./components/FitnessOnboarding').then(m => ({ default: m.FitnessOnboarding })));
 
 import { 
   auth,
@@ -136,6 +142,24 @@ export default function App() {
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
 
+  // Fitness State
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    try {
+      const stored = localStorage.getItem('doit_user_profile');
+      if (stored) return { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
+    } catch { /* ignore */ }
+    return DEFAULT_USER_PROFILE;
+  });
+  const [fitnessEntries, setFitnessEntries] = useState<FitnessEntry[]>(() => {
+    try {
+      const stored = localStorage.getItem('doit_fitness_entries');
+      if (stored) return JSON.parse(stored);
+    } catch { /* ignore */ }
+    return [];
+  });
+  const [isExerciseLogModalOpen, setIsExerciseLogModalOpen] = useState(false);
+  const [isFitnessOnboardingOpen, setIsFitnessOnboardingOpen] = useState(false);
+
   // Filters and Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
@@ -147,14 +171,14 @@ export default function App() {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const anyModalOpen = isTaskModalOpen || isNotifModalOpen || isDocsModalOpen || isAuthModalOpen;
+    const anyModalOpen = isTaskModalOpen || isNotifModalOpen || isDocsModalOpen || isAuthModalOpen || isExerciseLogModalOpen || isFitnessOnboardingOpen;
     if (anyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isTaskModalOpen, isNotifModalOpen, isDocsModalOpen, isAuthModalOpen]);
+  }, [isTaskModalOpen, isNotifModalOpen, isDocsModalOpen, isAuthModalOpen, isExerciseLogModalOpen, isFitnessOnboardingOpen]);
 
   // Firebase Auth State Listener with device session retention
   useEffect(() => {
@@ -286,6 +310,15 @@ export default function App() {
   useEffect(() => {
     storage.saveUserEmail(userEmail);
   }, [userEmail]);
+
+  // Fitness persistence
+  useEffect(() => {
+    localStorage.setItem('doit_user_profile', JSON.stringify(userProfile));
+  }, [userProfile]);
+
+  useEffect(() => {
+    localStorage.setItem('doit_fitness_entries', JSON.stringify(fitnessEntries));
+  }, [fitnessEntries]);
 
   const triggerAppNotification = (notif: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
     const created = notificationEngine.pushAppNotification(notif);
@@ -688,6 +721,43 @@ export default function App() {
   const handleTriggerTestEmail = (task: Task, email: string) => {
     const log = notificationEngine.dispatchEmailReminder(task, email);
     setNotificationLogs(prev => [log, ...prev]);
+  };
+
+  // Fitness Handlers
+  const handleSaveFitnessEntry = (entry: FitnessEntry) => {
+    setFitnessEntries(prev => [entry, ...prev]);
+    setUserProfile(prev => ({
+      ...prev,
+      fitnessStats: updateFitnessStats(prev.fitnessStats, entry, prev.weightUnit),
+    }));
+    triggerAppNotification({
+      type: 'achievement',
+      title: '🏋️ Workout Logged!',
+      message: `${entry.exerciseName}: ${entry.sets.filter(s => s.completed).length} sets, ${entry.totalVolume} ${entry.sets[0]?.weightUnit || 'kg'}`,
+    });
+  };
+
+  const handleFitnessOnboardingComplete = (data: {
+    fitnessMode: boolean;
+    weightUnit: 'kg' | 'lbs';
+    bodyWeight?: number;
+    heightCm?: number;
+    goal?: 'lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance';
+    experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
+  }) => {
+    setUserProfile(prev => ({
+      ...prev,
+      ...data,
+      onboardingCompleted: true,
+    }));
+    setIsFitnessOnboardingOpen(false);
+    if (data.fitnessMode) {
+      setCurrentView('fitness');
+    }
+  };
+
+  const handleSelectExercise = (_exerciseId: string) => {
+    setIsExerciseLogModalOpen(true);
   };
 
   // Filtered & Sorted Tasks
@@ -1214,6 +1284,34 @@ export default function App() {
             </div>
           )}
 
+          {/* VIEW 6: FITNESS DASHBOARD */}
+          {currentView === 'fitness' && (
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              {!userProfile.onboardingCompleted ? (
+                <div className="text-center py-16">
+                  <p className={`text-sm mb-4 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+                    Set up your fitness profile to get started
+                  </p>
+                  <button
+                    onClick={() => setIsFitnessOnboardingOpen(true)}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all"
+                  >
+                    Start Onboarding
+                  </button>
+                </div>
+              ) : (
+                <FitnessDashboard
+                  theme={theme}
+                  stats={userProfile.fitnessStats}
+                  userProfile={userProfile}
+                  entries={fitnessEntries}
+                  onOpenLogModal={() => setIsExerciseLogModalOpen(true)}
+                  onSelectExercise={handleSelectExercise}
+                />
+              )}
+            </Suspense>
+          )}
+
         </main>
 
         {/* Task Creation & Editing Modal */}
@@ -1284,6 +1382,27 @@ export default function App() {
               if (user.email) setUserEmail(user.email);
               setIsAuthModalOpen(false);
             }}
+          />
+        </Suspense>
+
+        {/* Exercise Log Modal */}
+        <Suspense fallback={null}>
+          <ExerciseLogModal
+            isOpen={isExerciseLogModalOpen}
+            onClose={() => setIsExerciseLogModalOpen(false)}
+            onSave={handleSaveFitnessEntry}
+            theme={theme}
+            weightUnit={userProfile.weightUnit}
+          />
+        </Suspense>
+
+        {/* Fitness Onboarding Modal */}
+        <Suspense fallback={null}>
+          <FitnessOnboarding
+            isOpen={isFitnessOnboardingOpen}
+            onClose={() => setIsFitnessOnboardingOpen(false)}
+            onComplete={handleFitnessOnboardingComplete}
+            theme={theme}
           />
         </Suspense>
 

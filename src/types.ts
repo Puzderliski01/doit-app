@@ -45,7 +45,7 @@ export interface Category {
   description?: string;
 }
 
-export type ViewMode = 'list' | 'matrix' | 'calendar' | 'analytics' | 'docs';
+export type ViewMode = 'list' | 'matrix' | 'calendar' | 'analytics' | 'docs' | 'fitness';
 
 export type FilterStatus = 'all' | 'pending' | 'completed' | 'today' | 'upcoming' | 'overdue';
 
@@ -115,4 +115,82 @@ export interface AuthUser {
   photoURL?: string | null;
   isLocal?: boolean;
   isGuest?: boolean;
+}
+
+export type MuscleGroup = 'chest' | 'back' | 'shoulders' | 'biceps' | 'triceps' | 'legs' | 'glutes' | 'core' | 'cardio' | 'full_body';
+
+export type ExerciseType = 'strength' | 'cardio' | 'bodyweight' | 'flexibility';
+
+export interface Exercise {
+  id: string;
+  name: string;
+  muscleGroup: MuscleGroup;
+  type: ExerciseType;
+  isCustom: boolean;
+}
+
+export interface ExerciseSet {
+  reps: number;
+  weight: number;
+  weightUnit: 'kg' | 'lbs';
+  completed: boolean;
+}
+
+export interface FitnessEntry {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  muscleGroup: MuscleGroup;
+  date: string;
+  sets: ExerciseSet[];
+  totalVolume: number;
+  estimatedOneRepMax: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export type Rank =
+  | 'Unranked'
+  | 'Novice'
+  | 'Beginner'
+  | 'Intermediate'
+  | 'Advanced'
+  | 'Elite'
+  | 'Legend'
+  | 'Godlike';
+
+export interface RankInfo {
+  rank: Rank;
+  minXP: number;
+  color: string;
+  icon: string;
+  label: string;
+}
+
+export interface FitnessStats {
+  totalWorkouts: number;
+  totalSets: number;
+  totalVolume: number;
+  totalVolumeUnit: 'kg' | 'lbs';
+  currentStreak: number;
+  bestStreak: number;
+  lastWorkoutDate: string | null;
+  xp: number;
+  rank: Rank;
+  personalRecords: Record<string, { weight: number; reps: number; date: string }>;
+  muscleGroupFrequency: Record<MuscleGroup, number>;
+  weeklyVolume: { week: string; volume: number }[];
+  exerciseHistory: Record<string, { date: string; volume: number; oneRepMax: number }[]>;
+}
+
+export interface UserProfile {
+  fitnessMode: boolean;
+  fitnessStats: FitnessStats;
+  weightUnit: 'kg' | 'lbs';
+  bodyWeight?: number;
+  heightCm?: number;
+  dateOfBirth?: string;
+  goal?: 'lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance';
+  experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
+  onboardingCompleted: boolean;
 }

@@ -15,7 +15,8 @@ import {
   Zap, 
   User as UserIcon, 
   LogIn, 
-  ShieldCheck 
+  ShieldCheck,
+  Dumbbell,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { User } from 'firebase/auth';
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
     { id: 'list', label: 'Focus View', icon: <CheckSquare className="w-3.5 h-3.5" /> },
     { id: 'matrix', label: 'Priority Matrix', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+    { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-3.5 h-3.5" /> },
     { id: 'calendar', label: 'Timeline', icon: <Calendar className="w-3.5 h-3.5" /> },
     { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-3.5 h-3.5" /> },
     { id: 'docs', label: 'Mobile & Store Docs', icon: <BookOpen className="w-3.5 h-3.5" /> },
