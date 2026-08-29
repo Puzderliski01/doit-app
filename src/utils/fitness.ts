@@ -308,43 +308,49 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
 
   if (setCount === 0) return 0;
 
+  const isBodyweight = isBodyweightExercise(entry.exerciseId);
   const hasWeight = completedSets.some((s) => s.weight > 0);
 
-  if (hasWeight) {
-    // WEIGHTED EXERCISES: XP = volume (weight × reps) + 1RM bonus
-    // Each set: weight × reps gives base XP, heavier = exponentially more
+  if (isBodyweight && !hasWeight) {
+    // PURE BODYWEIGHT: XP from reps only
     for (const set of completedSets) {
-      if (set.reps <= 0 || set.weight <= 0) continue;
-      const setVolume = set.weight * set.reps;
-      // Volume XP: each kg*rep gives ~0.3 XP, but scales up with weight
-      const volumeXP = Math.floor(set.weight * set.reps * (1 + set.weight / 200));
-      // 1RM estimate for this set
-      const set1RM = calculateOneRepMax(set.weight, set.reps);
-      const oneRMXP = Math.floor(set1RM / 10);
-      xp += volumeXP + oneRMXP;
+      if (set.reps <= 0) continue;
+      const repXP = (set.reps * (set.reps + 1)) / 2;
+      xp += Math.floor(repXP);
     }
-    // Volume milestones
+    const totalReps = completedSets.reduce((sum, s) => sum + s.reps, 0);
+    if (totalReps >= 50) xp += 10;
+    if (totalReps >= 100) xp += 25;
+    if (totalReps >= 200) xp += 50;
+  } else if (hasWeight) {
+    // WEIGHTED EXERCISE (with or without weight entered)
+    for (const set of completedSets) {
+      if (set.reps <= 0) continue;
+      if (set.weight > 0) {
+        // Has weight: full XP from volume + 1RM
+        const volumeXP = Math.floor(set.weight * set.reps * (1 + set.weight / 200));
+        const set1RM = calculateOneRepMax(set.weight, set.reps);
+        const oneRMXP = Math.floor(set1RM / 10);
+        xp += volumeXP + oneRMXP;
+      } else if (!isBodyweight) {
+        // Weighted exercise but no weight entered: minimal XP for effort only
+        xp += Math.floor(set.reps * 0.3);
+      }
+    }
     const volume = entry.totalVolume;
     if (volume >= 1000) xp += 20;
     if (volume >= 5000) xp += 50;
     if (volume >= 10000) xp += 100;
     if (volume >= 25000) xp += 200;
   } else {
-    // BODYWEIGHT EXERCISES: XP = reps (progressive per rep)
-    // Each rep counts progressively more: 1=1, 2=3, 5=15, 10=55
+    // Weighted exercise with NO weight entered at all: almost no XP
+    // Just credit the effort but barely
     for (const set of completedSets) {
       if (set.reps <= 0) continue;
-      const repXP = (set.reps * (set.reps + 1)) / 2;
-      xp += Math.floor(repXP);
+      xp += Math.floor(set.reps * 0.3);
     }
-    // Rep milestones
-    const totalReps = completedSets.reduce((sum, s) => sum + s.reps, 0);
-    if (totalReps >= 50) xp += 10;
-    if (totalReps >= 100) xp += 25;
-    if (totalReps >= 200) xp += 50;
   }
 
-  // High set count bonus
   if (setCount >= 5) xp += 10;
   if (setCount >= 8) xp += 25;
 
