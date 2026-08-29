@@ -53,16 +53,27 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
   const [experience, setExperience] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [bodyWeight, setBodyWeight] = useState('');
-  const [height, setHeight] = useState('');
+  const [heightFeet, setHeightFeet] = useState('');
+  const [heightInches, setHeightInches] = useState('');
+  const [heightCm, setHeightCm] = useState('');
 
   if (!isOpen) return null;
 
   const handleComplete = () => {
+    let heightCmVal: number | undefined;
+    if (weightUnit === 'lbs' && (heightFeet || heightInches)) {
+      const feet = parseFloat(heightFeet) || 0;
+      const inches = parseFloat(heightInches) || 0;
+      heightCmVal = Math.round((feet * 12 + inches) * 2.54);
+    } else if (heightCm) {
+      heightCmVal = parseFloat(heightCm);
+    }
+
     onComplete({
       fitnessMode: isFitness === true,
       weightUnit,
       bodyWeight: bodyWeight ? parseFloat(bodyWeight) : undefined,
-      heightCm: height ? parseFloat(height) : undefined,
+      heightCm: heightCmVal,
       goals: goals as ('lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance')[],
       experienceLevel: experience as 'beginner' | 'intermediate' | 'advanced' | undefined,
     });
@@ -290,7 +301,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
                     type="number"
                     value={bodyWeight}
                     onChange={(e) => setBodyWeight(e.target.value)}
-                    placeholder={`e.g. 80`}
+                    placeholder={weightUnit === 'lbs' ? 'e.g. 180' : 'e.g. 80'}
                     className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none ${
                       isLight
                         ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
@@ -301,19 +312,46 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
                 <div>
                   <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
                     <Ruler className="w-3 h-3 inline mr-1" />
-                    Height (cm)
+                    Height
                   </label>
-                  <input
-                    type="number"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    placeholder="e.g. 180"
-                    className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none ${
-                      isLight
-                        ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
-                        : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
-                    }`}
-                  />
+                  {weightUnit === 'lbs' ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={heightFeet}
+                        onChange={(e) => setHeightFeet(e.target.value)}
+                        placeholder="ft"
+                        className={`w-1/2 rounded-xl px-3 py-2.5 text-sm focus:outline-none ${
+                          isLight
+                            ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                            : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                        }`}
+                      />
+                      <input
+                        type="number"
+                        value={heightInches}
+                        onChange={(e) => setHeightInches(e.target.value)}
+                        placeholder="in"
+                        className={`w-1/2 rounded-xl px-3 py-2.5 text-sm focus:outline-none ${
+                          isLight
+                            ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                            : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                        }`}
+                      />
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      value={heightCm}
+                      onChange={(e) => setHeightCm(e.target.value)}
+                      placeholder="cm"
+                      className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none ${
+                        isLight
+                          ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                          : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                      }`}
+                    />
+                  )}
                 </div>
               </div>
             </div>
