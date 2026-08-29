@@ -14,8 +14,42 @@ import {
   MUSCLE_GROUP_LABELS,
   MUSCLE_GROUP_ICONS,
   calculateXPForWorkout,
+  isBodyweightExercise,
+  getMuscleEngagement,
 } from '../utils/fitness';
-import { X, Search, Plus, Trash2, Check, ChevronDown, Dumbbell, Zap } from 'lucide-react';
+import {
+  X,
+  Search,
+  Plus,
+  Trash2,
+  Check,
+  ChevronDown,
+  Dumbbell,
+  Zap,
+} from 'lucide-react';
+
+function MuscleEngagementPreview({ exerciseId, isLight }: { exerciseId: string; isLight: boolean }) {
+  const engagement = getMuscleEngagement(exerciseId);
+  const entries = Object.entries(engagement) as [string, number][];
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+        Muscle XP Split
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {entries.map(([muscle, percent]) => (
+          <span key={muscle} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+            isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-white/60'
+          }`}>
+            {MUSCLE_GROUP_ICONS[muscle as MuscleGroup]} {MUSCLE_GROUP_LABELS[muscle as MuscleGroup]} {percent}%
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface ExerciseLogModalProps {
   isOpen: boolean;
@@ -259,6 +293,11 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                   </button>
                 </div>
                 <div className="space-y-2">
+                  {selectedExercise && isBodyweightExercise(selectedExercise.id) && (
+                    <p className={`text-[11px] px-1 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                      Bodyweight exercise — weight is optional (add weighted vest, etc.)
+                    </p>
+                  )}
                   {sets.map((set, index) => (
                     <div key={index} className={`flex items-center gap-2 p-2.5 rounded-xl ${
                       isLight ? 'bg-slate-50' : 'bg-white/5'
@@ -284,7 +323,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                         type="number"
                         value={set.weight || ''}
                         onChange={(e) => handleUpdateSet(index, 'weight', e.target.value)}
-                        placeholder="Wt"
+                        placeholder={selectedExercise && isBodyweightExercise(selectedExercise.id) ? 'Wt (opt)' : 'Wt'}
                         className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
                           isLight
                             ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
@@ -338,21 +377,26 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 />
               </div>
 
-              <div className={`flex items-center justify-between p-3 rounded-xl ${
+              <div className={`p-3 rounded-xl space-y-2 ${
                 isLight ? 'bg-amber-50 border border-amber-200' : 'bg-amber-500/10 border border-amber-500/20'
               }`}>
-                <div>
-                  <p className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
-                    Volume: {totalVolume} {weightUnit}
-                  </p>
-                  <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                    {completedCount} sets completed
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
+                      Volume: {totalVolume} {totalVolume > 0 ? weightUnit : 'reps'}
+                    </p>
+                    <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+                      {completedCount} sets completed
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Zap className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold">+{xp} XP</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-amber-400">
-                  <Zap className="w-3.5 h-3.5" />
-                  <span className="text-xs font-bold">+{xp} XP</span>
-                </div>
+                {selectedExercise && (
+                  <MuscleEngagementPreview exerciseId={selectedExercise.id} isLight={isLight} />
+                )}
               </div>
             </>
           )}

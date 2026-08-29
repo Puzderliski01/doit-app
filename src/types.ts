@@ -181,6 +181,7 @@ export interface FitnessStats {
   lastWorkoutDate: string | null;
   xp: number;
   rank: Rank;
+  muscleRanks: Record<MuscleGroup, { xp: number; rank: Rank }>;
   personalRecords: Record<string, { weight: number; reps: number; date: string }>;
   muscleGroupFrequency: Record<MuscleGroup, number>;
   weeklyVolume: { week: string; volume: number }[];

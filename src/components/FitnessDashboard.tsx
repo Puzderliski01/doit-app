@@ -4,6 +4,7 @@ import {
   FitnessEntry,
   UserProfile,
   MuscleGroup,
+  Rank,
 } from '../types';
 import {
   getRankInfo,
@@ -220,6 +221,59 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Per-Muscle Ranks */}
+      <div className={`rounded-2xl p-4 border ${
+        isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
+      }`}>
+        <div className="flex items-center gap-2 mb-3">
+          <Medal className="w-4 h-4 text-amber-400" />
+          <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            Muscle Ranks
+          </h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {(Object.entries(stats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
+            .filter(([, data]) => data.xp > 0)
+            .sort(([, a], [, b]) => b.xp - a.xp)
+            .map(([group, data]) => {
+              const muscleRankInfo = getRankInfo(data.rank);
+              const muscleProgress = getProgressToNextRank(data.xp);
+              return (
+                <div key={group}
+                  className={`p-2.5 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm">{MUSCLE_GROUP_ICONS[group]}</span>
+                    <span className={`text-[10px] font-semibold truncate ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
+                      {MUSCLE_GROUP_LABELS[group]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">{muscleRankInfo.icon}</span>
+                    <span className="text-[10px] font-bold truncate" style={{ color: muscleRankInfo.color }}>
+                      {muscleRankInfo.rank}
+                    </span>
+                  </div>
+                  <div className={`mt-1.5 h-1 rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-white/10'}`}>
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${muscleProgress.percent}%`, background: muscleRankInfo.color }} />
+                  </div>
+                  <p className={`text-[9px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                    {data.xp} XP
+                  </p>
+                </div>
+              );
+            })}
+          {(Object.entries(stats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
+            .filter(([, data]) => data.xp === 0).length > 0 && (
+            <div className={`p-2.5 rounded-xl border border-dashed ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+              <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                Train more muscles to unlock their ranks
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {weeklyData.length > 0 && (
         <div className={`rounded-2xl p-4 border ${

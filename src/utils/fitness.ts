@@ -9,37 +9,126 @@ import {
   UserProfile,
 } from '../types';
 
+// 30 ranks with differentiated badges
+// Within a tier (I/II/III): badge varies slightly (outline → filled → bold)
+// New tier: completely new badge
 export const RANKS: RankInfo[] = [
+  // Tier 1: Loser
   { rank: 'Loser', minXP: 0, color: '#78716c', icon: '💀', label: 'Loser' },
+  // Tier 2: Weak Rookie (badge: broken bones → bandage → injured face)
   { rank: 'Weak Rookie I', minXP: 50, color: '#a8a29e', icon: '🦴', label: 'Weak Rookie I' },
-  { rank: 'Weak Rookie II', minXP: 120, color: '#a8a29e', icon: '🩹', label: 'Weak Rookie II' },
+  { rank: 'Weak Rookie II', minXP: 120, color: '#b0afa9', icon: '🩹', label: 'Weak Rookie II' },
   { rank: 'Weak Rookie III', minXP: 200, color: '#d6d3d1', icon: '🤕', label: 'Weak Rookie III' },
+  // Tier 3: Rookie (badge: seedling progression)
   { rank: 'Rookie I', minXP: 320, color: '#86efac', icon: '🌱', label: 'Rookie I' },
   { rank: 'Rookie II', minXP: 480, color: '#6ee7b7', icon: '🌿', label: 'Rookie II' },
   { rank: 'Rookie III', minXP: 680, color: '#34d399', icon: '🍀', label: 'Rookie III' },
+  // Tier 4: Amateur (badge: medal progression)
   { rank: 'Amateur I', minXP: 920, color: '#67e8f9', icon: '🥉', label: 'Amateur I' },
   { rank: 'Amateur II', minXP: 1200, color: '#22d3ee', icon: '🏅', label: 'Amateur II' },
   { rank: 'Amateur III', minXP: 1520, color: '#06b6d4', icon: '🏆', label: 'Amateur III' },
+  // Tier 5: Semi Soldier (badge: weapon progression)
   { rank: 'Semi Soldier I', minXP: 1900, color: '#93c5fd', icon: '⚔️', label: 'Semi Soldier I' },
   { rank: 'Semi Soldier II', minXP: 2350, color: '#60a5fa', icon: '🗡️', label: 'Semi Soldier II' },
   { rank: 'Semi Soldier III', minXP: 2880, color: '#3b82f6', icon: '🛡️', label: 'Semi Soldier III' },
+  // Tier 6: Soldier (badge: military progression)
   { rank: 'Soldier I', minXP: 3500, color: '#c084fc', icon: '🎖️', label: 'Soldier I' },
   { rank: 'Soldier II', minXP: 4250, color: '#a855f7', icon: '⚜️', label: 'Soldier II' },
   { rank: 'Soldier III', minXP: 5100, color: '#9333ea', icon: '🔱', label: 'Soldier III' },
+  // Tier 7: Elite Soldier (badge: fire progression)
   { rank: 'Elite Soldier I', minXP: 6100, color: '#fca5a5', icon: '🔥', label: 'Elite Soldier I' },
   { rank: 'Elite Soldier II', minXP: 7300, color: '#f87171', icon: '💥', label: 'Elite Soldier II' },
   { rank: 'Elite Soldier III', minXP: 8700, color: '#ef4444', icon: '⚡', label: 'Elite Soldier III' },
+  // Tier 8: Master (badge: royalty progression)
   { rank: 'Master I', minXP: 10300, color: '#fcd34d', icon: '👑', label: 'Master I' },
-  { rank: 'Master II', minXP: 12200, color: '#fbbf24', icon: '🏆', label: 'Master II' },
-  { rank: 'Master III', minXP: 14400, color: '#f59e0b', icon: '💎', label: 'Master III' },
+  { rank: 'Master II', minXP: 12200, color: '#fbbf24', icon: '💎', label: 'Master II' },
+  { rank: 'Master III', minXP: 14400, color: '#f59e0b', icon: '⚜️', label: 'Master III' },
+  // Tier 9: Apex (badge: beast progression)
   { rank: 'Apex I', minXP: 17000, color: '#fb923c', icon: '🐉', label: 'Apex I' },
   { rank: 'Apex II', minXP: 20000, color: '#f97316', icon: '🦅', label: 'Apex II' },
   { rank: 'Apex III', minXP: 23500, color: '#ea580c', icon: '🦁', label: 'Apex III' },
+  // Tier 10: Titan (badge: cosmic progression)
   { rank: 'Titan I', minXP: 27500, color: '#d946ef', icon: '🗿', label: 'Titan I' },
   { rank: 'Titan II', minXP: 32000, color: '#c026d3', icon: '🪐', label: 'Titan II' },
   { rank: 'Titan III', minXP: 37000, color: '#a21caf', icon: '🌋', label: 'Titan III' },
+  // Tier 11: Spartan (standalone - ultimate warrior)
   { rank: 'Spartan', minXP: 43000, color: '#dc2626', icon: '⚔️', label: 'Spartan' },
+  // Tier 12: God of Physic (standalone - divine)
   { rank: 'God of Physic', minXP: 50000, color: '#ffd700', icon: '🔱', label: 'God of Physic' },
+];
+
+// Muscle engagement per exercise: { muscleGroup: percent }
+// Percentages represent how much XP goes to each muscle
+// Primary muscle gets the biggest share, secondary muscles get smaller shares
+export const MUSCLE_ENGAGEMENT: Record<string, Partial<Record<MuscleGroup, number>>> = {
+  // Bodyweight
+  pushup: { chest: 50, triceps: 30, shoulders: 20 },
+  pullup: { back: 55, biceps: 25, core: 20 },
+  chinup: { biceps: 45, back: 35, core: 20 },
+  dip: { triceps: 45, chest: 35, shoulders: 20 },
+  squat_bw: { legs: 60, glutes: 25, core: 15 },
+  lunge: { legs: 50, glutes: 30, core: 20 },
+  plank: { core: 80, shoulders: 10, legs: 10 },
+  crunch: { core: 90, legs: 10 },
+  russian_twist: { core: 85, legs: 15 },
+  burpee: { full_body: 50, legs: 20, chest: 15, core: 15 },
+  mountain_climber: { full_body: 40, core: 35, legs: 25 },
+  jumping_jack: { cardio: 70, legs: 20, shoulders: 10 },
+  calf_raise: { legs: 80, glutes: 20 },
+  glute_bridge: { glutes: 70, legs: 20, core: 10 },
+  pike_pushup: { shoulders: 55, triceps: 25, chest: 20 },
+  inverted_row: { back: 55, biceps: 30, core: 15 },
+  leg_raise: { core: 75, legs: 25 },
+  muscle_up: { full_body: 40, back: 30, biceps: 15, core: 15 },
+  // Barbell
+  bench_press: { chest: 55, triceps: 25, shoulders: 20 },
+  incline_bench: { chest: 55, shoulders: 25, triceps: 20 },
+  decline_bench: { chest: 60, triceps: 25, shoulders: 15 },
+  squat: { legs: 50, glutes: 25, core: 15, back: 10 },
+  front_squat: { legs: 55, core: 20, glutes: 15, shoulders: 10 },
+  deadlift: { back: 35, legs: 30, glutes: 20, core: 15 },
+  romanian_deadlift: { legs: 45, glutes: 35, back: 20 },
+  overhead_press: { shoulders: 55, triceps: 25, core: 20 },
+  barbell_row: { back: 60, biceps: 25, core: 15 },
+  barbell_curl: { biceps: 80, shoulders: 20 },
+  skull_crusher: { triceps: 80, shoulders: 20 },
+  hip_thrust: { glutes: 65, legs: 25, core: 10 },
+  shrug: { shoulders: 70, back: 30 },
+  pendlay_row: { back: 60, biceps: 25, core: 15 },
+  // Dumbbell
+  db_bench: { chest: 55, triceps: 25, shoulders: 20 },
+  db_incline: { chest: 55, shoulders: 25, triceps: 20 },
+  db_fly: { chest: 70, shoulders: 20, biceps: 10 },
+  db_shoulder_press: { shoulders: 60, triceps: 25, core: 15 },
+  db_lateral_raise: { shoulders: 80, core: 20 },
+  db_front_raise: { shoulders: 75, core: 25 },
+  db_row: { back: 55, biceps: 30, core: 15 },
+  db_curl: { biceps: 85, shoulders: 15 },
+  db_hammer_curl: { biceps: 75, shoulders: 25 },
+  db_tricep_ext: { triceps: 85, shoulders: 15 },
+  db_lunge: { legs: 50, glutes: 30, core: 20 },
+  db_squat: { legs: 55, glutes: 25, core: 20 },
+  db_rdl: { legs: 45, glutes: 35, back: 20 },
+  db_shrug: { shoulders: 70, back: 30 },
+  // Machine
+  cable_fly: { chest: 75, shoulders: 15, triceps: 10 },
+  lat_pulldown: { back: 60, biceps: 30, core: 10 },
+  cable_row: { back: 55, biceps: 30, core: 15 },
+  leg_press: { legs: 60, glutes: 30, core: 10 },
+  leg_extension: { legs: 90, core: 10 },
+  leg_curl: { legs: 90, glutes: 10 },
+  pec_deck: { chest: 80, shoulders: 15, triceps: 5 },
+  shoulder_press_machine: { shoulders: 60, triceps: 30, core: 10 },
+  tricep_pushdown: { triceps: 85, shoulders: 15 },
+  bicep_curl_machine: { biceps: 90, shoulders: 10 },
+  ab_crunch_machine: { core: 85, legs: 15 },
+  calf_raise_machine: { legs: 85, glutes: 15 },
+  glute_kickback: { glutes: 80, legs: 20 },
+};
+
+const MUSCLE_GROUPS_LIST: MuscleGroup[] = [
+  'chest', 'back', 'shoulders', 'biceps', 'triceps',
+  'legs', 'glutes', 'core', 'cardio', 'full_body',
 ];
 
 export const DEFAULT_FITNESS_STATS: FitnessStats = {
@@ -52,6 +141,9 @@ export const DEFAULT_FITNESS_STATS: FitnessStats = {
   lastWorkoutDate: null,
   xp: 0,
   rank: 'Loser',
+  muscleRanks: Object.fromEntries(
+    MUSCLE_GROUPS_LIST.map((g) => [g, { xp: 0, rank: 'Loser' as Rank }])
+  ) as Record<MuscleGroup, { xp: number; rank: Rank }>,
   personalRecords: {},
   muscleGroupFrequency: {
     chest: 0,
@@ -205,6 +297,10 @@ export function calculateRank(xp: number): Rank {
   return rank;
 }
 
+export function getMuscleEngagement(exerciseId: string): Partial<Record<MuscleGroup, number>> {
+  return MUSCLE_ENGAGEMENT[exerciseId] || {};
+}
+
 export function calculateXPForWorkout(entry: FitnessEntry): number {
   let xp = 0;
   const completedSets = entry.sets.filter((s) => s.completed);
@@ -320,10 +416,40 @@ export function updateFitnessStats(
     oneRepMax: entry.estimatedOneRepMax,
   });
 
-  const xpFromWorkout = calculateXPForWorkout(entry);
+  // Calculate total XP from workout
+  const totalXP = calculateXPForWorkout(entry);
   const streakBonus = newStats.currentStreak >= 7 ? 50 : newStats.currentStreak >= 3 ? 20 : 0;
-  newStats.xp = stats.xp + xpFromWorkout + streakBonus;
+  const finalXP = totalXP + streakBonus;
+
+  // Distribute XP to global rank
+  newStats.xp = stats.xp + finalXP;
   newStats.rank = calculateRank(newStats.xp);
+
+  // Distribute XP to per-muscle ranks based on muscle engagement
+  const engagement = getMuscleEngagement(entry.exerciseId);
+  newStats.muscleRanks = { ...stats.muscleRanks };
+
+  if (Object.keys(engagement).length > 0) {
+    // Split XP by engagement percentages
+    for (const [muscle, percent] of Object.entries(engagement)) {
+      const muscleKey = muscle as MuscleGroup;
+      const muscleXP = Math.round((finalXP * (percent as number)) / 100);
+      const currentMuscleData = newStats.muscleRanks[muscleKey] || { xp: 0, rank: 'Loser' as Rank };
+      const newMuscleXP = currentMuscleData.xp + muscleXP;
+      newStats.muscleRanks[muscleKey] = {
+        xp: newMuscleXP,
+        rank: calculateRank(newMuscleXP),
+      };
+    }
+  } else {
+    // Fallback: give all XP to the primary muscle group
+    const primaryMuscle = entry.muscleGroup;
+    const currentMuscleData = newStats.muscleRanks[primaryMuscle] || { xp: 0, rank: 'Loser' as Rank };
+    newStats.muscleRanks[primaryMuscle] = {
+      xp: currentMuscleData.xp + finalXP,
+      rank: calculateRank(currentMuscleData.xp + finalXP),
+    };
+  }
 
   return newStats;
 }
@@ -396,4 +522,8 @@ export function getMuscleGroupStats(
 
 export function getWeeklyVolumeData(stats: FitnessStats): { week: string; volume: number }[] {
   return stats.weeklyVolume.slice(-8);
+}
+
+export function isBodyweightExercise(exerciseId: string): boolean {
+  return BODYWEIGHT_EXERCISES.some((e) => e.id === exerciseId);
 }
