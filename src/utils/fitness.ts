@@ -333,8 +333,8 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
         const oneRMXP = Math.floor(set1RM / 10);
         xp += volumeXP + oneRMXP;
       } else if (!isBodyweight) {
-        // Weighted exercise but no weight entered: minimal XP for effort only
-        xp += Math.floor(set.reps * 0.3);
+        // Weighted exercise but no weight entered: 0 XP — must enter weight
+        xp += 0;
       }
     }
     const volume = entry.totalVolume;
@@ -343,12 +343,8 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
     if (volume >= 10000) xp += 100;
     if (volume >= 25000) xp += 200;
   } else {
-    // Weighted exercise with NO weight entered at all: almost no XP
-    // Just credit the effort but barely
-    for (const set of completedSets) {
-      if (set.reps <= 0) continue;
-      xp += Math.floor(set.reps * 0.3);
-    }
+    // Weighted exercise with NO weight entered at all: 0 XP
+    xp = 0;
   }
 
   if (setCount >= 5) xp += 10;
