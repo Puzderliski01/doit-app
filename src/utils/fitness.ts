@@ -44,6 +44,93 @@ export const RANKS: RankInfo[] = [
   { rank: 'God of Physic', minXP: 1600000, color: '#ffd700', icon: '🔱', label: 'God of Physic' },
 ];
 
+// Exercise difficulty multiplier — harder exercises give more XP per rep
+// Scale: 0.4 (very easy) → 3.0 (extremely hard)
+export const EXERCISE_DIFFICULTY: Record<string, number> = {
+  // === BODYWEIGHT ===
+  pushup: 1.0,
+  pullup: 2.0,
+  chinup: 1.9,
+  dip: 1.8,
+  squat_bw: 0.6,
+  lunge: 0.9,
+  plank: 0.5,
+  crunch: 0.4,
+  russian_twist: 0.5,
+  burpee: 2.2,
+  mountain_climber: 0.8,
+  jumping_jack: 0.4,
+  calf_raise: 0.5,
+  glute_bridge: 0.5,
+  pike_pushup: 1.7,
+  inverted_row: 1.3,
+  leg_raise: 1.6,
+  muscle_up: 3.0,
+
+  // === BARBELL ===
+  bench_press: 1.2,
+  incline_bench: 1.3,
+  decline_bench: 1.2,
+  squat: 1.5,
+  front_squat: 1.7,
+  deadlift: 2.0,
+  romanian_deadlift: 1.6,
+  overhead_press: 1.4,
+  barbell_row: 1.3,
+  barbell_curl: 0.9,
+  skull_crusher: 1.0,
+  hip_thrust: 1.2,
+  shrug: 0.7,
+  pendlay_row: 1.4,
+
+  // === DUMBBELL ===
+  db_bench: 1.1,
+  db_incline: 1.2,
+  db_fly: 0.9,
+  db_shoulder_press: 1.2,
+  db_lateral_raise: 0.8,
+  db_front_raise: 0.7,
+  db_row: 1.1,
+  db_curl: 0.8,
+  db_hammer_curl: 0.8,
+  db_tricep_ext: 0.8,
+  db_lunge: 1.0,
+  db_squat: 1.0,
+  db_rdl: 1.3,
+  db_shrug: 0.6,
+
+  // === MACHINE ===
+  cable_fly: 0.8,
+  lat_pulldown: 1.0,
+  cable_row: 1.0,
+  leg_press: 0.8,
+  leg_extension: 0.6,
+  leg_curl: 0.6,
+  pec_deck: 0.7,
+  shoulder_press_machine: 0.8,
+  tricep_pushdown: 0.7,
+  bicep_curl_machine: 0.6,
+  ab_crunch_machine: 0.5,
+  calf_raise_machine: 0.5,
+  glute_kickback: 0.6,
+
+  // === CARDIO ===
+  running: 1.0,
+  cycling: 0.8,
+  rowing: 1.2,
+  jump_rope: 1.1,
+  swimming: 1.3,
+  elliptical: 0.7,
+  stairmaster: 1.1,
+  hiking: 0.9,
+  walking: 0.4,
+  hiit: 1.5,
+};
+
+export function getExerciseDifficulty(exerciseId: string): number {
+  return EXERCISE_DIFFICULTY[exerciseId] || 1.0;
+}
+
 // Muscle engagement per exercise: { muscleGroup: percent }
 // Percentages represent how much XP goes to each muscle
 // Primary muscle gets the biggest share, secondary muscles get smaller shares
@@ -336,6 +423,10 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
 
   if (setCount >= 5) xp += 10;
   if (setCount >= 8) xp += 25;
+
+  // Apply exercise difficulty multiplier
+  const difficulty = getExerciseDifficulty(entry.exerciseId);
+  xp = Math.floor(xp * difficulty);
 
   return Math.max(xp, 0);
 }
