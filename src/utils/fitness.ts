@@ -549,5 +549,6 @@ export function getWeeklyVolumeData(stats: FitnessStats): { week: string; volume
 }
 
 export function isBodyweightExercise(exerciseId: string): boolean {
-  return BODYWEIGHT_EXERCISES.some((e) => e.id === exerciseId);
+  const exercise = ALL_EXERCISES.find((e) => e.id === exerciseId);
+  return exercise?.type === 'bodyweight';
 }
