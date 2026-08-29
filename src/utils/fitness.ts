@@ -363,10 +363,11 @@ export function calculateTotalVolume(sets: ExerciseSet[]): number {
 }
 
 export function getDefaultSets(): ExerciseSet[] {
+  const unit = (localStorage.getItem('fitness-display-unit') === 'lbs') ? 'lbs' : 'kg';
   return [
-    { reps: 0, weight: 0, weightUnit: 'kg', completed: false },
-    { reps: 0, weight: 0, weightUnit: 'kg', completed: false },
-    { reps: 0, weight: 0, weightUnit: 'kg', completed: false },
+    { reps: 0, weight: 0, weightUnit: unit, completed: false },
+    { reps: 0, weight: 0, weightUnit: unit, completed: false },
+    { reps: 0, weight: 0, weightUnit: unit, completed: false },
   ];
 }
 

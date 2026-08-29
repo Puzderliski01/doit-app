@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Exercise,
   ExerciseSet,
@@ -56,7 +56,7 @@ interface ExerciseLogModalProps {
   onClose: () => void;
   onSave: (entry: FitnessEntry) => void;
   theme: 'dark' | 'light';
-  weightUnit: 'kg' | 'lbs';
+  defaultWeightUnit: 'kg' | 'lbs';
 }
 
 export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
@@ -64,15 +64,28 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   onClose,
   onSave,
   theme,
-  weightUnit,
+  defaultWeightUnit,
 }) => {
   const isLight = theme === 'light';
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>(() => {
+    const saved = localStorage.getItem('fitness-display-unit');
+    return (saved === 'kg' || saved === 'lbs') ? saved : defaultWeightUnit;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [sets, setSets] = useState<ExerciseSet[]>(getDefaultSets());
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showExerciseList, setShowExerciseList] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      const saved = localStorage.getItem('fitness-display-unit');
+      if (saved === 'kg' || saved === 'lbs') {
+        setWeightUnit(saved);
+      }
+    }
+  }, [isOpen]);
 
   const searchResults = searchExercises(searchQuery);
 
@@ -336,9 +349,18 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                             : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
                         }`}
                       />
-                      <span className={`text-[10px] w-5 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                      <button
+                        onClick={() => {
+                          const next = weightUnit === 'kg' ? 'lbs' : 'kg';
+                          setWeightUnit(next);
+                          localStorage.setItem('fitness-display-unit', next);
+                        }}
+                        className={`text-[10px] w-6 font-bold cursor-pointer transition-colors ${
+                          isLight ? 'text-slate-500 hover:text-amber-600' : 'text-white/40 hover:text-amber-400'
+                        }`}
+                      >
                         {weightUnit}
-                      </span>
+                      </button>
                       <button
                         onClick={() => handleUpdateSet(index, 'completed', !set.completed)}
                         className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${

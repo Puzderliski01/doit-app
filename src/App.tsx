@@ -1415,7 +1415,7 @@ export default function App() {
             onClose={() => setIsExerciseLogModalOpen(false)}
             onSave={handleSaveFitnessEntry}
             theme={theme}
-            weightUnit={userProfile.weightUnit}
+            defaultWeightUnit={userProfile.weightUnit}
           />
         </Suspense>
 
