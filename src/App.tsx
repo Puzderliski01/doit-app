@@ -751,7 +751,7 @@ export default function App() {
     setFitnessEntries(prev => [entry, ...prev]);
     setUserProfile(prev => ({
       ...prev,
-      fitnessStats: updateFitnessStats(prev.fitnessStats, entry, prev.weightUnit),
+      fitnessStats: updateFitnessStats(prev.fitnessStats, entry),
     }));
     triggerAppNotification({
       type: 'achievement',

@@ -373,13 +373,12 @@ export function getDefaultSets(): ExerciseSet[] {
 export function updateFitnessStats(
   stats: FitnessStats,
   entry: FitnessEntry,
-  weightUnit: 'kg' | 'lbs'
 ): FitnessStats {
   const newStats = { ...stats };
   newStats.totalWorkouts += 1;
   newStats.totalSets += entry.sets.filter((s) => s.completed).length;
   newStats.totalVolume += entry.totalVolume;
-  newStats.totalVolumeUnit = weightUnit;
+  newStats.totalVolumeUnit = entry.weightUnit;
   newStats.lastWorkoutDate = entry.date;
 
   const today = new Date(entry.date).toDateString();

@@ -153,6 +153,8 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   const xp = selectedExercise
     ? calculateXPForWorkout({
         ...({} as FitnessEntry),
+        exerciseId: selectedExercise.id,
+        weightUnit,
         sets,
         totalVolume,
         estimatedOneRepMax: calculateOneRepMax(
