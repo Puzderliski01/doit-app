@@ -31,7 +31,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t safe-area-bottom ${
+    <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t safe-area-bottom ${
       isLight
         ? 'bg-white/95 border-slate-200 backdrop-blur-xl'
         : 'bg-black/90 border-white/10 backdrop-blur-xl'

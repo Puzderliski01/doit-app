@@ -145,6 +145,17 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [recurringBanner, setRecurringBanner] = useState<string | null>(null);
 
+  // Lock body scroll when any modal is open
+  useEffect(() => {
+    const anyModalOpen = isTaskModalOpen || isNotifModalOpen || isDocsModalOpen || isAuthModalOpen;
+    if (anyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isTaskModalOpen, isNotifModalOpen, isDocsModalOpen, isAuthModalOpen]);
+
   // Firebase Auth State Listener with device session retention
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -1280,6 +1291,7 @@ export default function App() {
           notifications={activeToasts}
           onDismiss={handleDismissToast}
           onAction={handleToastAction}
+          theme={theme}
         />
 
         {/* Bottom Mobile Navigation */}
