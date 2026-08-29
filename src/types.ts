@@ -150,14 +150,18 @@ export interface FitnessEntry {
 }
 
 export type Rank =
-  | 'Unranked'
-  | 'Novice'
-  | 'Beginner'
-  | 'Intermediate'
-  | 'Advanced'
-  | 'Elite'
-  | 'Legend'
-  | 'Godlike';
+  | 'Loser'
+  | 'Weak Rookie I' | 'Weak Rookie II' | 'Weak Rookie III'
+  | 'Rookie I' | 'Rookie II' | 'Rookie III'
+  | 'Amateur I' | 'Amateur II' | 'Amateur III'
+  | 'Semi Soldier I' | 'Semi Soldier II' | 'Semi Soldier III'
+  | 'Soldier I' | 'Soldier II' | 'Soldier III'
+  | 'Elite Soldier I' | 'Elite Soldier II' | 'Elite Soldier III'
+  | 'Master I' | 'Master II' | 'Master III'
+  | 'Apex I' | 'Apex II' | 'Apex III'
+  | 'Titan I' | 'Titan II' | 'Titan III'
+  | 'Spartan'
+  | 'God of Physic';
 
 export interface RankInfo {
   rank: Rank;

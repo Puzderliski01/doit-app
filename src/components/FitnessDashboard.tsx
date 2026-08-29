@@ -96,17 +96,17 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
         <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-30"
           style={{ background: rankInfo.color }} />
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-lg"
-            style={{ background: `${rankInfo.color}20`, color: rankInfo.color, border: `2px solid ${rankInfo.color}40` }}>
-            {rankInfo.icon}
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-lg relative"
+            style={{ background: `${rankInfo.color}20`, border: `2px solid ${rankInfo.color}40`, boxShadow: `0 0 20px ${rankInfo.color}30` }}>
+            <span className="drop-shadow-lg">{rankInfo.icon}</span>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider"
+              <span className="text-sm font-bold uppercase tracking-wider truncate"
                 style={{ color: rankInfo.color }}>
                 {rankInfo.rank}
               </span>
-              <Medal className="w-3.5 h-3.5" style={{ color: rankInfo.color }} />
+              <Medal className="w-3.5 h-3.5 shrink-0" style={{ color: rankInfo.color }} />
             </div>
             <p className={`text-sm mt-0.5 ${isLight ? 'text-slate-600' : 'text-white/70'}`}>
               {stats.xp} XP Total

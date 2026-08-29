@@ -10,14 +10,36 @@ import {
 } from '../types';
 
 export const RANKS: RankInfo[] = [
-  { rank: 'Unranked', minXP: 0, color: '#6b7280', icon: '?', label: 'Unranked' },
-  { rank: 'Novice', minXP: 50, color: '#9ca3af', icon: 'I', label: 'Novice' },
-  { rank: 'Beginner', minXP: 200, color: '#22c55e', icon: 'II', label: 'Beginner' },
-  { rank: 'Intermediate', minXP: 500, color: '#3b82f6', icon: 'III', label: 'Intermediate' },
-  { rank: 'Advanced', minXP: 1200, color: '#a855f7', icon: 'IV', label: 'Advanced' },
-  { rank: 'Elite', minXP: 3000, color: '#f59e0b', icon: 'V', label: 'Elite' },
-  { rank: 'Legend', minXP: 7000, color: '#ef4444', icon: 'VI', label: 'Legend' },
-  { rank: 'Godlike', minXP: 15000, color: '#f97316', icon: 'VII', label: 'Godlike' },
+  { rank: 'Loser', minXP: 0, color: '#78716c', icon: '💀', label: 'Loser' },
+  { rank: 'Weak Rookie I', minXP: 50, color: '#a8a29e', icon: '🦴', label: 'Weak Rookie I' },
+  { rank: 'Weak Rookie II', minXP: 120, color: '#a8a29e', icon: '🩹', label: 'Weak Rookie II' },
+  { rank: 'Weak Rookie III', minXP: 200, color: '#d6d3d1', icon: '🤕', label: 'Weak Rookie III' },
+  { rank: 'Rookie I', minXP: 320, color: '#86efac', icon: '🌱', label: 'Rookie I' },
+  { rank: 'Rookie II', minXP: 480, color: '#6ee7b7', icon: '🌿', label: 'Rookie II' },
+  { rank: 'Rookie III', minXP: 680, color: '#34d399', icon: '🍀', label: 'Rookie III' },
+  { rank: 'Amateur I', minXP: 920, color: '#67e8f9', icon: '🥉', label: 'Amateur I' },
+  { rank: 'Amateur II', minXP: 1200, color: '#22d3ee', icon: '🏅', label: 'Amateur II' },
+  { rank: 'Amateur III', minXP: 1520, color: '#06b6d4', icon: '🏆', label: 'Amateur III' },
+  { rank: 'Semi Soldier I', minXP: 1900, color: '#93c5fd', icon: '⚔️', label: 'Semi Soldier I' },
+  { rank: 'Semi Soldier II', minXP: 2350, color: '#60a5fa', icon: '🗡️', label: 'Semi Soldier II' },
+  { rank: 'Semi Soldier III', minXP: 2880, color: '#3b82f6', icon: '🛡️', label: 'Semi Soldier III' },
+  { rank: 'Soldier I', minXP: 3500, color: '#c084fc', icon: '🎖️', label: 'Soldier I' },
+  { rank: 'Soldier II', minXP: 4250, color: '#a855f7', icon: '⚜️', label: 'Soldier II' },
+  { rank: 'Soldier III', minXP: 5100, color: '#9333ea', icon: '🔱', label: 'Soldier III' },
+  { rank: 'Elite Soldier I', minXP: 6100, color: '#fca5a5', icon: '🔥', label: 'Elite Soldier I' },
+  { rank: 'Elite Soldier II', minXP: 7300, color: '#f87171', icon: '💥', label: 'Elite Soldier II' },
+  { rank: 'Elite Soldier III', minXP: 8700, color: '#ef4444', icon: '⚡', label: 'Elite Soldier III' },
+  { rank: 'Master I', minXP: 10300, color: '#fcd34d', icon: '👑', label: 'Master I' },
+  { rank: 'Master II', minXP: 12200, color: '#fbbf24', icon: '🏆', label: 'Master II' },
+  { rank: 'Master III', minXP: 14400, color: '#f59e0b', icon: '💎', label: 'Master III' },
+  { rank: 'Apex I', minXP: 17000, color: '#fb923c', icon: '🐉', label: 'Apex I' },
+  { rank: 'Apex II', minXP: 20000, color: '#f97316', icon: '🦅', label: 'Apex II' },
+  { rank: 'Apex III', minXP: 23500, color: '#ea580c', icon: '🦁', label: 'Apex III' },
+  { rank: 'Titan I', minXP: 27500, color: '#d946ef', icon: '🗿', label: 'Titan I' },
+  { rank: 'Titan II', minXP: 32000, color: '#c026d3', icon: '🪐', label: 'Titan II' },
+  { rank: 'Titan III', minXP: 37000, color: '#a21caf', icon: '🌋', label: 'Titan III' },
+  { rank: 'Spartan', minXP: 43000, color: '#dc2626', icon: '⚔️', label: 'Spartan' },
+  { rank: 'God of Physic', minXP: 50000, color: '#ffd700', icon: '🔱', label: 'God of Physic' },
 ];
 
 export const DEFAULT_FITNESS_STATS: FitnessStats = {
@@ -29,7 +51,7 @@ export const DEFAULT_FITNESS_STATS: FitnessStats = {
   bestStreak: 0,
   lastWorkoutDate: null,
   xp: 0,
-  rank: 'Unranked',
+  rank: 'Loser',
   personalRecords: {},
   muscleGroupFrequency: {
     chest: 0,
@@ -176,7 +198,7 @@ export function getRankInfo(rank: Rank): RankInfo {
 }
 
 export function calculateRank(xp: number): Rank {
-  let rank: Rank = 'Unranked';
+  let rank: Rank = 'Loser';
   for (const r of RANKS) {
     if (xp >= r.minXP) rank = r.rank;
   }
