@@ -108,7 +108,22 @@ export default function App() {
     return stored;
   });
   const isLight = theme === 'light';
-  const [currentView, setCurrentView] = useState<ViewMode>('list');
+  const [currentView, setCurrentView] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('doit_current_view');
+      if (saved === 'fitness') return 'fitness';
+    } catch { /* ignore */ }
+    return 'list';
+  });
+
+  // Persist current view (only fitness sticks across refresh)
+  useEffect(() => {
+    if (currentView === 'fitness') {
+      localStorage.setItem('doit_current_view', 'fitness');
+    } else {
+      localStorage.removeItem('doit_current_view');
+    }
+  }, [currentView]);
   // Persist theme and apply light class to document
   useEffect(() => {
     storage.saveTheme(theme);

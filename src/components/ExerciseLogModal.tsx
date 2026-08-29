@@ -117,7 +117,6 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
     const completedSets = sets.filter((s) => s.completed);
     if (completedSets.length === 0) return;
 
-    const totalVolume = calculateTotalVolume(sets);
     const maxWeight = Math.max(...completedSets.map((s) => s.weight));
     const maxReps = Math.max(...completedSets.filter((s) => s.weight === maxWeight).map((s) => s.reps));
     const estimatedOneRepMax = calculateOneRepMax(maxWeight, maxReps);
@@ -145,6 +144,10 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   };
 
   const totalVolume = calculateTotalVolume(sets);
+  const totalReps = sets.filter((s) => s.completed).reduce((sum, s) => sum + s.reps, 0);
+  const isBodyweight = selectedExercise ? isBodyweightExercise(selectedExercise.id) : false;
+  const displayVolume = isBodyweight && totalVolume === 0 ? totalReps : totalVolume;
+  const volumeUnit = isBodyweight && totalVolume === 0 ? 'reps' : weightUnit;
   const completedCount = sets.filter((s) => s.completed).length;
   const xp = selectedExercise
     ? calculateXPForWorkout({
@@ -383,7 +386,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
-                      Volume: {totalVolume} {totalVolume > 0 ? weightUnit : 'reps'}
+                      Volume: {displayVolume} {volumeUnit}
                     </p>
                     <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
                       {completedCount} sets completed
