@@ -145,6 +145,7 @@ export interface FitnessEntry {
   sets: ExerciseSet[];
   totalVolume: number;
   estimatedOneRepMax: number;
+  weightUnit: 'kg' | 'lbs';
   notes?: string;
   createdAt: string;
 }

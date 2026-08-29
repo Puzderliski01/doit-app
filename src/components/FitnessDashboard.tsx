@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FitnessStats,
   FitnessEntry,
@@ -50,6 +50,25 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
   onSelectExercise,
 }) => {
   const isLight = theme === 'light';
+  const [displayUnit, setDisplayUnit] = useState<'kg' | 'lbs'>(() => {
+    const saved = localStorage.getItem('fitness-display-unit');
+    return (saved === 'kg' || saved === 'lbs') ? saved : userProfile.weightUnit;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fitness-display-unit', displayUnit);
+  }, [displayUnit]);
+
+  const toggleUnit = () => {
+    setDisplayUnit((prev) => prev === 'kg' ? 'lbs' : 'kg');
+  };
+
+  const convertWeight = (weight: number, fromUnit: 'kg' | 'lbs'): number => {
+    if (fromUnit === displayUnit) return weight;
+    if (fromUnit === 'kg' && displayUnit === 'lbs') return Math.round(weight * 2.205);
+    if (fromUnit === 'lbs' && displayUnit === 'kg') return Math.round(weight / 2.205);
+    return weight;
+  };
   const safeStats = {
     ...stats,
     muscleRanks: stats.muscleRanks || {} as Record<MuscleGroup, { xp: number; rank: Rank }>,
@@ -84,13 +103,25 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
             Track your training, grow your rank
           </p>
         </div>
-        <button
-          onClick={onOpenLogModal}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span className="hidden sm:inline">Log Workout</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleUnit}
+            className={`flex items-center gap-1 px-3 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+              isLight
+                ? 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                : 'bg-white/10 hover:bg-white/20 text-white/70'
+            }`}
+          >
+            {displayUnit === 'kg' ? '⚖️ kg' : '🏋️ lbs'}
+          </button>
+          <button
+            onClick={onOpenLogModal}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">Log Workout</span>
+          </button>
+        </div>
       </div>
 
       <div className={`rounded-2xl p-5 border relative overflow-hidden ${
@@ -150,7 +181,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
         <StatCard
           icon={<TrendingUp className="w-4.5 h-4.5" />}
           label="Volume"
-          value={getFormattedVolume(stats.totalVolume, stats.totalVolumeUnit)}
+          value={getFormattedVolume(convertWeight(stats.totalVolume, stats.totalVolumeUnit), displayUnit)}
           color="#3b82f6"
           isLight={isLight}
         />
@@ -187,7 +218,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                       {exercise?.name || exerciseId}
                     </span>
                     <span className="text-xs font-bold text-amber-400">
-                      {pr.weight} {userProfile.weightUnit} × {pr.reps}
+                      {convertWeight(pr.weight, userProfile.weightUnit)} {displayUnit} × {pr.reps}
                     </span>
                   </div>
                 );
@@ -373,11 +404,11 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                     {entry.sets.filter((s) => s.completed).length} sets
                   </span>
                   <span className="text-[11px] text-blue-400">
-                    {entry.totalVolume} {entry.sets[0]?.weightUnit || 'kg'}
+                    {convertWeight(entry.totalVolume, entry.sets[0]?.weightUnit || 'kg')} {displayUnit}
                   </span>
                   {entry.estimatedOneRepMax > 0 && (
                     <span className="text-[11px] text-purple-400">
-                      1RM: {entry.estimatedOneRepMax}
+                      1RM: {convertWeight(entry.estimatedOneRepMax, entry.sets[0]?.weightUnit || 'kg')} {displayUnit}
                     </span>
                   )}
                 </div>

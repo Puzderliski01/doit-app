@@ -130,6 +130,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
       sets: sets.map((s) => ({ ...s, weightUnit })),
       totalVolume,
       estimatedOneRepMax,
+      weightUnit,
       notes: notes.trim() || undefined,
       createdAt: new Date().toISOString(),
     };

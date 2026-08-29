@@ -11,50 +11,37 @@ import {
 
 // 30 ranks with differentiated badges
 // Within a tier (I/II/III): badge varies slightly (outline → filled → bold)
-// New tier: completely new badge
 export const RANKS: RankInfo[] = [
-  // Tier 1: Loser
   { rank: 'Loser', minXP: 0, color: '#78716c', icon: '💀', label: 'Loser' },
-  // Tier 2: Weak Rookie (badge: broken bones → bandage → injured face)
-  { rank: 'Weak Rookie I', minXP: 150, color: '#a8a29e', icon: '🦴', label: 'Weak Rookie I' },
-  { rank: 'Weak Rookie II', minXP: 400, color: '#b0afa9', icon: '🩹', label: 'Weak Rookie II' },
-  { rank: 'Weak Rookie III', minXP: 750, color: '#d6d3d1', icon: '🤕', label: 'Weak Rookie III' },
-  // Tier 3: Rookie (badge: seedling progression)
-  { rank: 'Rookie I', minXP: 1200, color: '#86efac', icon: '🌱', label: 'Rookie I' },
-  { rank: 'Rookie II', minXP: 1800, color: '#6ee7b7', icon: '🌿', label: 'Rookie II' },
-  { rank: 'Rookie III', minXP: 2500, color: '#34d399', icon: '🍀', label: 'Rookie III' },
-  // Tier 4: Amateur (badge: medal progression)
-  { rank: 'Amateur I', minXP: 3500, color: '#67e8f9', icon: '🥉', label: 'Amateur I' },
-  { rank: 'Amateur II', minXP: 5000, color: '#22d3ee', icon: '🏅', label: 'Amateur II' },
-  { rank: 'Amateur III', minXP: 7000, color: '#06b6d4', icon: '🏆', label: 'Amateur III' },
-  // Tier 5: Semi Soldier (badge: weapon progression)
-  { rank: 'Semi Soldier I', minXP: 9500, color: '#93c5fd', icon: '⚔️', label: 'Semi Soldier I' },
-  { rank: 'Semi Soldier II', minXP: 12500, color: '#60a5fa', icon: '🗡️', label: 'Semi Soldier II' },
-  { rank: 'Semi Soldier III', minXP: 16000, color: '#3b82f6', icon: '🛡️', label: 'Semi Soldier III' },
-  // Tier 6: Soldier (badge: military progression)
-  { rank: 'Soldier I', minXP: 20000, color: '#c084fc', icon: '🎖️', label: 'Soldier I' },
-  { rank: 'Soldier II', minXP: 25000, color: '#a855f7', icon: '⚜️', label: 'Soldier II' },
-  { rank: 'Soldier III', minXP: 31000, color: '#9333ea', icon: '🔱', label: 'Soldier III' },
-  // Tier 7: Elite Soldier (badge: fire progression)
-  { rank: 'Elite Soldier I', minXP: 38000, color: '#fca5a5', icon: '🔥', label: 'Elite Soldier I' },
-  { rank: 'Elite Soldier II', minXP: 46000, color: '#f87171', icon: '💥', label: 'Elite Soldier II' },
-  { rank: 'Elite Soldier III', minXP: 55000, color: '#ef4444', icon: '⚡', label: 'Elite Soldier III' },
-  // Tier 8: Master (badge: royalty progression)
-  { rank: 'Master I', minXP: 65000, color: '#fcd34d', icon: '👑', label: 'Master I' },
-  { rank: 'Master II', minXP: 77000, color: '#fbbf24', icon: '💎', label: 'Master II' },
-  { rank: 'Master III', minXP: 90000, color: '#f59e0b', icon: '⚜️', label: 'Master III' },
-  // Tier 9: Apex (badge: beast progression)
-  { rank: 'Apex I', minXP: 105000, color: '#fb923c', icon: '🐉', label: 'Apex I' },
-  { rank: 'Apex II', minXP: 122000, color: '#f97316', icon: '🦅', label: 'Apex II' },
-  { rank: 'Apex III', minXP: 142000, color: '#ea580c', icon: '🦁', label: 'Apex III' },
-  // Tier 10: Titan (badge: cosmic progression)
-  { rank: 'Titan I', minXP: 165000, color: '#d946ef', icon: '🗿', label: 'Titan I' },
-  { rank: 'Titan II', minXP: 192000, color: '#c026d3', icon: '🪐', label: 'Titan II' },
-  { rank: 'Titan III', minXP: 225000, color: '#a21caf', icon: '🌋', label: 'Titan III' },
-  // Tier 11: Spartan (standalone - ultimate warrior)
-  { rank: 'Spartan', minXP: 265000, color: '#dc2626', icon: '⚔️', label: 'Spartan' },
-  // Tier 12: God of Physic (standalone - divine)
-  { rank: 'God of Physic', minXP: 310000, color: '#ffd700', icon: '🔱', label: 'God of Physic' },
+  { rank: 'Weak Rookie I', minXP: 500, color: '#a8a29e', icon: '🦴', label: 'Weak Rookie I' },
+  { rank: 'Weak Rookie II', minXP: 1200, color: '#b0afa9', icon: '🩹', label: 'Weak Rookie II' },
+  { rank: 'Weak Rookie III', minXP: 2200, color: '#d6d3d1', icon: '🤕', label: 'Weak Rookie III' },
+  { rank: 'Rookie I', minXP: 3500, color: '#86efac', icon: '🌱', label: 'Rookie I' },
+  { rank: 'Rookie II', minXP: 5200, color: '#6ee7b7', icon: '🌿', label: 'Rookie II' },
+  { rank: 'Rookie III', minXP: 7500, color: '#34d399', icon: '🍀', label: 'Rookie III' },
+  { rank: 'Amateur I', minXP: 10500, color: '#67e8f9', icon: '🥉', label: 'Amateur I' },
+  { rank: 'Amateur II', minXP: 14500, color: '#22d3ee', icon: '🏅', label: 'Amateur II' },
+  { rank: 'Amateur III', minXP: 20000, color: '#06b6d4', icon: '🏆', label: 'Amateur III' },
+  { rank: 'Semi Soldier I', minXP: 27000, color: '#93c5fd', icon: '⚔️', label: 'Semi Soldier I' },
+  { rank: 'Semi Soldier II', minXP: 35000, color: '#60a5fa', icon: '🗡️', label: 'Semi Soldier II' },
+  { rank: 'Semi Soldier III', minXP: 45000, color: '#3b82f6', icon: '🛡️', label: 'Semi Soldier III' },
+  { rank: 'Soldier I', minXP: 58000, color: '#c084fc', icon: '🎖️', label: 'Soldier I' },
+  { rank: 'Soldier II', minXP: 73000, color: '#a855f7', icon: '⚜️', label: 'Soldier II' },
+  { rank: 'Soldier III', minXP: 92000, color: '#9333ea', icon: '🔱', label: 'Soldier III' },
+  { rank: 'Elite Soldier I', minXP: 115000, color: '#fca5a5', icon: '🔥', label: 'Elite Soldier I' },
+  { rank: 'Elite Soldier II', minXP: 142000, color: '#f87171', icon: '💥', label: 'Elite Soldier II' },
+  { rank: 'Elite Soldier III', minXP: 175000, color: '#ef4444', icon: '⚡', label: 'Elite Soldier III' },
+  { rank: 'Master I', minXP: 215000, color: '#fcd34d', icon: '👑', label: 'Master I' },
+  { rank: 'Master II', minXP: 265000, color: '#fbbf24', icon: '💎', label: 'Master II' },
+  { rank: 'Master III', minXP: 325000, color: '#f59e0b', icon: '⚜️', label: 'Master III' },
+  { rank: 'Apex I', minXP: 400000, color: '#fb923c', icon: '🐉', label: 'Apex I' },
+  { rank: 'Apex II', minXP: 490000, color: '#f97316', icon: '🦅', label: 'Apex II' },
+  { rank: 'Apex III', minXP: 600000, color: '#ea580c', icon: '🦁', label: 'Apex III' },
+  { rank: 'Titan I', minXP: 730000, color: '#d946ef', icon: '🗿', label: 'Titan I' },
+  { rank: 'Titan II', minXP: 890000, color: '#c026d3', icon: '🪐', label: 'Titan II' },
+  { rank: 'Titan III', minXP: 1080000, color: '#a21caf', icon: '🌋', label: 'Titan III' },
+  { rank: 'Spartan', minXP: 1300000, color: '#dc2626', icon: '⚔️', label: 'Spartan' },
+  { rank: 'God of Physic', minXP: 1600000, color: '#ffd700', icon: '🔱', label: 'God of Physic' },
 ];
 
 // Muscle engagement per exercise: { muscleGroup: percent }
@@ -323,27 +310,27 @@ export function calculateXPForWorkout(entry: FitnessEntry): number {
     if (totalReps >= 100) xp += 25;
     if (totalReps >= 200) xp += 50;
   } else if (hasWeight) {
-    // WEIGHTED EXERCISE (with or without weight entered)
+    // kg gives 2.2x more XP per unit than lbs (1 kg = 2.2 lbs)
+    const weightMultiplier = entry.weightUnit === 'kg' ? 2.2 : 1;
     for (const set of completedSets) {
       if (set.reps <= 0) continue;
       if (set.weight > 0) {
-        // Has weight: full XP from volume + 1RM
-        const volumeXP = Math.floor(set.weight * set.reps * (1 + set.weight / 200));
+        const effectiveWeight = set.weight * weightMultiplier;
+        const volumeXP = Math.floor(effectiveWeight * set.reps * (1 + effectiveWeight / 440));
         const set1RM = calculateOneRepMax(set.weight, set.reps);
-        const oneRMXP = Math.floor(set1RM / 10);
+        const effective1RM = set1RM * weightMultiplier;
+        const oneRMXP = Math.floor(effective1RM / 5);
         xp += volumeXP + oneRMXP;
       } else if (!isBodyweight) {
-        // Weighted exercise but no weight entered: 0 XP — must enter weight
         xp += 0;
       }
     }
-    const volume = entry.totalVolume;
+    const volume = entry.totalVolume * weightMultiplier;
     if (volume >= 1000) xp += 20;
     if (volume >= 5000) xp += 50;
     if (volume >= 10000) xp += 100;
     if (volume >= 25000) xp += 200;
   } else {
-    // Weighted exercise with NO weight entered at all: 0 XP
     xp = 0;
   }
 
