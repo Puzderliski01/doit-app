@@ -7,7 +7,6 @@ import {
 } from '../types';
 import {
   searchExercises,
-  getExerciseById,
   getDefaultSets,
   calculateTotalVolume,
   calculateOneRepMax,
@@ -24,8 +23,10 @@ import {
   Trash2,
   Check,
   ChevronDown,
+  ChevronUp,
   Dumbbell,
   Zap,
+  List,
 } from 'lucide-react';
 
 function MuscleEngagementPreview({ exerciseId, isLight }: { exerciseId: string; isLight: boolean }) {
@@ -51,6 +52,12 @@ function MuscleEngagementPreview({ exerciseId, isLight }: { exerciseId: string; 
   );
 }
 
+interface ExerciseSlot {
+  exercise: Exercise;
+  sets: ExerciseSet[];
+  notes: string;
+}
+
 interface ExerciseLogModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -71,12 +78,17 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
     const saved = localStorage.getItem('fitness-display-unit');
     return (saved === 'kg' || saved === 'lbs') ? saved : defaultWeightUnit;
   });
+  const [mode, setMode] = useState<'single' | 'multi'>('single');
   const [searchQuery, setSearchQuery] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showExerciseList, setShowExerciseList] = useState(true);
+
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [sets, setSets] = useState<ExerciseSet[]>(getDefaultSets());
   const [notes, setNotes] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showExerciseList, setShowExerciseList] = useState(true);
+
+  const [exerciseSlots, setExerciseSlots] = useState<ExerciseSlot[]>([]);
+  const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -91,91 +103,240 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSelectExercise = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setShowExerciseList(false);
-    setSets(getDefaultSets());
-  };
-
-  const handleAddSet = () => {
-    const lastSet = sets[sets.length - 1];
-    setSets([
-      ...sets,
-      {
-        reps: lastSet?.reps || 0,
-        weight: lastSet?.weight || 0,
-        weightUnit: weightUnit,
-        completed: false,
-      },
-    ]);
-  };
-
-  const handleRemoveSet = (index: number) => {
-    if (sets.length <= 1) return;
-    setSets(sets.filter((_, i) => i !== index));
-  };
-
-  const handleUpdateSet = (index: number, field: keyof ExerciseSet, value: string | boolean) => {
-    const updated = [...sets];
-    if (field === 'reps' || field === 'weight') {
-      updated[index] = { ...updated[index], [field]: Math.max(0, parseInt(value as string) || 0) };
-    } else {
-      updated[index] = { ...updated[index], [field]: value };
-    }
-    setSets(updated);
-  };
-
-  const handleSave = () => {
-    if (!selectedExercise) return;
-    const completedSets = sets.filter((s) => s.completed);
-    if (completedSets.length === 0) return;
-
-    const maxWeight = Math.max(...completedSets.map((s) => s.weight));
-    const maxReps = Math.max(...completedSets.filter((s) => s.weight === maxWeight).map((s) => s.reps));
-    const estimatedOneRepMax = calculateOneRepMax(maxWeight, maxReps);
-
-    const entry: FitnessEntry = {
-      id: Date.now().toString() + Math.random().toString(36).slice(2),
-      exerciseId: selectedExercise.id,
-      exerciseName: selectedExercise.name,
-      muscleGroup: selectedExercise.muscleGroup,
-      date,
-      sets: sets.map((s) => ({ ...s, weightUnit })),
-      totalVolume,
-      estimatedOneRepMax,
-      weightUnit,
-      notes: notes.trim() || undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    onSave(entry);
+  const resetState = () => {
     setSelectedExercise(null);
     setSets(getDefaultSets());
     setNotes('');
     setDate(new Date().toISOString().split('T')[0]);
     setShowExerciseList(true);
+    setExerciseSlots([]);
+    setActiveSlotIndex(null);
+  };
+
+  const handleClose = () => {
+    resetState();
     onClose();
   };
 
-  const totalVolume = calculateTotalVolume(sets);
-  const totalReps = sets.filter((s) => s.completed).reduce((sum, s) => sum + s.reps, 0);
-  const isBodyweight = selectedExercise ? isBodyweightExercise(selectedExercise.id) : false;
-  const displayVolume = isBodyweight && totalVolume === 0 ? totalReps : totalVolume;
-  const volumeUnit = isBodyweight && totalVolume === 0 ? 'reps' : weightUnit;
-  const completedCount = sets.filter((s) => s.completed).length;
-  const xp = selectedExercise
+  const buildEntry = (exercise: Exercise, exSets: ExerciseSet[], exNotes: string): FitnessEntry => {
+    const completed = exSets.filter((s) => s.completed);
+    const totalVol = calculateTotalVolume(exSets);
+    const maxW = completed.length > 0 ? Math.max(...completed.map((s) => s.weight)) : 0;
+    const maxR = completed.length > 0 ? Math.max(...completed.filter((s) => s.weight === maxW).map((s) => s.reps)) : 0;
+    return {
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      exerciseId: exercise.id,
+      exerciseName: exercise.name,
+      muscleGroup: exercise.muscleGroup,
+      date,
+      sets: exSets.map((s) => ({ ...s, weightUnit })),
+      totalVolume: totalVol,
+      estimatedOneRepMax: calculateOneRepMax(maxW, maxR),
+      weightUnit,
+      notes: exNotes.trim() || undefined,
+      createdAt: new Date().toISOString(),
+    };
+  };
+
+  const handleSaveSingle = () => {
+    if (!selectedExercise) return;
+    const completedSets = sets.filter((s) => s.completed);
+    if (completedSets.length === 0) return;
+    onSave(buildEntry(selectedExercise, sets, notes));
+    resetState();
+    onClose();
+  };
+
+  const handleSaveMulti = () => {
+    const validSlots = exerciseSlots.filter((slot) =>
+      slot.sets.some((s) => s.completed)
+    );
+    if (validSlots.length === 0) return;
+    validSlots.forEach((slot) => {
+      onSave(buildEntry(slot.exercise, slot.sets, slot.notes));
+    });
+    resetState();
+    onClose();
+  };
+
+  const handleSelectExerciseSingle = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setShowExerciseList(false);
+    setSets(getDefaultSets());
+  };
+
+  const handleAddExerciseMulti = (exercise: Exercise) => {
+    const newSlot: ExerciseSlot = {
+      exercise,
+      sets: getDefaultSets(),
+      notes: '',
+    };
+    setExerciseSlots([...exerciseSlots, newSlot]);
+    setActiveSlotIndex(exerciseSlots.length);
+    setShowExerciseList(false);
+  };
+
+  const handleRemoveSlot = (index: number) => {
+    const updated = exerciseSlots.filter((_, i) => i !== index);
+    setExerciseSlots(updated);
+    if (activeSlotIndex === index) {
+      setActiveSlotIndex(updated.length > 0 ? 0 : null);
+    } else if (activeSlotIndex !== null && activeSlotIndex > index) {
+      setActiveSlotIndex(activeSlotIndex - 1);
+    }
+  };
+
+  const handleUpdateSlotSets = (slotIdx: number, sets: ExerciseSet[]) => {
+    const updated = [...exerciseSlots];
+    updated[slotIdx] = { ...updated[slotIdx], sets };
+    setExerciseSlots(updated);
+  };
+
+  const handleUpdateSlotNotes = (slotIdx: number, notes: string) => {
+    const updated = [...exerciseSlots];
+    updated[slotIdx] = { ...updated[slotIdx], notes };
+    setExerciseSlots(updated);
+  };
+
+  const currentSlot = activeSlotIndex !== null ? exerciseSlots[activeSlotIndex] : null;
+
+  const totalXP = mode === 'multi'
+    ? exerciseSlots.reduce((sum, slot) => {
+        if (!slot.sets.some((s) => s.completed)) return sum;
+        return sum + calculateXPForWorkout({
+          ...({} as FitnessEntry),
+          exerciseId: slot.exercise.id,
+          weightUnit,
+          sets: slot.sets,
+          totalVolume: calculateTotalVolume(slot.sets),
+          estimatedOneRepMax: calculateOneRepMax(
+            Math.max(...slot.sets.filter((s) => s.completed).map((s) => s.weight), 0),
+            Math.max(...slot.sets.filter((s) => s.completed).map((s) => s.reps), 0)
+          ),
+        });
+      }, 0)
+    : selectedExercise
     ? calculateXPForWorkout({
         ...({} as FitnessEntry),
         exerciseId: selectedExercise.id,
         weightUnit,
         sets,
-        totalVolume,
+        totalVolume: calculateTotalVolume(sets),
         estimatedOneRepMax: calculateOneRepMax(
           Math.max(...sets.filter((s) => s.completed).map((s) => s.weight), 0),
           Math.max(...sets.filter((s) => s.completed).map((s) => s.reps), 0)
         ),
       })
     : 0;
+
+  const totalCompletedSets = mode === 'multi'
+    ? exerciseSlots.reduce((sum, slot) => sum + slot.sets.filter((s) => s.completed).length, 0)
+    : sets.filter((s) => s.completed).length;
+
+  const hasCompleted = mode === 'multi'
+    ? exerciseSlots.some((slot) => slot.sets.some((s) => s.completed))
+    : sets.some((s) => s.completed);
+
+  const renderSetsUI = (
+    exercise: Exercise,
+    exSets: ExerciseSet[],
+    onUpdateSet: (index: number, field: keyof ExerciseSet, value: string | boolean) => void,
+    onAddSet: () => void,
+    onRemoveSet: (index: number) => void,
+  ) => {
+    const isBW = isBodyweightExercise(exercise.id);
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+            Sets
+          </label>
+          <button
+            onClick={onAddSet}
+            className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            Add Set
+          </button>
+        </div>
+        {isBW && (
+          <p className={`text-[11px] px-1 mb-1 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+            Bodyweight — weight optional (weighted vest, etc.)
+          </p>
+        )}
+        <div className="space-y-2">
+          {exSets.map((set, index) => (
+            <div key={index} className={`flex items-center gap-2 p-2.5 rounded-xl ${
+              isLight ? 'bg-slate-50' : 'bg-white/5'
+            }`}>
+              <span className={`text-xs font-bold w-6 text-center ${
+                set.completed ? 'text-green-400' : isLight ? 'text-slate-400' : 'text-white/30'
+              }`}>
+                {index + 1}
+              </span>
+              <input
+                type="number"
+                value={set.reps || ''}
+                onChange={(e) => onUpdateSet(index, 'reps', e.target.value)}
+                placeholder="Reps"
+                className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
+                  isLight
+                    ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                    : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                }`}
+              />
+              <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>×</span>
+              <input
+                type="number"
+                value={set.weight || ''}
+                onChange={(e) => onUpdateSet(index, 'weight', e.target.value)}
+                placeholder={isBW ? 'Wt (opt)' : 'Wt'}
+                className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
+                  isLight
+                    ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                    : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                }`}
+              />
+              <button
+                onClick={() => {
+                  const next = weightUnit === 'kg' ? 'lbs' : 'kg';
+                  setWeightUnit(next);
+                  localStorage.setItem('fitness-display-unit', next);
+                }}
+                className={`text-[10px] w-6 font-bold cursor-pointer transition-colors ${
+                  isLight ? 'text-slate-500 hover:text-amber-600' : 'text-white/40 hover:text-amber-400'
+                }`}
+              >
+                {weightUnit}
+              </button>
+              <button
+                onClick={() => onUpdateSet(index, 'completed', !set.completed)}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  set.completed
+                    ? 'bg-green-500 text-white'
+                    : isLight
+                    ? 'bg-slate-200 text-slate-400 hover:bg-slate-300'
+                    : 'bg-white/10 text-white/30 hover:bg-white/20'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              {exSets.length > 1 && (
+                <button
+                  onClick={() => onRemoveSet(index)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-md ${
@@ -186,6 +347,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
           ? 'bg-white border border-slate-200 text-slate-900'
           : 'bg-[#121215] border border-white/15 text-white'
       }`}>
+        {/* Header */}
         <div className="p-5 border-b flex items-center justify-between shrink-0"
           style={{ borderColor: isLight ? 'rgb(226 232 240)' : 'rgba(255,255,255,0.1)' }}>
           <div className="flex items-center gap-3">
@@ -197,18 +359,40 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 Log Workout
               </h2>
               <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                {selectedExercise ? selectedExercise.name : 'Select an exercise'}
+                {mode === 'single'
+                  ? (selectedExercise ? selectedExercise.name : 'Select an exercise')
+                  : `${exerciseSlots.length} exercise${exerciseSlots.length !== 1 ? 's' : ''} added`
+                }
               </p>
             </div>
           </div>
-          <button onClick={onClose}
-            className={`p-2 rounded-xl transition-colors ${
-              isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-400' : 'bg-white/5 hover:bg-white/10 text-white/60'
-            }`}>
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setMode(mode === 'single' ? 'multi' : 'single');
+                resetState();
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                mode === 'multi'
+                  ? 'bg-amber-500 text-black'
+                  : isLight
+                  ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-white/10 text-white/60 hover:bg-white/20'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              {mode === 'single' ? 'Full Workout' : 'Single'}
+            </button>
+            <button onClick={handleClose}
+              className={`p-2 rounded-xl transition-colors ${
+                isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-400' : 'bg-white/5 hover:bg-white/10 text-white/60'
+              }`}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
+        {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {showExerciseList ? (
             <>
@@ -223,7 +407,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                   placeholder="Search exercises..."
                   className={`w-full rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none ${
                     isLight
-                      ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                      ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-40'
                       : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
                   }`}
                 />
@@ -251,7 +435,10 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                     {exercises.map((exercise) => (
                       <button
                         key={exercise.id}
-                        onClick={() => handleSelectExercise(exercise)}
+                        onClick={() => mode === 'single'
+                          ? handleSelectExerciseSingle(exercise)
+                          : handleAddExerciseMulti(exercise)
+                        }
                         className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
                           isLight
                             ? 'hover:bg-slate-50 text-slate-700'
@@ -269,8 +456,18 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                   </p>
                 )}
               </div>
+
+              {mode === 'multi' && exerciseSlots.length > 0 && (
+                <button
+                  onClick={() => setShowExerciseList(false)}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all"
+                >
+                  Done Adding ({exerciseSlots.length} exercises)
+                </button>
+              )}
             </>
-          ) : (
+          ) : mode === 'single' ? (
+            /* SINGLE EXERCISE MODE */
             <>
               <button
                 onClick={() => setShowExerciseList(true)}
@@ -298,95 +495,24 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
-                    Sets
-                  </label>
-                  <button
-                    onClick={handleAddSet}
-                    className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Add Set
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {selectedExercise && isBodyweightExercise(selectedExercise.id) && (
-                    <p className={`text-[11px] px-1 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
-                      Bodyweight exercise — weight is optional (add weighted vest, etc.)
-                    </p>
-                  )}
-                  {sets.map((set, index) => (
-                    <div key={index} className={`flex items-center gap-2 p-2.5 rounded-xl ${
-                      isLight ? 'bg-slate-50' : 'bg-white/5'
-                    }`}>
-                      <span className={`text-xs font-bold w-6 text-center ${
-                        set.completed ? 'text-green-400' : isLight ? 'text-slate-400' : 'text-white/30'
-                      }`}>
-                        {index + 1}
-                      </span>
-                      <input
-                        type="number"
-                        value={set.reps || ''}
-                        onChange={(e) => handleUpdateSet(index, 'reps', e.target.value)}
-                        placeholder="Reps"
-                        className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
-                          isLight
-                            ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
-                            : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
-                        }`}
-                      />
-                      <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>×</span>
-                      <input
-                        type="number"
-                        value={set.weight || ''}
-                        onChange={(e) => handleUpdateSet(index, 'weight', e.target.value)}
-                        placeholder={selectedExercise && isBodyweightExercise(selectedExercise.id) ? 'Wt (opt)' : 'Wt'}
-                        className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
-                          isLight
-                            ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
-                            : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
-                        }`}
-                      />
-                      <button
-                        onClick={() => {
-                          const next = weightUnit === 'kg' ? 'lbs' : 'kg';
-                          setWeightUnit(next);
-                          localStorage.setItem('fitness-display-unit', next);
-                        }}
-                        className={`text-[10px] w-6 font-bold cursor-pointer transition-colors ${
-                          isLight ? 'text-slate-500 hover:text-amber-600' : 'text-white/40 hover:text-amber-400'
-                        }`}
-                      >
-                        {weightUnit}
-                      </button>
-                      <button
-                        onClick={() => handleUpdateSet(index, 'completed', !set.completed)}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                          set.completed
-                            ? 'bg-green-500 text-white'
-                            : isLight
-                            ? 'bg-slate-200 text-slate-400 hover:bg-slate-300'
-                            : 'bg-white/10 text-white/30 hover:bg-white/20'
-                        }`}
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                      {sets.length > 1 && (
-                        <button
-                          onClick={() => handleRemoveSet(index)}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'
-                          }`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {selectedExercise && renderSetsUI(
+                selectedExercise,
+                sets,
+                (i, field, val) => {
+                  const updated = [...sets];
+                  if (field === 'reps' || field === 'weight') {
+                    updated[i] = { ...updated[i], [field]: Math.max(0, parseInt(val as string) || 0) };
+                  } else {
+                    updated[i] = { ...updated[i], [field]: val };
+                  }
+                  setSets(updated);
+                },
+                () => {
+                  const last = sets[sets.length - 1];
+                  setSets([...sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit, completed: false }]);
+                },
+                (i) => { if (sets.length > 1) setSets(sets.filter((_, idx) => idx !== i)); },
+              )}
 
               <div>
                 <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
@@ -411,15 +537,17 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
-                      Volume: {displayVolume} {volumeUnit}
+                      Volume: {isBodyweightExercise(selectedExercise?.id || '') && calculateTotalVolume(sets) === 0
+                        ? `${sets.filter((s) => s.completed).reduce((sum, s) => sum + s.reps, 0)} reps`
+                        : `${calculateTotalVolume(sets)} ${weightUnit}`}
                     </p>
                     <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                      {completedCount} sets completed
+                      {totalCompletedSets} sets completed
                     </p>
                   </div>
                   <div className="flex items-center gap-1 text-amber-400">
                     <Zap className="w-3.5 h-3.5" />
-                    <span className="text-xs font-bold">+{xp} XP</span>
+                    <span className="text-xs font-bold">+{totalXP} XP</span>
                   </div>
                 </div>
                 {selectedExercise && (
@@ -427,18 +555,151 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 )}
               </div>
             </>
+          ) : (
+            /* MULTI EXERCISE (FULL WORKOUT) MODE */
+            <>
+              <button
+                onClick={() => setShowExerciseList(true)}
+                className={`text-xs font-medium flex items-center gap-1 ${
+                  isLight ? 'text-amber-600 hover:text-amber-700' : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                <Plus className="w-3 h-3" />
+                Add Exercise
+              </button>
+
+              <div>
+                <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none ${
+                    isLight
+                      ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:border-amber-400'
+                      : 'bg-white/5 border border-white/10 text-white focus:border-amber-500'
+                  }`}
+                />
+              </div>
+
+              <div className="space-y-3">
+                {exerciseSlots.map((slot, idx) => {
+                  const isOpen = activeSlotIndex === idx;
+                  const completedInSlot = slot.sets.filter((s) => s.completed).length;
+                  return (
+                    <div key={idx} className={`rounded-xl border overflow-hidden ${
+                      isLight ? 'border-slate-200' : 'border-white/10'
+                    }`}>
+                      <button
+                        onClick={() => setActiveSlotIndex(isOpen ? null : idx)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium ${
+                          isLight ? 'bg-slate-50 text-slate-800' : 'bg-white/5 text-white/80'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-bold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                            {idx + 1}.
+                          </span>
+                          <span>{slot.exercise.name}</span>
+                          {completedInSlot > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
+                              {completedInSlot} done
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemoveSlot(idx); }}
+                            className={`p-1 rounded-lg transition-colors ${
+                              isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'
+                            }`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className={`p-3 space-y-3 ${isLight ? 'bg-white' : 'bg-[#121215]'}`}>
+                          {renderSetsUI(
+                            slot.exercise,
+                            slot.sets,
+                            (i, field, val) => {
+                              const updated = [...slot.sets];
+                              if (field === 'reps' || field === 'weight') {
+                                updated[i] = { ...updated[i], [field]: Math.max(0, parseInt(val as string) || 0) };
+                              } else {
+                                updated[i] = { ...updated[i], [field]: val };
+                              }
+                              handleUpdateSlotSets(idx, updated);
+                            },
+                            () => {
+                              const last = slot.sets[slot.sets.length - 1];
+                              handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit, completed: false }]);
+                            },
+                            (i) => { if (slot.sets.length > 1) handleUpdateSlotSets(idx, slot.sets.filter((_, j) => j !== i)); },
+                          )}
+                          <div>
+                            <input
+                              type="text"
+                              value={slot.notes}
+                              onChange={(e) => handleUpdateSlotNotes(idx, e.target.value)}
+                              placeholder="Notes (optional)"
+                              className={`w-full rounded-lg px-3 py-1.5 text-xs focus:outline-none ${
+                                isLight
+                                  ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                                  : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                              }`}
+                            />
+                          </div>
+                          <MuscleEngagementPreview exerciseId={slot.exercise.id} isLight={isLight} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {exerciseSlots.length === 0 && (
+                <div className={`text-center py-8 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                  <Dumbbell className={`w-8 h-8 mx-auto mb-2 ${isLight ? 'text-slate-300' : 'text-white/20'}`} />
+                  <p className={`text-sm ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                    Tap "Add Exercise" to start building your workout
+                  </p>
+                </div>
+              )}
+
+              <div className={`p-3 rounded-xl space-y-2 ${
+                isLight ? 'bg-amber-50 border border-amber-200' : 'bg-amber-500/10 border border-amber-500/20'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
+                      {exerciseSlots.length} exercise{exerciseSlots.length !== 1 ? 's' : ''} · {totalCompletedSets} sets
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Zap className="w-3.5 h-3.5" />
+                    <span className="text-xs font-bold">+{totalXP} XP</span>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
-        {!showExerciseList && (
+        {/* Footer */}
+        {((!showExerciseList && mode === 'single') || (mode === 'multi' && exerciseSlots.length > 0)) && (
           <div className="p-5 border-t shrink-0"
             style={{ borderColor: isLight ? 'rgb(226 232 240)' : 'rgba(255,255,255,0.1)' }}>
             <button
-              onClick={handleSave}
-              disabled={completedCount === 0}
+              onClick={mode === 'single' ? handleSaveSingle : handleSaveMulti}
+              disabled={!hasCompleted}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Save Workout
+              {mode === 'single' ? 'Save Workout' : `Save Workout (${exerciseSlots.filter((s) => s.sets.some((s) => s.completed)).length} exercises)`}
             </button>
           </div>
         )}
