@@ -22,7 +22,7 @@ import { haptic } from './utils/haptics';
 import { isOverdue, isDueToday, isDueThisWeek } from './utils/dateHelpers';
 import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
-import { DEFAULT_USER_PROFILE, updateFitnessStats } from './utils/fitness';
+import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from './utils/fitness';
 
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -146,7 +146,15 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
       const stored = localStorage.getItem('doit_user_profile');
-      if (stored) return { ...DEFAULT_USER_PROFILE, ...JSON.parse(stored) };
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const merged = { ...DEFAULT_USER_PROFILE, ...parsed };
+        merged.fitnessStats = { ...DEFAULT_FITNESS_STATS, ...parsed.fitnessStats };
+        if (!merged.fitnessStats.muscleRanks) {
+          merged.fitnessStats.muscleRanks = { ...DEFAULT_FITNESS_STATS.muscleRanks };
+        }
+        return merged;
+      }
     } catch { /* ignore */ }
     return DEFAULT_USER_PROFILE;
   });

@@ -50,10 +50,14 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
   onSelectExercise,
 }) => {
   const isLight = theme === 'light';
-  const rankInfo = getRankInfo(stats.rank);
-  const progress = getProgressToNextRank(stats.xp);
-  const muscleStats = getMuscleGroupStats(stats);
-  const weeklyData = getWeeklyVolumeData(stats);
+  const safeStats = {
+    ...stats,
+    muscleRanks: stats.muscleRanks || {} as Record<MuscleGroup, { xp: number; rank: Rank }>,
+  };
+  const rankInfo = getRankInfo(safeStats.rank);
+  const progress = getProgressToNextRank(safeStats.xp);
+  const muscleStats = getMuscleGroupStats(safeStats);
+  const weeklyData = getWeeklyVolumeData(safeStats);
 
   const recentEntries = [...entries]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -233,7 +237,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
           </h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {(Object.entries(stats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
+          {(Object.entries(safeStats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
             .filter(([, data]) => data.xp > 0)
             .sort(([, a], [, b]) => b.xp - a.xp)
             .map(([group, data]) => {
@@ -264,7 +268,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                 </div>
               );
             })}
-          {(Object.entries(stats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
+          {(Object.entries(safeStats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
             .filter(([, data]) => data.xp === 0).length > 0 && (
             <div className={`p-2.5 rounded-xl border border-dashed ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
               <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
