@@ -160,14 +160,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       transition={{ duration: 0.2 }}
       className={`group relative p-5 sm:p-6 rounded-3xl transition-all duration-200 border-2 ${
         isLight
-          ? task.priority === 'urgent' || task.priority === 'high'
-            ? 'bg-white/70 border-orange-300/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_20px_rgba(249,115,22,0.08)] backdrop-blur-2xl'
-            : 'bg-white/60 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-2xl'
-          : task.priority === 'urgent' || task.priority === 'high'
-            ? 'bg-gradient-to-r from-white/[0.1] to-white/[0.03] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.2)]'
-            : 'bg-white/[0.05] border-white/[0.12] backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.15)]'
+          ? 'bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] backdrop-blur-2xl'
+          : 'bg-gradient-to-r from-white/[0.1] to-white/[0.03] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.2)]'
       } ${task.completed ? (isLight ? 'opacity-60 bg-white/40' : 'opacity-55') : ''}`}
-      style={!isLight && (task.priority === 'urgent' || task.priority === 'high') ? { borderColor: currentPriorityStyle.borderColor } : undefined}
+      style={{ borderColor: currentPriorityStyle.borderColor, borderRadius: '1.5rem' }}
     >
       {/* Priority accent side glow indicator — now a subtle inner glow instead of line */}
       {!task.completed && (task.priority === 'urgent' || task.priority === 'high') && (
