@@ -416,9 +416,11 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('fitnessProfile.leaderboardPublic', '==', true), firestoreLimit(50));
     return onSnapshot(q, (snapshot) => {
+      console.log('[Leaderboard] Firestore snapshot received, docs:', snapshot.size);
       const users: LeaderboardUser[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        console.log('[Leaderboard] User doc:', docSnap.id, 'fitnessProfile:', !!data.fitnessProfile, 'leaderboardPublic:', data.fitnessProfile?.leaderboardPublic);
         const profile = data.fitnessProfile as UserProfile | undefined;
         if (profile) {
           users.push({
@@ -432,13 +434,14 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
           });
         }
       });
+      console.log('[Leaderboard] Final users:', users.length, users.map(u => u.displayName));
       onUpdate(users.sort((a, b) => b.xp - a.xp));
     }, (err) => {
-      console.warn('Firestore leaderboard subscription error:', err);
+      console.warn('[Leaderboard] Firestore subscription error:', err);
       onError?.(err);
     });
   } catch (err) {
-    console.warn('Firestore subscribe leaderboard error:', err);
+    console.warn('[Leaderboard] Firestore subscribe error:', err);
     onUpdate([]);
     return () => {};
   }
@@ -447,9 +450,11 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
 export async function saveUserProfileToFirestore(userId: string, profile: UserProfile): Promise<void> {
   try {
     const userRef = doc(db, 'users', userId);
+    console.log('[Firestore] Saving profile for', userId, 'leaderboardPublic:', profile.leaderboardPublic);
     await setDoc(userRef, { fitnessProfile: profile }, { merge: true });
+    console.log('[Firestore] Profile saved successfully');
   } catch (err) {
-    console.warn('Firestore save user profile note:', err);
+    console.warn('[Firestore] Save profile error:', err);
   }
 }
 
