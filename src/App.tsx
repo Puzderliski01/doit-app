@@ -1342,7 +1342,6 @@ export default function App() {
               <Leaderboard
                 theme={theme}
                 userProfile={userProfile}
-                onUpdateProfile={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
               />
             </Suspense>
           )}
