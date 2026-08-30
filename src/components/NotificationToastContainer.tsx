@@ -10,7 +10,8 @@ import {
   WifiOff, 
   Flame, 
   X,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { haptic } from '../utils/haptics';
@@ -46,6 +47,8 @@ export const NotificationToastContainer: React.FC<NotificationToastContainerProp
         return <Wifi className="w-4 h-4 text-cyan-400" />;
       case 'daily_briefing':
         return <Flame className="w-4 h-4 text-orange-400" />;
+      case 'recurring':
+        return <RefreshCw className="w-4 h-4 text-purple-400" />;
       default:
         return <Bell className="w-4 h-4 text-white/80" />;
     }
@@ -64,6 +67,8 @@ export const NotificationToastContainer: React.FC<NotificationToastContainerProp
           return 'border-orange-300 shadow-[0_4px_20px_rgba(249,115,22,0.15)] bg-orange-50 text-orange-900';
         case 'sync':
           return 'border-cyan-300 shadow-[0_4px_20px_rgba(6,182,212,0.15)] bg-cyan-50 text-cyan-900';
+        case 'recurring':
+          return 'border-purple-300 shadow-[0_4px_20px_rgba(168,85,247,0.15)] bg-purple-50 text-purple-900';
         default:
           return 'border-slate-200 shadow-lg bg-white text-slate-900';
       }
@@ -79,6 +84,8 @@ export const NotificationToastContainer: React.FC<NotificationToastContainerProp
         return 'border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.2)] bg-[#180f08]/90 text-white';
       case 'sync':
         return 'border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.2)] bg-[#08151a]/90 text-white';
+      case 'recurring':
+        return 'border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.2)] bg-[#12081a]/90 text-white';
       default:
         return 'border-white/15 shadow-2xl bg-[#0e0e12]/90 text-white';
     }

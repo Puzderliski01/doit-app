@@ -826,6 +826,16 @@ export default function App() {
         .then(() => { pendingWritesRef.current.delete(newTask.id); })
         .catch(console.error);
     }
+    if (newTask.priority === 'urgent') {
+      triggerAppNotification({
+        type: 'urgent_priority',
+        title: '🚨 Urgent Priority Task Added',
+        message: `"${newTask.title}" requires immediate focus.`,
+        actionLabel: 'View Task',
+        actionType: 'view_task',
+        taskId: newTask.id
+      });
+    }
   };
 
   const handleTriggerTestEmail = (task: Task, email: string) => {

@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Flame,
   Wifi,
-  CheckCheck
+  CheckCheck,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { haptic } from '../utils/haptics';
@@ -111,6 +112,8 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
         return <Wifi className={`w-4 h-4 ${isLight ? 'text-cyan-500' : 'text-cyan-400'}`} />;
       case 'daily_briefing':
         return <Flame className={`w-4 h-4 ${isLight ? 'text-orange-500' : 'text-orange-400'}`} />;
+      case 'recurring':
+        return <RefreshCw className={`w-4 h-4 ${isLight ? 'text-purple-500' : 'text-purple-400'}`} />;
       default:
         return <Bell className={`w-4 h-4 ${isLight ? 'text-slate-600' : 'text-white/80'}`} />;
     }
@@ -389,8 +392,14 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
                     >
                       <div className="space-y-1 flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                            DELIVERED
+                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
+                            log.status === 'delivered'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : log.status === 'failed'
+                              ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                          }`}>
+                            {log.status.toUpperCase()}
                           </span>
                           <h4 className={`text-xs font-bold truncate ${
                             isLight ? 'text-slate-900' : 'text-white'
