@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import {
   Dumbbell,
-  TrendingUp,
-  Heart,
-  Zap,
   ChevronRight,
   ChevronLeft,
   Check,
   Scale,
   Ruler,
-  Calendar,
+  Zap,
 } from 'lucide-react';
 
 interface FitnessOnboardingProps {
@@ -48,7 +45,6 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
 }) => {
   const isLight = theme === 'light';
   const [step, setStep] = useState(0);
-  const [isFitness, setIsFitness] = useState<boolean | null>(null);
   const [goals, setGoals] = useState<string[]>([]);
   const [experience, setExperience] = useState<string>('');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
@@ -70,7 +66,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
     }
 
     onComplete({
-      fitnessMode: isFitness === true,
+      fitnessMode: true,
       weightUnit,
       bodyWeight: bodyWeight ? parseFloat(bodyWeight) : undefined,
       heightCm: heightCmVal,
@@ -80,9 +76,8 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
   };
 
   const canProceed = () => {
-    if (step === 0) return isFitness !== null;
-    if (step === 1) return goals.length > 0;
-    if (step === 2) return experience !== '';
+    if (step === 0) return goals.length > 0;
+    if (step === 1) return experience !== '';
     return true;
   };
 
@@ -91,6 +86,8 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
       prev.includes(goalId) ? prev.filter((g) => g !== goalId) : [...prev, goalId]
     );
   };
+
+  const totalSteps = 3;
 
   return (
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-md ${
@@ -103,7 +100,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
       }`}>
         <div className="p-6 text-center">
           <div className="flex justify-center gap-1.5 mb-6">
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2].map((i) => (
               <div key={i} className={`h-1 rounded-full transition-all ${
                 i <= step ? 'w-8 bg-amber-500' : `w-4 ${isLight ? 'bg-slate-200' : 'bg-white/10'}`
               }`} />
@@ -111,70 +108,6 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
           </div>
 
           {step === 0 && (
-            <div className="space-y-6">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center">
-                <Dumbbell className="w-8 h-8 text-black" />
-              </div>
-              <div>
-                <h2 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  Welcome to DoIT
-                </h2>
-                <p className={`text-sm mt-2 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
-                  How would you like to use the app?
-                </p>
-              </div>
-              <div className="space-y-3">
-                <button
-                  onClick={() => setIsFitness(true)}
-                  className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
-                    isFitness === true
-                      ? 'border-amber-500 bg-amber-500/10'
-                      : isLight
-                      ? 'border-slate-200 hover:border-slate-300 bg-slate-50'
-                      : 'border-white/10 hover:border-white/20 bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🏋️</span>
-                    <div>
-                      <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                        Fitness & Training
-                      </p>
-                      <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                        Track workouts, exercises, PRs & progress
-                      </p>
-                    </div>
-                    {isFitness === true && <Check className="w-5 h-5 text-amber-400 ml-auto" />}
-                  </div>
-                </button>
-                <button
-                  onClick={() => setIsFitness(false)}
-                  className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
-                    isFitness === false
-                      ? 'border-amber-500 bg-amber-500/10'
-                      : isLight
-                      ? 'border-slate-200 hover:border-slate-300 bg-slate-50'
-                      : 'border-white/10 hover:border-white/20 bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📋</span>
-                    <div>
-                      <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                        Task Management
-                      </p>
-                      <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                        Productivity, tasks, calendar & analytics
-                      </p>
-                    </div>
-                    {isFitness === false && <Check className="w-5 h-5 text-amber-400 ml-auto" />}
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === 1 && (
             <div className="space-y-6">
               <div>
                 <h2 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -218,7 +151,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
             </div>
           )}
 
-          {step === 2 && (
+          {step === 1 && (
             <div className="space-y-6">
               <div>
                 <h2 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -257,7 +190,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
             </div>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <div className="space-y-6">
               <div>
                 <h2 className={`text-xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -376,7 +309,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
           )}
           <button
             onClick={() => {
-              if (step < 3) {
+              if (step < totalSteps - 1) {
                 setStep(step + 1);
               } else {
                 handleComplete();
@@ -385,7 +318,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
             disabled={!canProceed()}
             className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {step < 3 ? (
+            {step < totalSteps - 1 ? (
               <>
                 Continue
                 <ChevronRight className="w-4 h-4" />
