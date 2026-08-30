@@ -454,8 +454,7 @@ export function calculateTotalVolume(sets: ExerciseSet[]): number {
     .reduce((sum, s) => sum + s.weight * s.reps, 0);
 }
 
-export function getDefaultSets(): ExerciseSet[] {
-  const unit = (localStorage.getItem('fitness-display-unit') === 'lbs') ? 'lbs' : 'kg';
+export function getDefaultSets(unit: 'kg' | 'lbs' = 'kg'): ExerciseSet[] {
   return [
     { reps: 0, weight: 0, weightUnit: unit, completed: false },
     { reps: 0, weight: 0, weightUnit: unit, completed: false },

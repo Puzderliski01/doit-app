@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   FitnessStats,
   FitnessEntry,
@@ -50,23 +50,11 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
   onSelectExercise,
 }) => {
   const isLight = theme === 'light';
-  const [displayUnit, setDisplayUnit] = useState<'kg' | 'lbs'>(() => {
-    const saved = localStorage.getItem('fitness-display-unit');
-    return (saved === 'kg' || saved === 'lbs') ? saved : userProfile.weightUnit;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('fitness-display-unit', displayUnit);
-  }, [displayUnit]);
-
-  const toggleUnit = () => {
-    setDisplayUnit((prev) => prev === 'kg' ? 'lbs' : 'kg');
-  };
 
   const convertWeight = (weight: number, fromUnit: 'kg' | 'lbs'): number => {
-    if (fromUnit === displayUnit) return weight;
-    if (fromUnit === 'kg' && displayUnit === 'lbs') return Math.round(weight * 2.205);
-    if (fromUnit === 'lbs' && displayUnit === 'kg') return Math.round(weight / 2.205);
+    if (fromUnit === userProfile.weightUnit) return weight;
+    if (fromUnit === 'kg' && userProfile.weightUnit === 'lbs') return Math.round(weight * 2.205);
+    if (fromUnit === 'lbs' && userProfile.weightUnit === 'kg') return Math.round(weight / 2.205);
     return weight;
   };
   const safeStats = {
@@ -104,16 +92,6 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={toggleUnit}
-            className={`flex items-center gap-1 px-3 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
-              isLight
-                ? 'bg-slate-200 hover:bg-slate-300 text-slate-700'
-                : 'bg-white/10 hover:bg-white/20 text-white/70'
-            }`}
-          >
-            {displayUnit === 'kg' ? '⚖️ kg' : '🏋️ lbs'}
-          </button>
           <button
             onClick={onOpenLogModal}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all cursor-pointer"
@@ -181,7 +159,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
         <StatCard
           icon={<TrendingUp className="w-4.5 h-4.5" />}
           label="Volume"
-          value={getFormattedVolume(convertWeight(stats.totalVolume, stats.totalVolumeUnit), displayUnit)}
+          value={getFormattedVolume(convertWeight(stats.totalVolume, stats.totalVolumeUnit), userProfile.weightUnit)}
           color="#3b82f6"
           isLight={isLight}
         />
@@ -218,7 +196,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                       {exercise?.name || exerciseId}
                     </span>
                     <span className="text-xs font-bold text-amber-400">
-                      {convertWeight(pr.weight, userProfile.weightUnit)} {displayUnit} × {pr.reps}
+                      {convertWeight(pr.weight, userProfile.weightUnit)} {userProfile.weightUnit} × {pr.reps}
                     </span>
                   </div>
                 );
@@ -404,11 +382,11 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                     {entry.sets.filter((s) => s.completed).length} sets
                   </span>
                   <span className="text-[11px] text-blue-400">
-                    {convertWeight(entry.totalVolume, entry.sets[0]?.weightUnit || 'kg')} {displayUnit}
+                    {convertWeight(entry.totalVolume, entry.sets[0]?.weightUnit || 'kg')} {userProfile.weightUnit}
                   </span>
                   {entry.estimatedOneRepMax > 0 && (
                     <span className="text-[11px] text-purple-400">
-                      1RM: {convertWeight(entry.estimatedOneRepMax, entry.sets[0]?.weightUnit || 'kg')} {displayUnit}
+                      1RM: {convertWeight(entry.estimatedOneRepMax, entry.sets[0]?.weightUnit || 'kg')} {userProfile.weightUnit}
                     </span>
                   )}
                 </div>

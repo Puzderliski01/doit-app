@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Exercise,
   ExerciseSet,
@@ -74,30 +74,17 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   defaultWeightUnit,
 }) => {
   const isLight = theme === 'light';
-  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>(() => {
-    const saved = localStorage.getItem('fitness-display-unit');
-    return (saved === 'kg' || saved === 'lbs') ? saved : defaultWeightUnit;
-  });
   const [mode, setMode] = useState<'single' | 'multi'>('single');
   const [searchQuery, setSearchQuery] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showExerciseList, setShowExerciseList] = useState(true);
 
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [sets, setSets] = useState<ExerciseSet[]>(getDefaultSets());
+  const [sets, setSets] = useState<ExerciseSet[]>(getDefaultSets(defaultWeightUnit));
   const [notes, setNotes] = useState('');
 
   const [exerciseSlots, setExerciseSlots] = useState<ExerciseSlot[]>([]);
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      const saved = localStorage.getItem('fitness-display-unit');
-      if (saved === 'kg' || saved === 'lbs') {
-        setWeightUnit(saved);
-      }
-    }
-  }, [isOpen]);
 
   const searchResults = searchExercises(searchQuery);
 
@@ -105,7 +92,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
 
   const resetState = () => {
     setSelectedExercise(null);
-    setSets(getDefaultSets());
+    setSets(getDefaultSets(defaultWeightUnit));
     setNotes('');
     setDate(new Date().toISOString().split('T')[0]);
     setShowExerciseList(true);
@@ -129,10 +116,10 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
       exerciseName: exercise.name,
       muscleGroup: exercise.muscleGroup,
       date,
-      sets: exSets.map((s) => ({ ...s, weightUnit })),
+      sets: exSets.map((s) => ({ ...s, weightUnit: defaultWeightUnit })),
       totalVolume: totalVol,
       estimatedOneRepMax: calculateOneRepMax(maxW, maxR),
-      weightUnit,
+      weightUnit: defaultWeightUnit,
       notes: exNotes.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
@@ -162,13 +149,13 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   const handleSelectExerciseSingle = (exercise: Exercise) => {
     setSelectedExercise(exercise);
     setShowExerciseList(false);
-    setSets(getDefaultSets());
+    setSets(getDefaultSets(defaultWeightUnit));
   };
 
   const handleAddExerciseMulti = (exercise: Exercise) => {
     const newSlot: ExerciseSlot = {
       exercise,
-      sets: getDefaultSets(),
+      sets: getDefaultSets(defaultWeightUnit),
       notes: '',
     };
     setExerciseSlots([...exerciseSlots, newSlot]);
@@ -206,7 +193,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
         return sum + calculateXPForWorkout({
           ...({} as FitnessEntry),
           exerciseId: slot.exercise.id,
-          weightUnit,
+          weightUnit: defaultWeightUnit,
           sets: slot.sets,
           totalVolume: calculateTotalVolume(slot.sets),
           estimatedOneRepMax: calculateOneRepMax(
@@ -219,7 +206,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
     ? calculateXPForWorkout({
         ...({} as FitnessEntry),
         exerciseId: selectedExercise.id,
-        weightUnit,
+        weightUnit: defaultWeightUnit,
         sets,
         totalVolume: calculateTotalVolume(sets),
         estimatedOneRepMax: calculateOneRepMax(
@@ -297,18 +284,9 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                     : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
                 }`}
               />
-              <button
-                onClick={() => {
-                  const next = weightUnit === 'kg' ? 'lbs' : 'kg';
-                  setWeightUnit(next);
-                  localStorage.setItem('fitness-display-unit', next);
-                }}
-                className={`text-[10px] w-6 font-bold cursor-pointer transition-colors ${
-                  isLight ? 'text-slate-500 hover:text-amber-600' : 'text-white/40 hover:text-amber-400'
-                }`}
-              >
-                {weightUnit}
-              </button>
+              <span className={`text-[10px] w-6 font-bold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                {defaultWeightUnit}
+              </span>
               <button
                 onClick={() => onUpdateSet(index, 'completed', !set.completed)}
                 className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
@@ -509,7 +487,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 },
                 () => {
                   const last = sets[sets.length - 1];
-                  setSets([...sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit, completed: false }]);
+                  setSets([...sets, { reps: last?.reps || 0, weight: last?.weight || 0, defaultWeightUnit, completed: false }]);
                 },
                 (i) => { if (sets.length > 1) setSets(sets.filter((_, idx) => idx !== i)); },
               )}
@@ -539,7 +517,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                     <p className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
                       Volume: {isBodyweightExercise(selectedExercise?.id || '') && calculateTotalVolume(sets) === 0
                         ? `${sets.filter((s) => s.completed).reduce((sum, s) => sum + s.reps, 0)} reps`
-                        : `${calculateTotalVolume(sets)} ${weightUnit}`}
+                        : `${calculateTotalVolume(sets)} ${defaultWeightUnit}`}
                     </p>
                     <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
                       {totalCompletedSets} sets completed
@@ -637,7 +615,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                             },
                             () => {
                               const last = slot.sets[slot.sets.length - 1];
-                              handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit, completed: false }]);
+                              handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, defaultWeightUnit, completed: false }]);
                             },
                             (i) => { if (slot.sets.length > 1) handleUpdateSlotSets(idx, slot.sets.filter((_, j) => j !== i)); },
                           )}
