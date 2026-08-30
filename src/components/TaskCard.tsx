@@ -64,15 +64,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const isLight = theme === 'light';
 
-  const priorityStyles: Record<Priority, { label: string; bg: string; text: string; ring: string; dot: string; glow: string; borderLeft: string }> = {
+  const priorityStyles: Record<Priority, { label: string; bg: string; text: string; ring: string; dot: string; glow: string; borderColor: string }> = {
     urgent: {
-      label: 'Urgent',
+      label: 'Urgent Priority',
       bg: isLight ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-500/10 text-red-400 border-red-500/20',
       text: isLight ? 'text-red-700' : 'text-red-400',
       ring: isLight ? 'border-red-200' : 'border-red-500/20',
       dot: 'bg-red-500',
       glow: isLight ? 'shadow-[0_2px_8px_rgba(239,68,68,0.25)]' : 'shadow-[5px_0_15px_rgba(239,68,68,0.4)]',
-      borderLeft: 'bg-red-500'
+      borderColor: isLight ? '#fca5a5' : 'rgba(239,68,68,0.5)'
     },
     high: {
       label: 'High Priority',
@@ -81,7 +81,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       ring: isLight ? 'border-orange-200' : 'border-orange-500/20',
       dot: 'bg-orange-500',
       glow: isLight ? 'shadow-[0_2px_8px_rgba(249,115,22,0.25)]' : 'shadow-[5px_0_15px_rgba(249,115,22,0.4)]',
-      borderLeft: 'bg-orange-500'
+      borderColor: isLight ? '#fdba74' : 'rgba(249,115,22,0.5)'
     },
     medium: {
       label: 'Standard Priority',
@@ -90,7 +90,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       ring: isLight ? 'border-sky-200' : 'border-sky-500/20',
       dot: 'bg-sky-500',
       glow: isLight ? 'shadow-[0_2px_8px_rgba(14,165,233,0.2)]' : 'shadow-[5px_0_15px_rgba(14,165,233,0.3)]',
-      borderLeft: 'bg-sky-500'
+      borderColor: isLight ? '#bae6fd' : 'rgba(14,165,233,0.4)'
     },
     low: {
       label: 'Low Priority',
@@ -99,7 +99,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       ring: isLight ? 'border-emerald-200' : 'border-emerald-500/20',
       dot: 'bg-emerald-500',
       glow: isLight ? 'shadow-[0_2px_8px_rgba(16,185,129,0.2)]' : 'shadow-[5px_0_15px_rgba(16,185,129,0.3)]',
-      borderLeft: 'bg-emerald-500'
+      borderColor: isLight ? '#a7f3d0' : 'rgba(16,185,129,0.4)'
     }
   };
 
@@ -158,22 +158,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      className={`group relative p-5 sm:p-6 rounded-3xl transition-all duration-200 ${
+      className={`group relative p-5 sm:p-6 rounded-3xl transition-all duration-200 border-2 ${
         isLight
           ? task.priority === 'urgent' || task.priority === 'high'
-            ? 'bg-white/70 border border-orange-200/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_20px_rgba(249,115,22,0.08)] hover:border-orange-300/60 backdrop-blur-2xl'
-            : 'bg-white/60 border border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_12px_rgba(0,0,0,0.04)] hover:border-white/60 hover:shadow-md backdrop-blur-2xl'
+            ? 'bg-white/70 border-orange-300/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_20px_rgba(249,115,22,0.08)] backdrop-blur-2xl'
+            : 'bg-white/60 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-2xl'
           : task.priority === 'urgent' || task.priority === 'high'
-            ? 'bg-gradient-to-r from-white/[0.1] to-white/[0.03] border border-white/[0.12] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.2)] hover:border-white/20'
-            : 'bg-white/[0.05] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.12] backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.15)]'
+            ? 'bg-gradient-to-r from-white/[0.1] to-white/[0.03] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.2)]'
+            : 'bg-white/[0.05] border-white/[0.12] backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.15)]'
       } ${task.completed ? (isLight ? 'opacity-60 bg-white/40' : 'opacity-55') : ''}`}
+      style={!isLight && (task.priority === 'urgent' || task.priority === 'high') ? { borderColor: currentPriorityStyle.borderColor } : undefined}
     >
-      {/* Priority accent side glow indicator */}
-      <div 
-        className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-3xl transition-all ${currentPriorityStyle.borderLeft} ${
-          task.completed ? 'opacity-30' : 'opacity-100 ' + currentPriorityStyle.glow
-        }`} 
-      />
+      {/* Priority accent side glow indicator — now a subtle inner glow instead of line */}
+      {!task.completed && (task.priority === 'urgent' || task.priority === 'high') && (
+        <div 
+          className={`absolute inset-0 rounded-3xl pointer-events-none transition-all ${
+            isLight ? 'shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]' : 'shadow-[inset_0_0_20px_rgba(249,115,22,0.08)]'
+          }`} 
+        />
+      )}
 
       <div className="flex items-start justify-between gap-4">
           

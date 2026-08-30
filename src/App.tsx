@@ -94,7 +94,8 @@ import {
   Trophy,
   CheckSquare,
   Dumbbell,
-  LayoutGrid
+  LayoutGrid,
+  Trash2
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -725,6 +726,21 @@ export default function App() {
     }
   };
 
+  const handleClearCompleted = () => {
+    const completedIds = tasks.filter(t => t.completed).map(t => t.id);
+    if (completedIds.length === 0) return;
+    haptic.deleteAction();
+    setTasks(prev => prev.filter(t => !t.completed));
+    if (canSyncToFirestore) {
+      completedIds.forEach(id => {
+        pendingDeletesRef.current.add(id);
+        deleteUserTaskFromFirestore(currentUser!.uid, id)
+          .then(() => { pendingDeletesRef.current.delete(id); })
+          .catch(console.error);
+      });
+    }
+  };
+
   const handleDuplicateTask = (task: Task) => {
     const duplicated: Task = {
       ...task,
@@ -1273,7 +1289,7 @@ export default function App() {
                         </select>
                       </div>
                     </div>
-                    <div className={`flex flex-wrap gap-1.5 pt-3 border-t ${isLight ? 'border-white/30' : 'border-white/10'}`}>
+                    <div className={`flex flex-wrap items-center gap-1.5 pt-3 border-t ${isLight ? 'border-white/30' : 'border-white/10'}`}>
                       {[
                         { id: 'all', label: t('tasks.allTasks'), count: tasks.length },
                         { id: 'pending', label: t('tasks.pending'), count: pendingCount },
@@ -1294,6 +1310,17 @@ export default function App() {
                           <span className={`text-[10px] ${statusFilter === item.id ? 'opacity-70' : 'opacity-50'}`}>{item.count}</span>
                         </button>
                       ))}
+                      {tasks.filter(t => t.completed).length > 0 && (
+                        <button
+                          onClick={handleClearCompleted}
+                          className={`ml-auto px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            isLight ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
+                          }`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Clear Done ({tasks.filter(t => t.completed).length})
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-3">
