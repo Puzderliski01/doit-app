@@ -375,6 +375,7 @@ export async function deleteUserFitnessEntryFromFirestore(userId: string, entryI
 export interface LeaderboardUser {
   uid: string;
   displayName: string;
+  photoURL?: string;
   xp: number;
   rank: string;
   totalWorkouts: number;
@@ -394,7 +395,8 @@ export async function fetchPublicLeaderboard(): Promise<LeaderboardUser[]> {
       if (profile) {
         users.push({
           uid: docSnap.id,
-          displayName: profile.displayName || 'Anonymous',
+          displayName: profile.displayName || data.displayName || 'Anonymous',
+          photoURL: data.photoURL || '',
           xp: profile.fitnessStats?.xp || 0,
           rank: profile.fitnessStats?.rank || 'Weak Rookie',
           totalWorkouts: profile.fitnessStats?.totalWorkouts || 0,
@@ -406,6 +408,36 @@ export async function fetchPublicLeaderboard(): Promise<LeaderboardUser[]> {
   } catch (err) {
     console.warn('Firestore fetch leaderboard note:', err);
     return [];
+  }
+}
+
+export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]) => void) {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('fitnessProfile.leaderboardPublic', '==', true), firestoreLimit(50));
+    return onSnapshot(q, (snapshot) => {
+      const users: LeaderboardUser[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const profile = data.fitnessProfile as UserProfile | undefined;
+        if (profile) {
+          users.push({
+            uid: docSnap.id,
+            displayName: profile.displayName || data.displayName || 'Anonymous',
+            photoURL: data.photoURL || '',
+            xp: profile.fitnessStats?.xp || 0,
+            rank: profile.fitnessStats?.rank || 'Weak Rookie',
+            totalWorkouts: profile.fitnessStats?.totalWorkouts || 0,
+            currentStreak: profile.fitnessStats?.currentStreak || 0,
+          });
+        }
+      });
+      onUpdate(users.sort((a, b) => b.xp - a.xp));
+    });
+  } catch (err) {
+    console.warn('Firestore subscribe leaderboard error:', err);
+    onUpdate([]);
+    return () => {};
   }
 }
 

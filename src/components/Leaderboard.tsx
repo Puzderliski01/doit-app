@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { FitnessStats, Rank, UserProfile } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { UserProfile } from '../types';
 import { getRankInfo, RANKS, getProgressToNextRank } from '../utils/fitness';
-import { fetchPublicLeaderboard, LeaderboardUser } from '../firebase';
+import { subscribeToPublicLeaderboard, LeaderboardUser } from '../firebase';
 import { Trophy, Zap, Target, TrendingUp, Users, Eye, EyeOff, Crown } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -10,6 +10,8 @@ interface LeaderboardProps {
   userProfile: UserProfile;
   onProfileUpdate?: (updates: Partial<UserProfile>) => void;
   currentUserUid?: string;
+  isGuest?: boolean;
+  userPhotoURL?: string | null;
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({
@@ -17,6 +19,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   userProfile,
   onProfileUpdate,
   currentUserUid,
+  isGuest,
+  userPhotoURL,
 }) => {
   const isLight = theme === 'light';
   const stats = userProfile.fitnessStats;
@@ -30,11 +34,34 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     setLoadingLeaderboard(true);
-    fetchPublicLeaderboard().then((users) => {
+    const unsub = subscribeToPublicLeaderboard((users) => {
       setPublicUsers(users);
       setLoadingLeaderboard(false);
     });
+    return () => { if (typeof unsub === 'function') unsub(); };
   }, []);
+
+  // Merge current user (always shown) with public users
+  const allUsers = useMemo(() => {
+    const currentUserEntry: LeaderboardUser = {
+      uid: currentUserUid || 'local',
+      displayName: userProfile.displayName || 'You',
+      photoURL: userPhotoURL || '',
+      xp: stats.xp,
+      rank: stats.rank,
+      totalWorkouts: stats.totalWorkouts,
+      currentStreak: stats.currentStreak,
+      isCurrentUser: true,
+    };
+
+    // Remove current user from public list if present (avoid duplicates)
+    const others = publicUsers.filter((u) => u.uid !== currentUserUid);
+
+    // Merge and sort by XP
+    const merged = [...others, currentUserEntry];
+    merged.sort((a, b) => b.xp - a.xp);
+    return merged;
+  }, [publicUsers, currentUserUid, stats, userProfile]);
 
   const handleTogglePublic = () => {
     haptic.mediumClick();
@@ -59,17 +86,19 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             Your rank and community standings
           </p>
         </div>
-        <button
-          onClick={handleTogglePublic}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-            isPublic
-              ? isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/60'
-          }`}
-        >
-          {isPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          {isPublic ? 'Public' : 'Private'}
-        </button>
+        {!isGuest && (
+          <button
+            onClick={handleTogglePublic}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              isPublic
+                ? isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/60'
+            }`}
+          >
+            {isPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            {isPublic ? 'Public' : 'Private'}
+          </button>
+        )}
       </div>
 
       {/* Current Rank Card */}
@@ -142,7 +171,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
         </div>
       </div>
 
-      {/* Public Leaderboard */}
+      {/* Community Leaderboard */}
       <div className={`rounded-2xl border overflow-hidden ${
         isLight ? 'border-slate-200' : 'border-white/10'
       }`}>
@@ -157,11 +186,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="p-6 text-center">
               <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Loading leaderboard...</p>
             </div>
-          ) : publicUsers.length === 0 ? (
+          ) : allUsers.length === 0 ? (
             <div className="p-6 text-center">
               <Trophy className={`w-8 h-8 mx-auto mb-2 ${isLight ? 'text-slate-300' : 'text-white/20'}`} />
-              <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/40'}`}>No public profiles yet. Be the first!</p>
-              {!isPublic && (
+              <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/40'}`}>No profiles yet. Be the first!</p>
+              {!isPublic && !isGuest && (
                 <button
                   onClick={handleTogglePublic}
                   className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 cursor-pointer"
@@ -171,7 +200,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               )}
             </div>
           ) : (
-            publicUsers.map((user, index) => {
+            allUsers.map((user, index) => {
               const isCurrentUser = user.uid === currentUserUid;
               const userRank = RANKS.find((r) => r.rank === user.rank);
               return (
@@ -191,7 +220,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                   }`}>
                     {index < 3 ? ['🥇','🥈','🥉'][index] : `#${index + 1}`}
                   </span>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden ${
                     isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-white/60'
                   }`}>
                     {user.photoURL ? (

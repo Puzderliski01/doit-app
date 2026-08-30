@@ -1652,6 +1652,8 @@ export default function App() {
                       userProfile={userProfile}
                       onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
                       currentUserUid={currentUser?.uid}
+                      isGuest={currentUser?.isGuest}
+                      userPhotoURL={currentUser?.photoURL}
                     />
                   )}
                 </Suspense>
