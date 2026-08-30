@@ -45,6 +45,55 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const completedMinutes = tasks.filter(t => t.completed).reduce((acc, curr) => acc + (curr.estimatedMinutes || 30), 0);
   const pendingMinutes = totalEstimatedMinutes - completedMinutes;
 
+  // Calculate streak: consecutive days with at least 1 completed task
+  const calculateStreak = (): number => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let streak = 0;
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - i);
+      const dateStr = checkDate.toISOString().split('T')[0];
+      const hasCompleted = tasks.some(t => t.completed && t.completedAt && t.completedAt.startsWith(dateStr));
+      if (hasCompleted) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+    return streak;
+  };
+
+  // Calculate velocity: tasks completed this week vs last week
+  const calculateVelocity = (): { thisWeek: number; lastWeek: number; change: number } => {
+    const now = new Date();
+    const thisWeekStart = new Date(now);
+    thisWeekStart.setDate(now.getDate() - now.getDay());
+    thisWeekStart.setHours(0, 0, 0, 0);
+    
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    
+    const thisWeekCount = tasks.filter(t => 
+      t.completed && t.completedAt && new Date(t.completedAt) >= thisWeekStart
+    ).length;
+    
+    const lastWeekCount = tasks.filter(t => 
+      t.completed && t.completedAt && 
+      new Date(t.completedAt) >= lastWeekStart && 
+      new Date(t.completedAt) < thisWeekStart
+    ).length;
+    
+    const change = lastWeekCount > 0 
+      ? Math.round(((thisWeekCount - lastWeekCount) / lastWeekCount) * 100)
+      : thisWeekCount > 0 ? 100 : 0;
+    
+    return { thisWeek: thisWeekCount, lastWeek: lastWeekCount, change };
+  };
+
+  const streak = calculateStreak();
+  const velocity = calculateVelocity();
+
   const isLight = theme === 'light';
 
   return (
@@ -83,11 +132,17 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <div className={`w-12 h-12 rounded-xl border text-orange-400 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)] ${
             isLight ? 'bg-orange-100 border-orange-300' : 'bg-orange-500/10 border-orange-500/30'
           }`}>
-            <Flame className="w-6 h-6 fill-current animate-pulse" />
+            <Flame className="w-6 h-6 fill-current" />
           </div>
           <div>
-            <div className={`text-2xl font-semibold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>7 Days</div>
-            <div className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">+12% Velocity</div>
+            <div className={`text-2xl font-semibold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {streak} Day{streak !== 1 ? 's' : ''}
+            </div>
+            <div className={`text-[10px] font-bold uppercase tracking-widest ${
+              velocity.change >= 0 ? 'text-emerald-400' : 'text-red-400'
+            }`}>
+              {velocity.change >= 0 ? '+' : ''}{velocity.change}% vs last week
+            </div>
           </div>
         </div>
       </div>
