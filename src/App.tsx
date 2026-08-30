@@ -19,7 +19,7 @@ import {
 } from './types';
 import { storage } from './utils/storage';
 import { haptic } from './utils/haptics';
-import { isOverdue, isDueToday, isDueThisWeek } from './utils/dateHelpers';
+import { isOverdue, isDueToday, isDueThisWeek, formatDeadlineRelative } from './utils/dateHelpers';
 import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
 import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from './utils/fitness';
@@ -95,7 +95,11 @@ import {
   CheckSquare,
   Dumbbell,
   LayoutGrid,
-  Trash2
+  Trash2,
+  TrendingUp,
+  Target,
+  Zap,
+  ChevronRight
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -1163,65 +1167,260 @@ export default function App() {
           
           {/* HOME VIEW - Dashboard Overview */}
           {currentView === 'home' && (
-            <div className="space-y-6">
-              {/* Welcome Header */}
-              <div className={`p-6 rounded-3xl border relative overflow-hidden ${isLight ? 'bg-white/70 border-white/40 backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_20px_rgba(0,0,0,0.06)]' : 'bg-white/[0.06] border-white/[0.1] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_20px_rgba(0,0,0,0.2)]'}`}>
-                <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  {currentUser ? `${t('home.welcome')}, ${currentUser.displayName || 'User'}` : 'Welcome to DoIT'}
-                </h1>
-                <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                  {new Date().toLocaleDateString(userProfile.language === 'sr' ? 'sr-Latn' : userProfile.language || 'en', { weekday: 'long', month: 'long', day: 'numeric' })}
-                </p>
+            <div className="space-y-5">
+              {/* Hero Greeting + Progress Ring */}
+              <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 ${isLight
+                ? 'bg-gradient-to-br from-white via-white to-orange-50/50 border border-white/60 shadow-[0_8px_40px_rgba(0,0,0,0.06)]'
+                : 'bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-orange-500/[0.06] border border-white/[0.1] shadow-[0_8px_40px_rgba(0,0,0,0.3)]'
+              }`}>
+                {/* Decorative gradient orb */}
+                <div className={`absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl pointer-events-none ${
+                  isLight ? 'bg-gradient-to-br from-orange-200/40 to-amber-100/30' : 'bg-gradient-to-br from-orange-500/15 to-amber-500/10'
+                }`} />
+                <div className={`absolute -bottom-16 -left-16 w-40 h-40 rounded-full blur-3xl pointer-events-none ${
+                  isLight ? 'bg-gradient-to-tr from-sky-100/30 to-transparent' : 'bg-gradient-to-tr from-sky-500/10 to-transparent'
+                }`} />
+                
+                <div className="relative flex items-center justify-between gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-2 ${
+                      isLight ? 'text-orange-500' : 'text-orange-400'
+                    }`}>
+                      {new Date().getHours() < 12 ? '☀️ Good Morning' : new Date().getHours() < 18 ? '🌤️ Good Afternoon' : '🌙 Good Evening'}
+                    </div>
+                    <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      {currentUser?.displayName || 'Commander'}
+                    </h1>
+                    <p className={`text-sm mt-1.5 ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+                      {new Date().toLocaleDateString(userProfile.language === 'sr' ? 'sr-Latn' : userProfile.language || 'en', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </p>
+                    {pendingCount > 0 && (
+                      <p className={`text-xs mt-3 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                        You have <span className={`font-bold ${isLight ? 'text-orange-600' : 'text-orange-400'}`}>{pendingCount} pending</span> and{' '}
+                        {todayCount > 0 && <><span className={`font-bold ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>{todayCount} due today</span>{overdueCount > 0 ? ', ' : ''}</>}
+                        {overdueCount > 0 && <span className="font-bold text-red-500">{overdueCount} overdue</span>}
+                      </p>
+                    )}
+                    {pendingCount === 0 && (
+                      <p className={`text-xs mt-3 font-medium ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>
+                        ✨ All caught up! Enjoy your day.
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Progress Ring */}
+                  <div className="relative shrink-0">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                      <defs>
+                        <linearGradient id="home-progress-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f59e0b" />
+                          <stop offset="50%" stopColor="#f97316" />
+                          <stop offset="100%" stopColor="#ef4444" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="55" cy="55" r="46" fill="none" strokeWidth="7" className={isLight ? 'stroke-slate-100' : 'stroke-white/[0.06]'} />
+                      <circle
+                        cx="55" cy="55" r="46" fill="none" strokeWidth="7" strokeLinecap="round"
+                        stroke="url(#home-progress-grad)"
+                        className="rotate-[-90deg] origin-center transition-all duration-1000 ease-out"
+                        strokeDasharray={`${2 * Math.PI * 46}`}
+                        strokeDashoffset={`${2 * Math.PI * 46 * (1 - (tasks.length > 0 ? tasks.filter(t => t.completed).length / tasks.length : 0))}`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                        {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}%
+                      </span>
+                      <span className={`text-[9px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                        Done
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.pendingTasks')}</p>
-                  <p className={`text-2xl font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>{pendingCount}</p>
-                </div>
-                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.dueToday')}</p>
-                  <p className="text-2xl font-bold mt-1 text-orange-500">{todayCount}</p>
-                </div>
-                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.overdue')}</p>
-                  <p className={`text-2xl font-bold mt-1 ${overdueCount > 0 ? 'text-red-500' : isLight ? 'text-slate-900' : 'text-white'}`}>{overdueCount}</p>
-                </div>
-                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.completed')}</p>
-                  <p className="text-2xl font-bold mt-1 text-emerald-500">{tasks.filter(task => task.completed).length}</p>
-                </div>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: t('home.pendingTasks'), value: pendingCount, icon: <Clock className="w-4 h-4" />, gradient: 'from-blue-500 to-cyan-400', bgLight: 'from-blue-50 to-cyan-50', bgDark: 'from-blue-500/10 to-cyan-500/10', borderColor: 'rgba(59,130,246,0.3)' },
+                  { label: t('home.dueToday'), value: todayCount, icon: <Zap className="w-4 h-4" />, gradient: 'from-amber-500 to-orange-400', bgLight: 'from-amber-50 to-orange-50', bgDark: 'from-amber-500/10 to-orange-500/10', borderColor: 'rgba(245,158,11,0.3)' },
+                  { label: t('home.overdue'), value: overdueCount, icon: <Flame className="w-4 h-4" />, gradient: 'from-red-500 to-rose-400', bgLight: 'from-red-50 to-rose-50', bgDark: 'from-red-500/10 to-rose-500/10', borderColor: 'rgba(239,68,68,0.3)' },
+                  { label: t('home.completed'), value: tasks.filter(t => t.completed).length, icon: <Target className="w-4 h-4" />, gradient: 'from-emerald-500 to-green-400', bgLight: 'from-emerald-50 to-green-50', bgDark: 'from-emerald-500/10 to-green-500/10', borderColor: 'rgba(16,185,129,0.3)' },
+                ].map((stat, i) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08, duration: 0.4 }}
+                    className={`relative overflow-hidden rounded-2xl p-4 border backdrop-blur-2xl ${
+                      isLight
+                        ? `bg-gradient-to-br ${stat.bgLight} border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)]`
+                        : `bg-gradient-to-br ${stat.bgDark} border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.15)]`
+                    }`}
+                    style={{ borderColor: !isLight ? stat.borderColor : undefined }}
+                  >
+                    <div className={`absolute -top-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-30 bg-gradient-to-br ${stat.gradient}`} />
+                    <div className={`flex items-center gap-1.5 mb-2 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
+                      <span className={`${stat.label === t('home.overdue') && overdueCount > 0 ? 'text-red-500' : ''}`}>{stat.icon}</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{stat.label}</span>
+                    </div>
+                    <p className={`text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      {stat.value}
+                    </p>
+                  </motion.div>
+                ))}
               </div>
 
               {/* Quick Actions */}
               <div className="grid grid-cols-2 gap-3">
-                <button
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
                   onClick={() => { haptic.mediumClick(); setCurrentView('tasks'); }}
-                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer liquid-glass-card ${isLight ? 'hover:border-orange-300' : 'hover:border-orange-500/30'}`}
+                  className={`group relative overflow-hidden p-5 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${
+                    isLight
+                      ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-orange-300 hover:shadow-[0_8px_30px_rgba(249,115,22,0.12)]'
+                      : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-orange-500/30 hover:shadow-[0_8px_30px_rgba(249,115,22,0.15)]'
+                  }`}
                 >
-                  <CheckSquare className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
-                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
-                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} {t('home.totalTasks')}</p>
-                </button>
-                <button
+                  <div className={`absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/5 group-hover:to-transparent transition-all duration-500`} />
+                  <div className="relative">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-gradient-to-br from-orange-500 to-amber-400 shadow-[0_4px_12px_rgba(249,115,22,0.3)]`}>
+                      <CheckSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
+                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} {t('home.totalTasks')}</p>
+                  </div>
+                </motion.button>
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.35 }}
                   onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
-                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer liquid-glass-card ${isLight ? 'hover:border-orange-300' : 'hover:border-orange-500/30'}`}
+                  className={`group relative overflow-hidden p-5 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${
+                    isLight
+                      ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-purple-300 hover:shadow-[0_8px_30px_rgba(168,85,247,0.12)]'
+                      : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-purple-500/30 hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]'
+                  }`}
                 >
-                  <Dumbbell className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
-                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
-                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} {t('home.workoutsLogged')}</p>
-                </button>
+                  <div className={`absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-transparent transition-all duration-500`} />
+                  <div className="relative">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-gradient-to-br from-purple-500 to-pink-400 shadow-[0_4px_12px_rgba(168,85,247,0.3)]`}>
+                      <Dumbbell className="w-5 h-5 text-white" />
+                    </div>
+                    <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
+                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} {t('home.workoutsLogged')}</p>
+                  </div>
+                </motion.button>
               </div>
 
-              {/* Overdue Tasks Alert */}
+              {/* Overdue Alert */}
               {overdueCount > 0 && (
-                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-red-50 border-red-200' : 'bg-red-500/10 border-red-500/20'}`}>
-                  <p className={`text-xs font-bold ${isLight ? 'text-red-700' : 'text-red-400'}`}>
-                    ⚠️ {overdueCount} {t('home.overdueAlert')}
-                  </p>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border ${
+                    isLight ? 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200/60' : 'bg-gradient-to-r from-red-500/10 to-rose-500/5 border-red-500/20'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(239,68,68,0.3)]">
+                    <Flame className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${isLight ? 'text-red-700' : 'text-red-400'}`}>
+                      {overdueCount} {overdueCount === 1 ? 'task is' : 'tasks are'} overdue
+                    </p>
+                    <p className={`text-[11px] ${isLight ? 'text-red-500' : 'text-red-300/60'}`}>
+                      Focus on these first to stay on track
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { haptic.lightTap(); setCurrentView('tasks'); setStatusFilter('overdue'); }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      isLight ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                    }`}
+                  >
+                    View
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Recent Tasks */}
+              {tasks.filter(t => !t.completed).length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Recent Tasks</h2>
+                    <button
+                      onClick={() => { haptic.lightTap(); setCurrentView('tasks'); }}
+                      className={`text-[11px] font-semibold flex items-center gap-0.5 cursor-pointer transition-colors ${
+                        isLight ? 'text-orange-600 hover:text-orange-700' : 'text-orange-400 hover:text-orange-300'
+                      }`}
+                    >
+                      View all <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {tasks.filter(t => !t.completed).slice(0, 3).map((task, i) => (
+                      <motion.div
+                        key={task.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + i * 0.05 }}
+                        onClick={() => { haptic.lightTap(); setEditingTask(task); setIsTaskModalOpen(true); }}
+                        className={`flex items-center gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 ${
+                          isLight
+                            ? 'bg-white/70 border-white/50 hover:border-orange-200 hover:shadow-md backdrop-blur-xl'
+                            : 'bg-white/[0.04] border-white/[0.06] hover:border-orange-500/20 hover:bg-white/[0.06] backdrop-blur-xl'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${
+                          task.priority === 'urgent' ? 'bg-red-500' :
+                          task.priority === 'high' ? 'bg-orange-500' :
+                          task.priority === 'medium' ? 'bg-sky-500' : 'bg-emerald-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {task.title}
+                          </p>
+                          <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                            {task.categoryId ? categories.find(c => c.id === task.categoryId)?.name || '' : ''}
+                          </p>
+                        </div>
+                        {task.dueDate && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                            isOverdue(task.dueDate, task.completed)
+                              ? 'bg-red-500/10 text-red-500'
+                              : isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/40'
+                          }`}>
+                            {formatDeadlineRelative(task.dueDate, task.completed).text}
+                          </span>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* Motivational Footer */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className={`text-center py-4 rounded-2xl border ${
+                  isLight ? 'bg-gradient-to-r from-amber-50/50 to-orange-50/50 border-amber-200/30' : 'bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-amber-500/10'
+                }`}
+              >
+                <p className={`text-xs font-medium italic ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+                  {[
+                    '"The secret of getting ahead is getting started." — Mark Twain',
+                    '"Small daily improvements are the key to staggering long-term results."',
+                    '"Discipline is choosing between what you want now and what you want most."',
+                    '"Done is better than perfect." — Sheryl Sandberg',
+                    '"Your future is created by what you do today, not tomorrow."',
+                  ][new Date().getDate() % 5]}
+                </p>
+              </motion.div>
             </div>
           )}
 
