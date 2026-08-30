@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Task, Category, Priority } from '../types';
 import { 
   Check, 
@@ -53,6 +53,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuOpensUp, setMenuOpensUp] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+
+  const toggleMenu = useCallback(() => {
+    if (!showMenu && menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setMenuOpensUp(spaceBelow < 280);
+    }
+    setShowMenu(!showMenu);
+    haptic.lightTap();
+  }, [showMenu]);
 
   const completedSubtasksCount = task.subtasks.filter(s => s.completed).length;
   const totalSubtasksCount = task.subtasks.length;
@@ -442,10 +454,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             <div className="relative">
               <button
-                onClick={() => {
-                  haptic.lightTap();
-                  setShowMenu(!showMenu);
-                }}
+                ref={menuBtnRef}
+                onClick={toggleMenu}
                 className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
                   isLight 
                     ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' 
@@ -464,13 +474,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     onClick={() => setShowMenu(false)} 
                   />
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    initial={{ opacity: 0, scale: 0.95, y: menuOpensUp ? 5 : -5 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className={`absolute right-0 top-10 z-[60] w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
+                    exit={{ opacity: 0, scale: 0.95, y: menuOpensUp ? 5 : -5 }}
+                    className={`absolute right-0 z-[60] w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
+                      menuOpensUp ? 'bottom-10' : 'top-10'
+                    } ${
                       isLight 
-                        ? 'bg-white border-slate-200 text-slate-800' 
-                        : 'bg-[#111111] border-white/15 text-white'
+                        ? 'bg-white/95 border-slate-200/80 text-slate-800 shadow-[0_8px_40px_rgba(0,0,0,0.12)]' 
+                        : 'bg-[#111111]/95 border-white/15 text-white shadow-[0_8px_40px_rgba(0,0,0,0.5)]'
                     }`}
                   >
                     <button

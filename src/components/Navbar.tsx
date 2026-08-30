@@ -64,11 +64,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <header className={`sticky top-0 z-40 transition-colors duration-200 border-b backdrop-blur-xl safe-area-top ${
-      isLight 
-        ? 'bg-white/90 border-slate-200 text-slate-800 shadow-[0_2px_15px_rgba(0,0,0,0.04)]' 
-        : 'bg-black/60 border-white/10 text-[#e0e0e0]'
+    <header className={`sticky top-0 z-40 relative transition-all duration-300 safe-area-top ${
+      isLight
+        ? 'bg-white/70 backdrop-blur-3xl border-b border-white/40 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_3px_rgba(0,0,0,0.06)]'
+        : 'bg-white/[0.08] backdrop-blur-3xl border-b border-white/[0.12] text-[#e0e0e0] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_3px_rgba(0,0,0,0.3)]'
     }`}>
+      {/* Liquid glass gradient overlay */}
+      <div className={`absolute inset-0 pointer-events-none ${
+        isLight
+          ? 'bg-gradient-to-b from-white/50 via-transparent to-white/20'
+          : 'bg-gradient-to-b from-white/[0.06] via-transparent to-white/[0.02]'
+      }`} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         
         {/* Brand Logo */}
@@ -117,8 +123,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Center View Navigation */}
-        <nav className={`hidden lg:flex items-center gap-1 p-1 rounded-xl border backdrop-blur-md ${
-          isLight ? 'bg-slate-100/90 border-slate-200' : 'bg-white/5 border-white/10'
+        <nav className={`hidden lg:flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-2xl ${
+          isLight ? 'bg-white/60 border-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-white/[0.06] border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.2)]'
         }`}>
           {navItems.map((item) => {
             const isActive = currentView === item.id;
