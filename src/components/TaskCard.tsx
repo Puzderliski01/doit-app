@@ -53,14 +53,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [menuOpensUp, setMenuOpensUp] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   const toggleMenu = useCallback(() => {
     if (!showMenu && menuBtnRef.current) {
       const rect = menuBtnRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      setMenuOpensUp(spaceBelow < 280);
+      const menuHeight = 260;
+      if (spaceBelow < menuHeight) {
+        // Open above the button
+        setMenuPos({ top: rect.top - menuHeight - 4, right: window.innerWidth - rect.right });
+      } else {
+        // Open below the button
+        setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+      }
     }
     setShowMenu(!showMenu);
     haptic.lightTap();
@@ -467,19 +474,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             {/* Popover Action Menu */}
             <AnimatePresence>
-              {showMenu && (
+              {showMenu && menuPos && (
                 <>
                   <div 
                     className="fixed inset-0 z-50" 
                     onClick={() => setShowMenu(false)} 
                   />
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: menuOpensUp ? 5 : -5 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: menuOpensUp ? 5 : -5 }}
-                    className={`absolute right-0 z-[60] w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
-                      menuOpensUp ? 'bottom-10' : 'top-10'
-                    } ${
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    style={{ top: menuPos.top, right: menuPos.right }}
+                    className={`fixed z-[60] w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
                       isLight 
                         ? 'bg-white/95 border-slate-200/80 text-slate-800 shadow-[0_8px_40px_rgba(0,0,0,0.12)]' 
                         : 'bg-[#111111]/95 border-white/15 text-white shadow-[0_8px_40px_rgba(0,0,0,0.5)]'
