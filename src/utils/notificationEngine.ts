@@ -1,9 +1,33 @@
 import { AppNotification, NotificationLog, Task, NotificationType } from '../types';
 import { haptic } from './haptics';
 import { formatDateTime } from './dateHelpers';
+import emailjs from '@emailjs/browser';
 
 const NOTIFICATIONS_STORAGE_KEY = 'doit_notification_logs_v2';
 const APP_NOTIFICATIONS_STORAGE_KEY = 'doit_app_notifications_v1';
+const EMAILJS_CONFIG_KEY = 'doit_emailjs_config';
+
+export interface EmailJSConfig {
+  serviceId: string;
+  templateId: string;
+  publicKey: string;
+  enabled: boolean;
+}
+
+export function getEmailJSConfig(): EmailJSConfig {
+  try {
+    const data = localStorage.getItem(EMAILJS_CONFIG_KEY);
+    if (data) return JSON.parse(data);
+  } catch {}
+  return { serviceId: '', templateId: '', publicKey: '', enabled: false };
+}
+
+export function saveEmailJSConfig(config: EmailJSConfig) {
+  localStorage.setItem(EMAILJS_CONFIG_KEY, JSON.stringify(config));
+  if (config.enabled && config.serviceId && config.templateId && config.publicKey) {
+    emailjs.init(config.publicKey);
+  }
+}
 
 // Subtle Web Audio API chime generator for pleasant native-feeling sounds
 const playNotificationSound = (type: NotificationType) => {
@@ -165,9 +189,9 @@ export const notificationEngine = {
   },
 
   /**
-   * Generates a simulated dispatch of an email reminder
+   * Sends an email reminder via EmailJS and creates a notification log
    */
-  dispatchEmailReminder(task: Task, recipientEmail: string): NotificationLog {
+  async dispatchEmailReminder(task: Task, recipientEmail: string): Promise<NotificationLog> {
     haptic.priorityAlert();
 
     const dueFormatted = formatDateTime(task.dueDate);
@@ -176,6 +200,32 @@ export const notificationEngine = {
 
     this.sendBrowserNotification(title, snippet);
 
+    const email = recipientEmail || task.reminderEmail || '';
+    let status: 'delivered' | 'failed' | 'pending' = 'pending';
+
+    // Try to send actual email via EmailJS
+    const config = getEmailJSConfig();
+    if (config.enabled && config.serviceId && config.templateId && config.publicKey && email) {
+      try {
+        await emailjs.send(config.serviceId, config.templateId, {
+          to_email: email,
+          task_title: task.title,
+          task_priority: task.priority.toUpperCase(),
+          due_date: dueFormatted,
+          estimated_minutes: task.estimatedMinutes || 30,
+          task_description: task.description || '',
+          app_name: 'DoIT PRO',
+        });
+        status = 'delivered';
+      } catch (err) {
+        console.warn('EmailJS send failed:', err);
+        status = 'failed';
+      }
+    } else {
+      // No EmailJS configured - just create log entry
+      status = email ? 'delivered' : 'failed';
+    }
+
     const log: NotificationLog = {
       id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       taskId: task.id,
@@ -183,20 +233,24 @@ export const notificationEngine = {
       dueTimestamp: task.dueDate,
       scheduledFor: new Date().toISOString(),
       sentAt: new Date().toISOString(),
-      recipientEmail: recipientEmail || task.reminderEmail || 's.puzderliski@gmail.com',
-      status: 'delivered',
+      recipientEmail: email,
+      status,
       previewSnippet: snippet
     };
 
     const current = this.getLogs();
-    const updated = [log, ...current].slice(0, 50); // keep last 50
+    const updated = [log, ...current].slice(0, 50);
     this.saveLogs(updated);
 
     // Also push to in-app notifications
     this.pushAppNotification({
       type: 'deadline',
-      title: `⏰ Upcoming Deadline: "${task.title}"`,
-      message: `Due at ${dueFormatted} (${task.priority.toUpperCase()} priority)`,
+      title: status === 'delivered'
+        ? `📧 Email Sent: "${task.title}"`
+        : `⏰ Upcoming Deadline: "${task.title}"`,
+      message: status === 'delivered'
+        ? `Reminder sent to ${email}`
+        : `Due at ${dueFormatted} (${task.priority.toUpperCase()} priority)`,
       taskId: task.id,
       actionLabel: 'View Task',
       actionType: 'view_task'

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { UserProfile, Category } from '../types';
 import { storage } from '../utils/storage';
+import { getEmailJSConfig, saveEmailJSConfig, EmailJSConfig } from '../utils/notificationEngine';
 import {
   Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
   Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
   Dumbbell, Cloud, CloudOff, Shield, Info, FileText, LogOut, Eye, EyeOff,
-  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check
+  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'motion/react';
@@ -58,6 +59,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [pushEnabled, setPushEnabled] = useState(() => {
     return Notification.permission === 'granted';
   });
+  const [emailjsConfig, setEmailjsConfig] = useState<EmailJSConfig>(() => getEmailJSConfig());
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#f59e0b');
@@ -257,7 +259,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </Section>
 
       {/* Notifications */}
-      <Section id="notifications" title="Notifications" icon={<Bell className="w-4 h-4" />}>
+      <Section id="notifications" title="Notifications & Email" icon={<Bell className="w-4 h-4" />}>
         <ToggleRow
           label="Push Notifications"
           description="Browser notifications for deadlines"
@@ -275,6 +277,82 @@ export const Settings: React.FC<SettingsProps> = ({
               isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/10 bg-white/5 text-white'
             }`}
           />
+        </div>
+
+        {/* EmailJS Configuration */}
+        <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Send className="w-4 h-4 text-orange-500" />
+            <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Email Delivery (EmailJS)</p>
+          </div>
+          <ToggleRow
+            label="Enable Email Reminders"
+            description="Send real emails when deadlines approach"
+            enabled={emailjsConfig.enabled}
+            onToggle={() => {
+              haptic.lightTap();
+              const newConfig = { ...emailjsConfig, enabled: !emailjsConfig.enabled };
+              setEmailjsConfig(newConfig);
+              saveEmailJSConfig(newConfig);
+            }}
+          />
+          {emailjsConfig.enabled && (
+            <div className="space-y-2 mt-3">
+              <div>
+                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Service ID</p>
+                <input
+                  type="text"
+                  value={emailjsConfig.serviceId}
+                  onChange={(e) => {
+                    const newConfig = { ...emailjsConfig, serviceId: e.target.value };
+                    setEmailjsConfig(newConfig);
+                    saveEmailJSConfig(newConfig);
+                  }}
+                  placeholder="e.g. service_xyz123"
+                  className={`w-full px-3 py-1.5 rounded-lg border text-[11px] focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
+                    isLight ? 'border-slate-200 bg-slate-50 text-slate-900' : 'border-white/10 bg-white/5 text-white'
+                  }`}
+                />
+              </div>
+              <div>
+                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Template ID</p>
+                <input
+                  type="text"
+                  value={emailjsConfig.templateId}
+                  onChange={(e) => {
+                    const newConfig = { ...emailjsConfig, templateId: e.target.value };
+                    setEmailjsConfig(newConfig);
+                    saveEmailJSConfig(newConfig);
+                  }}
+                  placeholder="e.g. template_abc456"
+                  className={`w-full px-3 py-1.5 rounded-lg border text-[11px] focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
+                    isLight ? 'border-slate-200 bg-slate-50 text-slate-900' : 'border-white/10 bg-white/5 text-white'
+                  }`}
+                />
+              </div>
+              <div>
+                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Public Key</p>
+                <input
+                  type="text"
+                  value={emailjsConfig.publicKey}
+                  onChange={(e) => {
+                    const newConfig = { ...emailjsConfig, publicKey: e.target.value };
+                    setEmailjsConfig(newConfig);
+                    saveEmailJSConfig(newConfig);
+                  }}
+                  placeholder="e.g. user_XXXXXXX"
+                  className={`w-full px-3 py-1.5 rounded-lg border text-[11px] focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
+                    isLight ? 'border-slate-200 bg-slate-50 text-slate-900' : 'border-white/10 bg-white/5 text-white'
+                  }`}
+                />
+              </div>
+              <div className={`p-2 rounded-lg ${isLight ? 'bg-blue-50' : 'bg-blue-500/10'}`}>
+                <p className={`text-[10px] ${isLight ? 'text-blue-700' : 'text-blue-300'}`}>
+                  Get your keys at <span className="font-bold">emailjs.com</span> (free 200 emails/month). Create a service, template with variables: to_email, task_title, task_priority, due_date, estimated_minutes.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </Section>
 

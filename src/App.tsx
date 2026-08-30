@@ -542,8 +542,9 @@ export default function App() {
 
           // If due within the trigger window or slightly past
           if (diff <= triggerWindowMs && diff > -1000 * 60 * 60) {
-            const log = notificationEngine.dispatchEmailReminder(task, userEmail);
-            setNotificationLogs(prev => [log, ...prev].slice(0, 50));
+            notificationEngine.dispatchEmailReminder(task, userEmail).then(log => {
+              setNotificationLogs(prev => [log, ...prev].slice(0, 50));
+            });
             // Mark reminderSent on task
             setTasks(prev => prev.map(t => t.id === task.id ? { ...t, reminderSent: true } : t));
           }
@@ -815,8 +816,9 @@ export default function App() {
   };
 
   const handleTriggerTestEmail = (task: Task, email: string) => {
-    const log = notificationEngine.dispatchEmailReminder(task, email);
-    setNotificationLogs(prev => [log, ...prev]);
+    notificationEngine.dispatchEmailReminder(task, email).then(log => {
+      setNotificationLogs(prev => [log, ...prev]);
+    });
   };
 
   // Fitness Handlers

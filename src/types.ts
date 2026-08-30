@@ -89,7 +89,7 @@ export interface NotificationLog {
   scheduledFor: string;
   sentAt: string;
   recipientEmail: string;
-  status: 'delivered' | 'pending' | 'simulated';
+  status: 'delivered' | 'pending' | 'simulated' | 'failed';
   previewSnippet: string;
 }
 
