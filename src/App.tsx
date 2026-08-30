@@ -106,16 +106,25 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>(() => storage.getCategories());
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const stored = storage.getTheme();
-    // If no stored preference, detect system preference
-    if (!stored || stored === 'dark') {
-      if (typeof window !== 'undefined' && window.matchMedia) {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return prefersDark ? 'dark' : 'light';
-      }
+    if (stored === 'dark' || stored === 'light') return stored;
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-    return stored;
+    return 'dark';
   });
   const isLight = theme === 'light';
+
+  // Listen for system theme changes and auto-switch if user hasn't manually set a preference
+  useEffect(() => {
+    const stored = storage.getTheme();
+    if (stored) return; // User has a manual preference, don't override
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const [currentView, setCurrentView] = useState<ViewMode>(() => {
     try {
       const saved = localStorage.getItem('doit_current_view');
@@ -133,9 +142,8 @@ export default function App() {
       localStorage.removeItem('doit_current_view');
     }
   }, [currentView]);
-  // Persist theme and apply light class to document
+  // Apply theme class to document (don't auto-save - only save on manual toggle)
   useEffect(() => {
-    storage.saveTheme(theme);
     if (theme === 'light') {
       document.documentElement.classList.add('light');
       document.body.classList.add('light');

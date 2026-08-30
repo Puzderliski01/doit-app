@@ -1,5 +1,6 @@
 import React from 'react';
 import { ViewMode, AuthUser } from '../types';
+import { storage } from '../utils/storage';
 import { 
   CheckSquare, 
   LayoutGrid, 
@@ -179,6 +180,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => {
               haptic.lightTap();
               onToggleTheme();
+              storage.saveTheme(isLight ? 'dark' : 'light');
             }}
             className={`min-w-[40px] min-h-[40px] flex items-center justify-center border rounded-full transition-all cursor-pointer ${
               isLight 

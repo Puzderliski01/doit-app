@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, Category } from '../types';
+import { storage } from '../utils/storage';
 import {
   Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
   Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
@@ -212,7 +213,12 @@ export const Settings: React.FC<SettingsProps> = ({
           label="Dark Mode"
           description={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
           enabled={!isLight}
-          onToggle={() => { haptic.lightTap(); onToggleTheme(); }}
+          onToggle={() => {
+            haptic.lightTap();
+            onToggleTheme();
+            // Save preference so system auto-switch is disabled
+            storage.saveTheme(theme === 'dark' ? 'light' : 'dark');
+          }}
         />
         <div>
           <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Weight Unit</p>
@@ -377,28 +383,35 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Sync Status */}
       <Section id="sync" title="Cloud Sync" icon={<Cloud className="w-4 h-4" />}>
         <div className={`flex items-center gap-3 p-3 rounded-xl ${isLight ? 'bg-white' : 'bg-white/5'}`}>
-          {isOnline ? (
+          {currentUser?.isGuest ? (
+            <CloudOff className="w-5 h-5 text-amber-500" />
+          ) : isOnline ? (
             <Cloud className="w-5 h-5 text-emerald-500" />
           ) : (
             <CloudOff className="w-5 h-5 text-amber-500" />
           )}
           <div>
             <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              {isOnline ? 'Connected' : 'Offline Mode'}
+              {currentUser?.isGuest ? 'Guest Mode (Local Only)' : isOnline ? 'Connected' : 'Offline Mode'}
             </p>
             <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
-              {lastSyncTime ? `Last sync: ${new Date(lastSyncTime).toLocaleString()}` : 'Not synced yet'}
+              {currentUser?.isGuest
+                ? 'Sign in to enable cloud sync'
+                : lastSyncTime ? `Last sync: ${new Date(lastSyncTime).toLocaleString()}` : 'Not synced yet'
+              }
             </p>
           </div>
         </div>
-        <div className={`text-[10px] space-y-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
-          <p className="font-semibold">Synced data:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {['Tasks', 'Categories', 'Fitness Entries', 'Profile', 'Notifications'].map(item => (
-              <span key={item} className={`px-2 py-0.5 rounded-full ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>{item}</span>
-            ))}
+        {!currentUser?.isGuest && (
+          <div className={`text-[10px] space-y-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+            <p className="font-semibold">Synced data:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {['Tasks', 'Categories', 'Fitness Entries', 'Profile', 'Notifications'].map(item => (
+                <span key={item} className={`px-2 py-0.5 rounded-full ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>{item}</span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </Section>
 
       {/* Data Management */}
