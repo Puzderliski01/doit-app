@@ -1,16 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FitnessStats, Rank, UserProfile } from '../types';
 import { getRankInfo, RANKS, getProgressToNextRank } from '../utils/fitness';
-import { Trophy, Zap, Target, TrendingUp } from 'lucide-react';
+import { fetchPublicLeaderboard, LeaderboardUser } from '../firebase';
+import { Trophy, Zap, Target, TrendingUp, Users, Eye, EyeOff, Crown } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 interface LeaderboardProps {
   theme: 'dark' | 'light';
   userProfile: UserProfile;
+  onProfileUpdate?: (updates: Partial<UserProfile>) => void;
+  currentUserUid?: string;
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({
   theme,
   userProfile,
+  onProfileUpdate,
+  currentUserUid,
 }) => {
   const isLight = theme === 'light';
   const stats = userProfile.fitnessStats;
@@ -18,16 +24,52 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   const progress = getProgressToNextRank(stats.xp);
   const currentRankIndex = RANKS.findIndex((r) => r.rank === stats.rank);
 
+  const [publicUsers, setPublicUsers] = useState<LeaderboardUser[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
+  const isPublic = userProfile.leaderboardPublic ?? true;
+
+  useEffect(() => {
+    setLoadingLeaderboard(true);
+    fetchPublicLeaderboard().then((users) => {
+      setPublicUsers(users);
+      setLoadingLeaderboard(false);
+    });
+  }, []);
+
+  const handleTogglePublic = () => {
+    haptic.mediumClick();
+    onProfileUpdate?.({ leaderboardPublic: !isPublic });
+  };
+
+  const formatXp = (xp: number) => {
+    if (xp >= 1000000) return `${(xp / 1000000).toFixed(1)}M`;
+    if (xp >= 1000) return `${(xp / 1000).toFixed(1)}k`;
+    return xp.toString();
+  };
+
   return (
     <div className="space-y-5 pb-24">
       {/* Header */}
-      <div>
-        <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-          Rank Ladder
-        </h1>
-        <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
-          Your position in the rank system
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            Leaderboard
+          </h1>
+          <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
+            Your rank and community standings
+          </p>
+        </div>
+        <button
+          onClick={handleTogglePublic}
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+            isPublic
+              ? isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/60'
+          }`}
+        >
+          {isPublic ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          {isPublic ? 'Public' : 'Private'}
+        </button>
       </div>
 
       {/* Current Rank Card */}
@@ -76,11 +118,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
         }`}>
           <Zap className="w-5 h-5 mx-auto mb-1 text-amber-400" />
           <p className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-            {stats.xp >= 1000000
-              ? `${(stats.xp / 1000000).toFixed(1)}M`
-              : stats.xp >= 1000
-              ? `${(stats.xp / 1000).toFixed(1)}k`
-              : stats.xp}
+            {formatXp(stats.xp)}
           </p>
           <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Total XP</p>
         </div>
@@ -101,6 +139,87 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
             {stats.currentStreak}
           </p>
           <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Day Streak</p>
+        </div>
+      </div>
+
+      {/* Public Leaderboard */}
+      <div className={`rounded-2xl border overflow-hidden ${
+        isLight ? 'border-slate-200' : 'border-white/10'
+      }`}>
+        <div className={`px-4 py-3 border-b flex items-center gap-2 ${isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/5'}`}>
+          <Users className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
+          <h3 className={`text-xs font-bold uppercase tracking-widest ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+            Community Leaderboard
+          </h3>
+        </div>
+        <div className="divide-y divide-slate-100 dark:divide-white/5">
+          {loadingLeaderboard ? (
+            <div className="p-6 text-center">
+              <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Loading leaderboard...</p>
+            </div>
+          ) : publicUsers.length === 0 ? (
+            <div className="p-6 text-center">
+              <Trophy className={`w-8 h-8 mx-auto mb-2 ${isLight ? 'text-slate-300' : 'text-white/20'}`} />
+              <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/40'}`}>No public profiles yet. Be the first!</p>
+              {!isPublic && (
+                <button
+                  onClick={handleTogglePublic}
+                  className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 cursor-pointer"
+                >
+                  Make your profile public →
+                </button>
+              )}
+            </div>
+          ) : (
+            publicUsers.map((user, index) => {
+              const isCurrentUser = user.uid === currentUserUid;
+              const userRank = RANKS.find((r) => r.rank === user.rank);
+              return (
+                <div
+                  key={user.uid}
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                    isCurrentUser
+                      ? isLight
+                        ? 'bg-amber-50 border-l-4 border-l-amber-500'
+                        : 'bg-amber-500/10 border-l-4 border-l-amber-500'
+                      : ''
+                  }`}
+                >
+                  <span className={`w-8 text-center text-xs font-bold ${
+                    index === 0 ? 'text-amber-500' : index === 1 ? 'text-slate-400' : index === 2 ? 'text-orange-400'
+                    : isLight ? 'text-slate-400' : 'text-white/40'
+                  }`}>
+                    {index < 3 ? ['🥇','🥈','🥉'][index] : `#${index + 1}`}
+                  </span>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                    isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-white/60'
+                  }`}>
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="w-10 h-10 rounded-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      user.displayName[0]?.toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${
+                      isCurrentUser ? 'text-amber-500' : isLight ? 'text-slate-800' : 'text-white/90'
+                    }`}>
+                      {user.displayName} {isCurrentUser && <span className="text-[10px] opacity-60">(you)</span>}
+                    </p>
+                    <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                      {userRank?.icon} {user.rank} · {user.totalWorkouts} workouts · {user.currentStreak}d streak
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      {formatXp(user.xp)}
+                    </p>
+                    <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>XP</p>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -163,11 +282,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                       ? isLight ? 'text-slate-600' : 'text-white/50'
                       : isLight ? 'text-slate-300' : 'text-white/20'
                   }`}>
-                    {rank.minXP >= 1000000
-                      ? `${(rank.minXP / 1000000).toFixed(1)}M`
-                      : rank.minXP >= 1000
-                      ? `${(rank.minXP / 1000).toFixed(0)}k`
-                      : rank.minXP}
+                    {formatXp(rank.minXP)}
                   </p>
                 </div>
               </div>

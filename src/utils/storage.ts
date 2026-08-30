@@ -2,11 +2,13 @@ import { Category, Task } from '../types';
 import { formatISODateInput } from './dateHelpers';
 
 export const INITIAL_CATEGORIES: Category[] = [
-  { id: 'cat-work', name: 'Executive & Strategy', color: '#f59e0b', iconName: 'Briefcase', description: 'High-leverage business objectives & leadership' },
-  { id: 'cat-dev', name: 'Product & Code', color: '#6366f1', iconName: 'Code2', description: 'Engineering, architecture & deployments' },
-  { id: 'cat-personal', name: 'Personal & Lifestyle', color: '#ec4899', iconName: 'Compass', description: 'Personal growth, errands & life admin' },
-  { id: 'cat-health', name: 'Health & Wellness', color: '#10b981', iconName: 'HeartPulse', description: 'Fitness, mindfulness & nutrition' },
-  { id: 'cat-finance', name: 'Finance & Ops', color: '#38bdf8', iconName: 'Coins', description: 'Investments, accounting & budgets' }
+  { id: 'cat-work', name: 'Work', color: '#f59e0b', iconName: 'Briefcase', description: 'Job tasks, meetings, deadlines' },
+  { id: 'cat-personal', name: 'Personal', color: '#ec4899', iconName: 'User', description: 'Life admin, errands, personal goals' },
+  { id: 'cat-health', name: 'Health', color: '#10b981', iconName: 'HeartPulse', description: 'Fitness, nutrition, mental health' },
+  { id: 'cat-finance', name: 'Finance', color: '#38bdf8', iconName: 'Coins', description: 'Budget, bills, investments' },
+  { id: 'cat-shopping', name: 'Shopping', color: '#8b5cf6', iconName: 'ShoppingCart', description: 'Groceries, purchases, orders' },
+  { id: 'cat-learning', name: 'Learning', color: '#f97316', iconName: 'BookOpen', description: 'Courses, reading, skill development' },
+  { id: 'cat-projects', name: 'Projects', color: '#06b6d4', iconName: 'Folder', description: 'Side projects, home improvements' },
 ];
 
 export function getInitialTasks(): Task[] {

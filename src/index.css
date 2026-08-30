@@ -135,7 +135,7 @@
 /* Mobile bottom nav spacer */
 @media (max-width: 1023px) {
   .mobile-nav-spacer {
-    padding-bottom: 5rem;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 

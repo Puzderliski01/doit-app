@@ -26,7 +26,9 @@ import {
   onSnapshot, 
   query, 
   orderBy,
-  writeBatch
+  where,
+  writeBatch,
+  limit as firestoreLimit
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 import { Task, Category, AppNotification, AuthUser, FitnessEntry, UserProfile } from './types';
@@ -367,6 +369,43 @@ export async function deleteUserFitnessEntryFromFirestore(userId: string, entryI
     await deleteDoc(entryRef);
   } catch (err) {
     console.warn('Firestore delete fitness entry note:', err);
+  }
+}
+
+export interface LeaderboardUser {
+  uid: string;
+  displayName: string;
+  xp: number;
+  rank: string;
+  totalWorkouts: number;
+  currentStreak: number;
+  isCurrentUser?: boolean;
+}
+
+export async function fetchPublicLeaderboard(): Promise<LeaderboardUser[]> {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('fitnessProfile.leaderboardPublic', '==', true), firestoreLimit(50));
+    const snapshot = await getDocs(q);
+    const users: LeaderboardUser[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const profile = data.fitnessProfile as UserProfile | undefined;
+      if (profile) {
+        users.push({
+          uid: docSnap.id,
+          displayName: profile.displayName || 'Anonymous',
+          xp: profile.fitnessStats?.xp || 0,
+          rank: profile.fitnessStats?.rank || 'Weak Rookie',
+          totalWorkouts: profile.fitnessStats?.totalWorkouts || 0,
+          currentStreak: profile.fitnessStats?.currentStreak || 0,
+        });
+      }
+    });
+    return users.sort((a, b) => b.xp - a.xp);
+  } catch (err) {
+    console.warn('Firestore fetch leaderboard note:', err);
+    return [];
   }
 }
 

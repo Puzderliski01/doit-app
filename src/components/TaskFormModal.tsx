@@ -14,7 +14,8 @@ import {
   Check, 
   Sparkles,
   Layers,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { haptic } from '../utils/haptics';
@@ -25,6 +26,7 @@ interface TaskFormModalProps {
   onClose: () => void;
   onSave: (taskData: Partial<Task>) => void;
   categories: Category[];
+  onCategoriesChange?: (cats: Category[]) => void;
   initialTask?: Task | null;
   theme: 'dark' | 'light';
 }
@@ -34,6 +36,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   onClose,
   onSave,
   categories,
+  onCategoriesChange,
   initialTask,
   theme
 }) => {
@@ -41,6 +44,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
   const [categoryId, setCategoryId] = useState(categories[0]?.id || 'cat-work');
+  const [localCategories, setLocalCategories] = useState(categories);
   const [dueDate, setDueDate] = useState('');
   const [estimatedMinutes, setEstimatedMinutes] = useState(30);
   const [recurringType, setRecurringType] = useState<RecurringType>('none');
@@ -48,10 +52,18 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [subtasks, setSubtasks] = useState<SubTask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#f59e0b');
+  const CATEGORY_COLORS = ['#f59e0b','#10b981','#ec4899','#38bdf8','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#6366f1'];
   const [reminderEmail, setReminderEmail] = useState('');
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(30);
   const [isImportant, setIsImportant] = useState(true);
   const [isUrgent, setIsUrgent] = useState(false);
+
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   useEffect(() => {
     if (initialTask) {
@@ -153,12 +165,12 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 overflow-y-auto bg-black/80 backdrop-blur-xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-xl">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className={`w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-0 sm:my-8 backdrop-blur-2xl ${
+        className={`w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-8 backdrop-blur-2xl max-h-[85vh] sm:max-h-[85vh] flex flex-col ${
           isLight
             ? 'bg-white border-slate-200 text-slate-900 shadow-[0_8px_40px_rgba(0,0,0,0.12)]'
             : 'bg-[#0a0a0c]/95 border-white/10 text-white'
@@ -201,7 +213,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className={`p-5 sm:p-8 space-y-5 max-h-[80vh] sm:max-h-[75vh] overflow-y-auto ${
+        <form onSubmit={handleSubmit} className={`p-5 sm:p-8 space-y-5 flex-1 overflow-y-auto ${
           isLight ? 'bg-white' : ''
         }`}>
           
@@ -284,23 +296,86 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
                 isLight ? 'text-slate-500' : 'text-white/50'
               }`}>
-                Workspace Domain
+                Category
               </label>
-              <select
-                value={categoryId}
-                onChange={(e) => { haptic.lightTap(); setCategoryId(e.target.value); }}
-                className={`w-full px-4 py-2.5 rounded-2xl border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/50 cursor-pointer ${
-                  isLight
-                    ? 'border-slate-200 bg-slate-50 text-slate-900 focus:border-orange-400'
-                    : 'border-white/10 bg-white/5 text-white'
-                }`}
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id} className={isLight ? 'bg-white text-slate-900' : 'bg-[#121216] text-white'}>
+              <div className="flex flex-wrap gap-2">
+                {localCategories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => { haptic.lightTap(); setCategoryId(c.id); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                      categoryId === c.id
+                        ? 'ring-2 ring-offset-1'
+                        : isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
+                    }`}
+                    style={categoryId === c.id ? { backgroundColor: c.color + '20', borderColor: c.color, color: c.color, ringColor: c.color } : undefined}
+                  >
                     {c.name}
-                  </option>
+                  </button>
                 ))}
-              </select>
+                <button
+                  type="button"
+                  onClick={() => { haptic.lightTap(); setShowCategoryForm(!showCategoryForm); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border border-dashed transition-all cursor-pointer ${
+                    isLight ? 'border-slate-300 text-slate-500 hover:bg-slate-100' : 'border-white/20 text-white/40 hover:bg-white/5'
+                  }`}
+                >
+                  <Plus className="w-3 h-3 inline mr-1" />
+                  Add
+                </button>
+              </div>
+              {showCategoryForm && (
+                <div className={`mt-3 p-3 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <input
+                    type="text"
+                    placeholder="Category name..."
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    className={`w-full px-3 py-2 rounded-lg border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 mb-2 ${
+                      isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/10 bg-white/5 text-white'
+                    }`}
+                  />
+                  <div className="flex gap-1.5 mb-2">
+                    {CATEGORY_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewCategoryColor(color)}
+                        className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${newCategoryColor === color ? 'scale-110 border-white' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newCategoryName.trim()) return;
+                        const id = 'cat-' + newCategoryName.trim().toLowerCase().replace(/\s+/g, '-');
+                        const newCat: Category = { id, name: newCategoryName.trim(), color: newCategoryColor, iconName: 'Folder' };
+                        const newCats = [...localCategories, newCat];
+                        setLocalCategories(newCats);
+                        onCategoriesChange?.(newCats);
+                        setCategoryId(id);
+                        setNewCategoryName('');
+                        setShowCategoryForm(false);
+                        haptic.mediumClick();
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-bold cursor-pointer"
+                    >
+                      Create
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowCategoryForm(false); setNewCategoryName(''); }}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'}`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

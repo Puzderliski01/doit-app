@@ -1406,6 +1406,8 @@ export default function App() {
               <Leaderboard
                 theme={theme}
                 userProfile={userProfile}
+                onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+                currentUserUid={currentUser?.uid}
               />
             </Suspense>
           )}
@@ -1422,6 +1424,7 @@ export default function App() {
             }}
             onSave={handleSaveTask}
             categories={categories}
+            onCategoriesChange={setCategories}
             initialTask={editingTask}
             theme={theme}
           />
