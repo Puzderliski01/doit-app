@@ -416,11 +416,14 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
     const usersRef = collection(db, 'users');
     const q = query(usersRef, firestoreLimit(100));
     return onSnapshot(q, (snapshot) => {
+      console.log('[Leaderboard] Snapshot! Total docs:', snapshot.size);
       const users: LeaderboardUser[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const profile = data.fitnessProfile as UserProfile | undefined;
-        if (profile && profile.leaderboardPublic === true) {
+        const profile = data.fitnessProfile;
+        const isPublic = profile?.leaderboardPublic;
+        console.log('[Leaderboard] doc:', docSnap.id, 'hasProfile:', !!profile, 'leaderboardPublic:', isPublic, 'xp:', profile?.fitnessStats?.xp);
+        if (profile && isPublic === true) {
           users.push({
             uid: docSnap.id,
             displayName: profile.displayName || data.displayName || 'Anonymous',
@@ -432,13 +435,14 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
           });
         }
       });
+      console.log('[Leaderboard] Public users found:', users.length);
       onUpdate(users.sort((a, b) => b.xp - a.xp));
     }, (err) => {
-      console.warn('[Leaderboard] Firestore subscription error:', err);
+      console.warn('[Leaderboard] Subscription error:', err);
       onError?.(err);
     });
   } catch (err) {
-    console.warn('[Leaderboard] Firestore subscribe error:', err);
+    console.warn('[Leaderboard] Subscribe error:', err);
     onUpdate([]);
     return () => {};
   }
@@ -448,7 +452,9 @@ export async function saveUserProfileToFirestore(userId: string, profile: UserPr
   try {
     const userRef = doc(db, 'users', userId);
     const clean = stripUndefined(profile as unknown as Record<string, unknown>);
+    console.log('[Firestore] Saving profile, leaderboardPublic:', clean.leaderboardPublic, 'bodyWeight:', clean.bodyWeight);
     await setDoc(userRef, { fitnessProfile: clean }, { merge: true });
+    console.log('[Firestore] Profile saved OK');
   } catch (err) {
     console.warn('[Firestore] Save profile error:', err);
   }
