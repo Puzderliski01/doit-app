@@ -45,7 +45,7 @@ export interface Category {
   description?: string;
 }
 
-export type ViewMode = 'list' | 'matrix' | 'calendar' | 'analytics' | 'docs' | 'fitness';
+export type ViewMode = 'list' | 'matrix' | 'calendar' | 'analytics' | 'docs' | 'fitness' | 'leaderboard';
 
 export type FilterStatus = 'all' | 'pending' | 'completed' | 'today' | 'upcoming' | 'overdue';
 
@@ -199,4 +199,6 @@ export interface UserProfile {
   goals?: ('lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance')[];
   experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
   onboardingCompleted: boolean;
+  leaderboardPublic: boolean;
+  displayName?: string;
 }

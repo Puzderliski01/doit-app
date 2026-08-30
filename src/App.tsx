@@ -43,6 +43,7 @@ const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ defau
 const FitnessDashboard = lazy(() => import('./components/FitnessDashboard').then(m => ({ default: m.FitnessDashboard })));
 const ExerciseLogModal = lazy(() => import('./components/ExerciseLogModal').then(m => ({ default: m.ExerciseLogModal })));
 const FitnessOnboarding = lazy(() => import('./components/FitnessOnboarding').then(m => ({ default: m.FitnessOnboarding })));
+const Leaderboard = lazy(() => import('./components/Leaderboard').then(m => ({ default: m.Leaderboard })));
 
 import { 
   auth,
@@ -1332,6 +1333,17 @@ export default function App() {
                   onSelectExercise={handleSelectExercise}
                 />
               )}
+            </Suspense>
+          )}
+
+          {/* VIEW 7: LEADERBOARD */}
+          {currentView === 'leaderboard' && (
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              <Leaderboard
+                theme={theme}
+                userProfile={userProfile}
+                onUpdateProfile={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+              />
             </Suspense>
           )}
 

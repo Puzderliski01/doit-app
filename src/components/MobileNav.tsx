@@ -7,6 +7,7 @@ import {
   BarChart3, 
   BookOpen,
   Dumbbell,
+  Trophy,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -20,6 +21,7 @@ const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
   { id: 'list', label: 'Tasks', icon: <CheckSquare className="w-5 h-5" /> },
   { id: 'matrix', label: 'Matrix', icon: <LayoutGrid className="w-5 h-5" /> },
   { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-5 h-5" /> },
+  { id: 'leaderboard', label: 'Ranks', icon: <Trophy className="w-5 h-5" /> },
   { id: 'calendar', label: 'Calendar', icon: <Calendar className="w-5 h-5" /> },
   { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'docs', label: 'Docs', icon: <BookOpen className="w-5 h-5" /> },

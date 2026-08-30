@@ -240,6 +240,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   fitnessStats: DEFAULT_FITNESS_STATS,
   weightUnit: 'kg',
   onboardingCompleted: false,
+  leaderboardPublic: false,
 };
 
 export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {

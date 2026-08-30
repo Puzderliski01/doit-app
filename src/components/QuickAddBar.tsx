@@ -87,7 +87,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <div className={`w-full rounded-3xl border transition-all ${
+    <div className={`w-full rounded-3xl border transition-all overflow-hidden ${
       isLight 
         ? 'border-slate-200 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.06)] hover:border-slate-300' 
         : 'border-white/10 bg-gradient-to-r from-white/[0.08] to-white/[0.02] backdrop-blur-xl shadow-2xl hover:border-white/20'
@@ -110,7 +110,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
             }}
             onFocus={() => setIsExpanded(true)}
             placeholder="Quick capture mission or task... (e.g. 'Review security audit tomorrow 5pm')"
-            className={`flex-1 bg-transparent text-sm sm:text-base font-medium focus:outline-none ${
+            className={`flex-1 min-w-0 bg-transparent text-sm sm:text-base font-medium focus:outline-none ${
               isLight 
                 ? 'text-slate-900 placeholder:text-slate-400' 
                 : 'text-white placeholder:text-white/30'
@@ -121,7 +121,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
             id="btn-quick-add-submit"
             type="submit"
             disabled={!title.trim()}
-            className="min-h-[44px] px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 disabled:opacity-30 disabled:cursor-not-allowed text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-[0_2px_12px_rgba(245,158,11,0.35)] active:scale-95 transition-all cursor-pointer"
+            className="shrink-0 min-h-[44px] px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 disabled:opacity-30 disabled:cursor-not-allowed text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-[0_2px_12px_rgba(245,158,11,0.35)] active:scale-95 transition-all cursor-pointer"
           >
             <span>Capture</span>
             <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
