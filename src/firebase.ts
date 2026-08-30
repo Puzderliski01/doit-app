@@ -414,15 +414,13 @@ export async function fetchPublicLeaderboard(): Promise<LeaderboardUser[]> {
 export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]) => void, onError?: (err: any) => void) {
   try {
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('fitnessProfile.leaderboardPublic', '==', true), firestoreLimit(50));
+    const q = query(usersRef, firestoreLimit(100));
     return onSnapshot(q, (snapshot) => {
-      console.log('[Leaderboard] Firestore snapshot received, docs:', snapshot.size);
       const users: LeaderboardUser[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        console.log('[Leaderboard] User doc:', docSnap.id, 'fitnessProfile:', !!data.fitnessProfile, 'leaderboardPublic:', data.fitnessProfile?.leaderboardPublic);
         const profile = data.fitnessProfile as UserProfile | undefined;
-        if (profile) {
+        if (profile && profile.leaderboardPublic === true) {
           users.push({
             uid: docSnap.id,
             displayName: profile.displayName || data.displayName || 'Anonymous',
@@ -434,7 +432,6 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
           });
         }
       });
-      console.log('[Leaderboard] Final users:', users.length, users.map(u => u.displayName));
       onUpdate(users.sort((a, b) => b.xp - a.xp));
     }, (err) => {
       console.warn('[Leaderboard] Firestore subscription error:', err);
@@ -450,9 +447,8 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
 export async function saveUserProfileToFirestore(userId: string, profile: UserProfile): Promise<void> {
   try {
     const userRef = doc(db, 'users', userId);
-    console.log('[Firestore] Saving profile for', userId, 'leaderboardPublic:', profile.leaderboardPublic);
-    await setDoc(userRef, { fitnessProfile: profile }, { merge: true });
-    console.log('[Firestore] Profile saved successfully');
+    const clean = stripUndefined(profile as unknown as Record<string, unknown>);
+    await setDoc(userRef, { fitnessProfile: clean }, { merge: true });
   } catch (err) {
     console.warn('[Firestore] Save profile error:', err);
   }
