@@ -44,6 +44,7 @@ const FitnessDashboard = lazy(() => import('./components/FitnessDashboard').then
 const ExerciseLogModal = lazy(() => import('./components/ExerciseLogModal').then(m => ({ default: m.ExerciseLogModal })));
 const FitnessOnboarding = lazy(() => import('./components/FitnessOnboarding').then(m => ({ default: m.FitnessOnboarding })));
 const Leaderboard = lazy(() => import('./components/Leaderboard').then(m => ({ default: m.Leaderboard })));
+const TrainerDashboard = lazy(() => import('./components/TrainerDashboard').then(m => ({ default: m.TrainerDashboard })));
 
 import { 
   auth,
@@ -117,14 +118,15 @@ export default function App() {
     try {
       const saved = localStorage.getItem('doit_current_view');
       if (saved === 'fitness') return 'fitness';
+      if (saved === 'trainer') return 'trainer';
     } catch { /* ignore */ }
     return 'list';
   });
 
-  // Persist current view (only fitness sticks across refresh)
+  // Persist current view (only fitness/trainer sticks across refresh)
   useEffect(() => {
-    if (currentView === 'fitness') {
-      localStorage.setItem('doit_current_view', 'fitness');
+    if (currentView === 'fitness' || currentView === 'trainer') {
+      localStorage.setItem('doit_current_view', currentView);
     } else {
       localStorage.removeItem('doit_current_view');
     }
@@ -1408,6 +1410,20 @@ export default function App() {
                 userProfile={userProfile}
                 onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
                 currentUserUid={currentUser?.uid}
+              />
+            </Suspense>
+          )}
+
+          {/* VIEW 8: PERSONAL TRAINER */}
+          {currentView === 'trainer' && (
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              <TrainerDashboard
+                theme={theme}
+                userProfile={userProfile}
+                fitnessEntries={fitnessEntries}
+                onLogExercise={(_exerciseId, _exerciseName, _muscleGroup) => {
+                  setIsExerciseLogModalOpen(true);
+                }}
               />
             </Suspense>
           )}

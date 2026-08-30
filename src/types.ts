@@ -45,7 +45,7 @@ export interface Category {
   description?: string;
 }
 
-export type ViewMode = 'list' | 'matrix' | 'calendar' | 'analytics' | 'docs' | 'fitness' | 'leaderboard';
+export type ViewMode = 'list' | 'matrix' | 'calendar' | 'analytics' | 'docs' | 'fitness' | 'leaderboard' | 'trainer';
 
 export type FilterStatus = 'all' | 'pending' | 'completed' | 'today' | 'upcoming' | 'overdue';
 
@@ -201,4 +201,73 @@ export interface UserProfile {
   onboardingCompleted: boolean;
   leaderboardPublic: boolean;
   displayName?: string;
+}
+
+// Personal Trainer Types
+export type TrainingGoal = 'strength' | 'hypertrophy' | 'endurance' | 'fat_loss' | 'general_fitness';
+export type TrainingDays = 3 | 4 | 5 | 6;
+export type SplitType = 'push_pull_legs' | 'upper_lower' | 'full_body' | 'bro_split' | 'custom';
+
+export interface PlannedExercise {
+  exerciseId: string;
+  exerciseName: string;
+  muscleGroup: MuscleGroup;
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  restSeconds: number;
+  weight?: number;
+  weightUnit?: 'kg' | 'lbs';
+  notes?: string;
+}
+
+export interface PlannedWorkout {
+  id: string;
+  dayName: string;
+  dayIndex: number;
+  splitName: string;
+  targetMuscles: MuscleGroup[];
+  exercises: PlannedExercise[];
+  estimatedMinutes: number;
+  completed: boolean;
+}
+
+export interface WeeklyPlan {
+  id: string;
+  name: string;
+  goal: TrainingGoal;
+  splitType: SplitType;
+  trainingDays: TrainingDays;
+  workouts: PlannedWorkout[];
+  createdAt: string;
+  weekStart: string;
+  isActive: boolean;
+}
+
+export interface WeakPoint {
+  muscleGroup: MuscleGroup;
+  currentXp: number;
+  currentRank: Rank;
+  frequency: number;
+  avgWeeklyFrequency: number;
+  priority: 'high' | 'medium' | 'low';
+  reason: string;
+}
+
+export interface RecoveryStatus {
+  muscleGroup: MuscleGroup;
+  lastTrained: string | null;
+  daysSinceLast: number;
+  recoveryPercent: number;
+  isRecovered: boolean;
+  daysNeeded: number;
+}
+
+export interface TrainerSuggestion {
+  type: 'weak_point' | 'recovery' | 'progressive_overload' | 'deload' | 'milestone';
+  title: string;
+  description: string;
+  muscleGroup?: MuscleGroup;
+  priority: 'high' | 'medium' | 'low';
+  actionable: boolean;
 }

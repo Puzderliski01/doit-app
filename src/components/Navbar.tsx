@@ -55,6 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'list', label: 'Focus View', icon: <CheckSquare className="w-3.5 h-3.5" /> },
     { id: 'matrix', label: 'Priority Matrix', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
     { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-3.5 h-3.5" /> },
+    { id: 'trainer', label: 'Trainer', icon: <Dumbbell className="w-3.5 h-3.5" /> },
     { id: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="w-3.5 h-3.5" /> },
     { id: 'calendar', label: 'Timeline', icon: <Calendar className="w-3.5 h-3.5" /> },
     { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-3.5 h-3.5" /> },
