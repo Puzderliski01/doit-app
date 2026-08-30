@@ -20,11 +20,9 @@ interface MobileNavProps {
 }
 
 const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-  { id: 'list', label: 'Tasks', icon: <CheckSquare className="w-5 h-5" /> },
-  { id: 'matrix', label: 'Matrix', icon: <LayoutGrid className="w-5 h-5" /> },
+  { id: 'home', label: 'Home', icon: <Sparkles className="w-5 h-5" /> },
+  { id: 'tasks', label: 'Tasks', icon: <CheckSquare className="w-5 h-5" /> },
   { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-5 h-5" /> },
-  { id: 'trainer', label: 'Trainer', icon: <Sparkles className="w-5 h-5" /> },
-  { id: 'leaderboard', label: 'Ranks', icon: <Trophy className="w-5 h-5" /> },
   { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ];
 

@@ -88,7 +88,10 @@ import {
   ShieldCheck,
   UserCheck,
   Lock,
-  Trophy
+  Trophy,
+  CheckSquare,
+  Dumbbell,
+  LayoutGrid
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -129,18 +132,20 @@ export default function App() {
     try {
       const saved = localStorage.getItem('doit_current_view');
       if (saved === 'fitness') return 'fitness';
-      if (saved === 'trainer') return 'trainer';
+      if (saved === 'tasks') return 'tasks';
+      if (saved === 'home') return 'home';
+      if (saved === 'settings') return 'settings';
     } catch { /* ignore */ }
-    return 'list';
+    return 'home';
   });
 
-  // Persist current view (only fitness/trainer sticks across refresh)
+  // Sub-views within grouped views
+  const [taskSubView, setTaskSubView] = useState<'list' | 'matrix'>('list');
+  const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer' | 'ranks'>('dashboard');
+
+  // Persist current view
   useEffect(() => {
-    if (currentView === 'fitness' || currentView === 'trainer') {
-      localStorage.setItem('doit_current_view', currentView);
-    } else {
-      localStorage.removeItem('doit_current_view');
-    }
+    localStorage.setItem('doit_current_view', currentView);
   }, [currentView]);
   // Apply theme class to document (don't auto-save - only save on manual toggle)
   useEffect(() => {
@@ -1088,355 +1093,295 @@ export default function App() {
         {/* Main Content Workspace */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacer">
           
-          {/* VIEW 1: ALL TASKS / LIST VIEW */}
-          {currentView === 'list' && (
+          {/* HOME VIEW - Dashboard Overview */}
+          {currentView === 'home' && (
             <div className="space-y-6">
-              
-              {/* Quick Add Bar */}
-              <QuickAddBar
-                categories={categories}
-                theme={theme}
-                onAddTask={handleQuickAdd}
-              />
-
-              {/* Filter & Toolbar Area */}
-              <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/[0.03]'}`}>
-                
-                {/* Top Row: Search & Sort */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  
-                  {/* Search input */}
-                  <div className="relative flex-1 max-w-md">
-                    <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
-                    <input
-                      id="main-search-input"
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search tasks, notes, or tags... (Press '/' to focus)"
-                      className={`w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${isLight ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'}`}
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-xs cursor-pointer ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-white/40 hover:text-white'}`}
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Right: Sort options */}
-                  <div className="flex items-center gap-2">
-                    <div className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                      <ArrowUpDown className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
-                      <span className={`${isLight ? 'text-slate-400' : 'text-white/40'} text-[10px] font-bold uppercase tracking-wider`}>Sort:</span>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => {
-                          haptic.lightTap();
-                          setSortBy(e.target.value as 'dueDate' | 'priority' | 'createdAt' | 'title');
-                        }}
-                        className={`bg-transparent text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'text-slate-700' : 'text-white'}`}
-                      >
-                        <option value="dueDate" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Deadline</option>
-                        <option value="priority" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Priority</option>
-                        <option value="createdAt" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Created</option>
-                        <option value="title" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Alphabetical</option>
-                      </select>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        haptic.lightTap();
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      }}
-                      className={`p-2.5 rounded-2xl border text-xs font-bold transition-colors cursor-pointer ${isLight ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900' : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/60 hover:text-white'}`}
-                      title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                    >
-                      {sortOrder === 'asc' ? '↑' : '↓'}
-                    </button>
-                  </div>
-
-                </div>
-
-                {/* Bottom Row: Status Filter Chips & Priority Filters */}
-                <div className={`flex flex-wrap items-center justify-between gap-3 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
-                  
-                  {/* Status pills */}
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {[
-                      { id: 'all', label: 'All Tasks', count: tasks.length },
-                      { id: 'pending', label: 'Pending', count: pendingCount },
-                      { id: 'today', label: 'Due Today', count: todayCount },
-                      { id: 'overdue', label: 'Overdue', count: overdueCount },
-                      { id: 'completed', label: 'Completed', count: tasks.filter(t => t.completed).length }
-                    ].map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          haptic.lightTap();
-                          setStatusFilter(item.id as FilterStatus);
-                        }}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                          statusFilter === item.id
-                            ? isLight
-                              ? 'bg-slate-900 text-white font-bold shadow-[0_0_15px_rgba(0,0,0,0.15)]'
-                              : 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.25)]'
-                            : isLight
-                              ? 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900'
-                              : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
-                        }`}
-                      >
-                        <span>{item.label}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                          statusFilter === item.id
-                            ? isLight
-                              ? 'bg-white text-slate-900 font-black'
-                              : 'bg-black text-white font-black'
-                            : isLight
-                              ? 'bg-slate-200 text-slate-600'
-                              : 'bg-white/10 text-white/60'
-                        }`}>
-                          {item.count}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Priority & Category Dropdowns */}
-                  <div className="flex items-center gap-2">
-                    
-                    {/* Priority Selector */}
-                    <select
-                      value={priorityFilter}
-                      onChange={(e) => {
-                        haptic.lightTap();
-                        setPriorityFilter(e.target.value as Priority | 'all');
-                      }}
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
-                    >
-                      <option value="all" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>All Priorities</option>
-                      <option value="urgent" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Urgent Priority</option>
-                      <option value="high" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>High Priority</option>
-                      <option value="medium" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Medium Priority</option>
-                      <option value="low" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>Low Priority</option>
-                    </select>
-
-                    {/* Category Selector */}
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => {
-                        haptic.lightTap();
-                        setCategoryFilter(e.target.value);
-                      }}
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
-                    >
-                      <option value="all" className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>All Domains</option>
-                      {categories.map(c => (
-                        <option key={c.id} value={c.id} className={isLight ? "bg-white text-slate-900" : "bg-[#121216] text-white"}>{c.name}</option>
-                      ))}
-                    </select>
-
-                  </div>
-
-                </div>
-
+              {/* Welcome Header */}
+              <div className={`p-6 rounded-3xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
+                <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {currentUser ? `Welcome back, ${currentUser.displayName || 'User'}` : 'Welcome to DoIT'}
+                </h1>
+                <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </p>
               </div>
 
-              {/* Task Cards List */}
-              <div className="space-y-3">
-                {filteredTasks.length === 0 ? (
-                  <div className="p-12 sm:p-16 text-center rounded-3xl bg-white/[0.02] border border-dashed border-white/10 backdrop-blur-md">
-                    <Inbox className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                    <h3 className="text-base font-medium text-white">
-                      {currentUser ? 'Your personal workspace is clear' : 'No tasks in current view'}
-                    </h3>
-                    <p className="text-xs text-white/40 mt-1 max-w-sm mx-auto leading-relaxed">
-                      {currentUser 
-                        ? 'All tasks shown here are private to your authenticated account. Ready to schedule your next objective?'
-                        : 'Sign in to access and synchronize your personal tasks securely, or deploy a new task now.'}
-                    </p>
-                    <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                      {!currentUser && (
-                        <button
-                          onClick={() => {
-                            haptic.mediumClick();
-                            setIsAuthModalOpen(true);
-                          }}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-[0_0_20px_rgba(249,115,22,0.3)] active:scale-95 transition-all cursor-pointer"
-                        >
-                          <LogIn className="w-4 h-4" />
-                          <span>Sign In to My Tasks</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          haptic.mediumClick();
-                          setEditingTask(null);
-                          setIsTaskModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black font-bold text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-white/90 active:scale-95 transition-all cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4 stroke-[3]" />
-                        <span>Deploy New Task</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <AnimatePresence mode="popLayout">
-                    {filteredTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        category={categoriesMap.get(task.categoryId)}
-                        theme={theme}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={(t) => {
-                          setEditingTask(t);
-                          setIsTaskModalOpen(true);
-                        }}
-                        onDelete={handleDeleteTask}
-                        onDuplicate={handleDuplicateTask}
-                        onChangePriority={handleChangePriority}
-                        onToggleSubtask={handleToggleSubtask}
-                        onTriggerEmailReminder={(t) => {
-                          handleTriggerTestEmail(t, userEmail);
-                          setIsNotifModalOpen(true);
-                        }}
-                      />
-                    ))}
-                  </AnimatePresence>
-                )}
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Pending Tasks</p>
+                  <p className={`text-2xl font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>{pendingCount}</p>
+                </div>
+                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Due Today</p>
+                  <p className="text-2xl font-bold mt-1 text-orange-500">{todayCount}</p>
+                </div>
+                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Overdue</p>
+                  <p className={`text-2xl font-bold mt-1 ${overdueCount > 0 ? 'text-red-500' : isLight ? 'text-slate-900' : 'text-white'}`}>{overdueCount}</p>
+                </div>
+                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Completed</p>
+                  <p className="text-2xl font-bold mt-1 text-emerald-500">{tasks.filter(t => t.completed).length}</p>
+                </div>
               </div>
 
+              {/* Quick Actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => { haptic.mediumClick(); setCurrentView('tasks'); }}
+                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${isLight ? 'bg-white border-slate-200 hover:border-orange-300' : 'bg-white/5 border-white/10 hover:border-orange-500/30'}`}
+                >
+                  <CheckSquare className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
+                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>View Tasks</p>
+                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} total tasks</p>
+                </button>
+                <button
+                  onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
+                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${isLight ? 'bg-white border-slate-200 hover:border-orange-300' : 'bg-white/5 border-white/10 hover:border-orange-500/30'}`}
+                >
+                  <Dumbbell className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
+                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Fitness</p>
+                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} workouts logged</p>
+                </button>
+              </div>
+
+              {/* Overdue Tasks Alert */}
+              {overdueCount > 0 && (
+                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-red-50 border-red-200' : 'bg-red-500/10 border-red-500/20'}`}>
+                  <p className={`text-xs font-bold ${isLight ? 'text-red-700' : 'text-red-400'}`}>
+                    ⚠️ {overdueCount} overdue task{overdueCount > 1 ? 's' : ''} need attention
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          {/* VIEW 2: EISENHOWER DECISION MATRIX */}
-          {currentView === 'matrix' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              <EisenhowerMatrix
-                tasks={tasks}
-                categories={categories}
-                theme={theme}
-                onToggleComplete={handleToggleComplete}
-                onEditTask={(t) => {
-                  setEditingTask(t);
-                  setIsTaskModalOpen(true);
-                }}
-                onMoveQuadrant={handleMoveQuadrant}
-                onOpenNewTask={() => {
-                  setEditingTask(null);
-                  setIsTaskModalOpen(true);
-                }}
-              />
-            </Suspense>
+          {/* TASKS VIEW - List + Matrix */}
+          {currentView === 'tasks' && (
+            <div className="space-y-5">
+              {/* Sub-view Toggle */}
+              <div className={`flex gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                {[
+                  { id: 'list' as const, label: 'Task List', icon: <CheckSquare className="w-3.5 h-3.5" /> },
+                  { id: 'matrix' as const, label: 'Priority Matrix', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { haptic.lightTap(); setTaskSubView(tab.id); }}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-1 cursor-pointer ${
+                      taskSubView === tab.id
+                        ? isLight ? 'bg-white text-slate-900 border border-slate-300 shadow-sm' : 'bg-white/10 text-white border border-white/15 shadow-sm'
+                        : isLight ? 'text-slate-500 hover:text-slate-700' : 'text-white/50 hover:text-white/70'
+                    }`}
+                  >
+                    {tab.icon}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* List View */}
+              {taskSubView === 'list' && (
+                <div className="space-y-6">
+                  <QuickAddBar categories={categories} theme={theme} onAddTask={handleQuickAdd} />
+                  <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/[0.03]'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="relative flex-1 max-w-md">
+                        <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
+                        <input
+                          id="main-search-input"
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search tasks... (Press '/')"
+                          className={`w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${isLight ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'}`}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={sortBy}
+                          onChange={(e) => { haptic.lightTap(); setSortBy(e.target.value as 'dueDate' | 'priority' | 'createdAt' | 'title'); }}
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
+                        >
+                          <option value="dueDate">Deadline</option>
+                          <option value="priority">Priority</option>
+                          <option value="createdAt">Created</option>
+                        </select>
+                        <select
+                          value={priorityFilter}
+                          onChange={(e) => { haptic.lightTap(); setPriorityFilter(e.target.value as Priority | 'all'); }}
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
+                        >
+                          <option value="all">All Priorities</option>
+                          <option value="urgent">Urgent</option>
+                          <option value="high">High</option>
+                          <option value="medium">Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className={`flex flex-wrap gap-1.5 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+                      {[
+                        { id: 'all', label: 'All', count: tasks.length },
+                        { id: 'pending', label: 'Pending', count: pendingCount },
+                        { id: 'today', label: 'Today', count: todayCount },
+                        { id: 'overdue', label: 'Overdue', count: overdueCount },
+                        { id: 'completed', label: 'Done', count: tasks.filter(t => t.completed).length }
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => { haptic.lightTap(); setStatusFilter(item.id as FilterStatus); }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            statusFilter === item.id
+                              ? isLight ? 'bg-slate-900 text-white' : 'bg-white text-black'
+                              : isLight ? 'bg-slate-100 text-slate-600 hover:text-slate-900' : 'bg-white/5 text-white/50 hover:text-white'
+                          }`}
+                        >
+                          {item.label}
+                          <span className={`text-[10px] ${statusFilter === item.id ? 'opacity-70' : 'opacity-50'}`}>{item.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {filteredTasks.length === 0 ? (
+                      <div className="p-12 text-center rounded-3xl bg-white/[0.02] border border-dashed border-white/10">
+                        <Inbox className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-white/60">No tasks found</p>
+                      </div>
+                    ) : (
+                      <AnimatePresence mode="popLayout">
+                        {filteredTasks.map((task) => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            category={categoriesMap.get(task.categoryId)}
+                            theme={theme}
+                            onToggleComplete={handleToggleComplete}
+                            onEdit={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                            onDelete={handleDeleteTask}
+                            onDuplicate={handleDuplicateTask}
+                            onChangePriority={handleChangePriority}
+                            onToggleSubtask={handleToggleSubtask}
+                            onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Matrix View */}
+              {taskSubView === 'matrix' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                  <EisenhowerMatrix
+                    tasks={tasks}
+                    categories={categories}
+                    theme={theme}
+                    onToggleComplete={handleToggleComplete}
+                    onEditTask={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                    onMoveQuadrant={handleMoveQuadrant}
+                    onOpenNewTask={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
+                  />
+                </Suspense>
+              )}
+            </div>
           )}
 
-          {/* VIEW 3: TIMELINE & CALENDAR */}
-          {currentView === 'calendar' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              <CalendarTimeline
-                tasks={tasks}
-                categories={categories}
-                theme={theme}
-                onToggleComplete={handleToggleComplete}
-                onEditTask={(t) => {
-                  setEditingTask(t);
-                  setIsTaskModalOpen(true);
-                }}
-                onOpenNewTask={() => {
-                  setEditingTask(null);
-                  setIsTaskModalOpen(true);
-                }}
-              />
-            </Suspense>
-          )}
-
-          {/* VIEW 4: INSIGHTS & ANALYTICS */}
-          {currentView === 'analytics' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              <AnalyticsDashboard
-                tasks={tasks}
-                categories={categories}
-                theme={theme}
-              />
-            </Suspense>
-          )}
-
-          {/* VIEW 5: BUILD & NATIVE APP STORE DOCS */}
-          {/* VIEW 6: FITNESS DASHBOARD */}
+          {/* FITNESS VIEW - Dashboard + Trainer + Ranks */}
           {currentView === 'fitness' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              {!userProfile.onboardingCompleted ? (
-                <div className="text-center py-16">
-                  <p className={`text-sm mb-4 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
-                    Set up your fitness profile to get started
-                  </p>
+            <div className="space-y-5">
+              {/* Sub-view Tabs */}
+              <div className={`flex gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                {[
+                  { id: 'dashboard' as const, label: 'Dashboard', icon: <Dumbbell className="w-3.5 h-3.5" /> },
+                  { id: 'trainer' as const, label: 'Trainer', icon: <Sparkles className="w-3.5 h-3.5" /> },
+                  { id: 'ranks' as const, label: 'Ranks', icon: <Trophy className="w-3.5 h-3.5" /> },
+                ].map(tab => (
                   <button
-                    onClick={() => setIsFitnessOnboardingOpen(true)}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all"
+                    key={tab.id}
+                    onClick={() => { haptic.lightTap(); setFitnessSubView(tab.id); }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex-1 cursor-pointer ${
+                      fitnessSubView === tab.id
+                        ? isLight ? 'bg-white text-slate-900 border border-slate-300 shadow-sm' : 'bg-white/10 text-white border border-white/15 shadow-sm'
+                        : isLight ? 'text-slate-500 hover:text-slate-700' : 'text-white/50 hover:text-white/70'
+                    }`}
                   >
-                    Start Onboarding
+                    {tab.icon}
+                    {tab.label}
                   </button>
-                </div>
-              ) : (
-                <FitnessDashboard
-                  theme={theme}
-                  stats={userProfile.fitnessStats}
-                  userProfile={userProfile}
-                  entries={fitnessEntries}
-                  onOpenLogModal={() => setIsExerciseLogModalOpen(true)}
-                  onSelectExercise={handleSelectExercise}
-                />
+                ))}
+              </div>
+
+              {/* Fitness Dashboard */}
+              {fitnessSubView === 'dashboard' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                  {!userProfile.onboardingCompleted ? (
+                    <div className="text-center py-16">
+                      <p className={`text-sm mb-4 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Set up your fitness profile to get started</p>
+                      <button
+                        onClick={() => setIsFitnessOnboardingOpen(true)}
+                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all"
+                      >
+                        Start Onboarding
+                      </button>
+                    </div>
+                  ) : (
+                    <FitnessDashboard
+                      theme={theme}
+                      stats={userProfile.fitnessStats}
+                      userProfile={userProfile}
+                      entries={fitnessEntries}
+                      onOpenLogModal={() => setIsExerciseLogModalOpen(true)}
+                      onSelectExercise={handleSelectExercise}
+                    />
+                  )}
+                </Suspense>
               )}
-            </Suspense>
-          )}
 
-          {/* VIEW 7: LEADERBOARD */}
-          {currentView === 'leaderboard' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              {!currentUser || currentUser.isGuest ? (
-                <div className={`text-center py-16 rounded-2xl border mx-4 ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                  <Trophy className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
-                  <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Leaderboard</h2>
-                  <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>
-                    Sign in to see how you rank against others
-                  </p>
-                  <button
-                    onClick={() => setIsAuthModalOpen(true)}
-                    className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
-                  >
-                    Sign In to View Leaderboard
-                  </button>
-                </div>
-              ) : (
-                <Leaderboard
-                  theme={theme}
-                  userProfile={userProfile}
-                  onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
-                  currentUserUid={currentUser?.uid}
-                />
+              {/* Trainer */}
+              {fitnessSubView === 'trainer' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                  <TrainerDashboard
+                    theme={theme}
+                    userProfile={userProfile}
+                    fitnessEntries={fitnessEntries}
+                    onLogExercise={() => setIsExerciseLogModalOpen(true)}
+                  />
+                </Suspense>
               )}
-            </Suspense>
+
+              {/* Ranks / Leaderboard */}
+              {fitnessSubView === 'ranks' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                  {!currentUser || currentUser.isGuest ? (
+                    <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                      <Trophy className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
+                      <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Leaderboard</h2>
+                      <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>Sign in to see how you rank</p>
+                      <button
+                        onClick={() => setIsAuthModalOpen(true)}
+                        className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
+                      >
+                        Sign In
+                      </button>
+                    </div>
+                  ) : (
+                    <Leaderboard
+                      theme={theme}
+                      userProfile={userProfile}
+                      onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+                      currentUserUid={currentUser?.uid}
+                    />
+                  )}
+                </Suspense>
+              )}
+            </div>
           )}
 
-          {/* VIEW 8: PERSONAL TRAINER */}
-          {currentView === 'trainer' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              <TrainerDashboard
-                theme={theme}
-                userProfile={userProfile}
-                fitnessEntries={fitnessEntries}
-                onLogExercise={(_exerciseId, _exerciseName, _muscleGroup) => {
-                  setIsExerciseLogModalOpen(true);
-                }}
-              />
-            </Suspense>
-          )}
-
-          {/* VIEW 9: SETTINGS */}
+          {/* SETTINGS VIEW */}
           {currentView === 'settings' && (
             <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
               <Settings
