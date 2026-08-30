@@ -25,6 +25,7 @@ import { notificationEngine } from './utils/notificationEngine';
 import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from './utils/fitness';
 import { setLanguage, t } from './i18n';
 import { initPushNotifications, requestPermission as requestPushPermission, showLocalNotification, isPushSupported } from './utils/pushNotifications';
+import { startBackgroundPoller, stopBackgroundPoller, requestPushToFirestore } from './utils/backgroundNotifier';
 
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -165,6 +166,14 @@ export default function App() {
     notificationEngine.requestPermission();
     initPushNotifications();
   }, []);
+
+  // Start/stop background notification poller based on user login state
+  useEffect(() => {
+    if (currentUser && !(currentUser as AuthUser).isGuest && !(currentUser as AuthUser).isLocal) {
+      startBackgroundPoller(currentUser.uid);
+    }
+    return () => stopBackgroundPoller();
+  }, [currentUser?.uid]);
 
   const [userEmail, setUserEmail] = useState<string>(() => {
     const localUser = getLocalAuthSession();
@@ -443,6 +452,18 @@ export default function App() {
 
     if (currentUser && !(currentUser as AuthUser).isGuest) {
       saveUserNotificationToFirestore(currentUser.uid, created).catch(console.error);
+
+      // Write push request for background notification (native wrapper / screen off)
+      const isUrgent = created.type === 'urgent_priority' || created.type === 'overdue' || created.type === 'deadline';
+      if (isUrgent) {
+        requestPushToFirestore(currentUser.uid, {
+          title: created.title,
+          body: created.message,
+          tag: created.type,
+          taskId: created.taskId,
+          requireInteraction: created.type === 'urgent_priority' || created.type === 'overdue',
+        }).catch(console.error);
+      }
     }
 
     // Send push notification (system notification, works even when app is in background)
