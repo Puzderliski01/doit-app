@@ -33,10 +33,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   const isPublic = userProfile.leaderboardPublic ?? true;
 
   useEffect(() => {
-    setLoadingLeaderboard(true);
+    setLoadingLeaderboard(false);
     const unsub = subscribeToPublicLeaderboard((users) => {
       setPublicUsers(users);
-      setLoadingLeaderboard(false);
     });
     return () => { if (typeof unsub === 'function') unsub(); };
   }, []);

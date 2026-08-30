@@ -411,7 +411,7 @@ export async function fetchPublicLeaderboard(): Promise<LeaderboardUser[]> {
   }
 }
 
-export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]) => void) {
+export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]) => void, onError?: (err: any) => void) {
   try {
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('fitnessProfile.leaderboardPublic', '==', true), firestoreLimit(50));
@@ -433,6 +433,9 @@ export function subscribeToPublicLeaderboard(onUpdate: (users: LeaderboardUser[]
         }
       });
       onUpdate(users.sort((a, b) => b.xp - a.xp));
+    }, (err) => {
+      console.warn('Firestore leaderboard subscription error:', err);
+      onError?.(err);
     });
   } catch (err) {
     console.warn('Firestore subscribe leaderboard error:', err);
