@@ -29,7 +29,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, Category, AppNotification, AuthUser } from './types';
+import { Task, Category, AppNotification, AuthUser, FitnessEntry, UserProfile } from './types';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -324,5 +324,75 @@ export async function deleteSingleNotificationFromFirestore(userId: string, noti
     await deleteDoc(notifRef);
   } catch (err) {
     console.warn('Firestore delete notification note:', err);
+  }
+}
+
+// ==================== FITNESS SYNC ====================
+
+export function subscribeToUserFitness(userId: string, onUpdate: (entries: FitnessEntry[]) => void) {
+  try {
+    const fitnessRef = collection(db, 'users', userId, 'fitness');
+    const q = query(fitnessRef, orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const entries: FitnessEntry[] = [];
+      snapshot.forEach((docSnap) => {
+        entries.push({ id: docSnap.id, ...docSnap.data() } as FitnessEntry);
+      });
+      onUpdate(entries);
+    }, (err) => {
+      console.warn('Firestore fitness subscription note:', err?.message || err);
+    });
+  } catch (err) {
+    return () => {};
+  }
+}
+
+export async function saveFitnessEntryToFirestore(userId: string, entry: FitnessEntry): Promise<void> {
+  try {
+    const entryRef = doc(db, 'users', userId, 'fitness', entry.id);
+    await setDoc(entryRef, stripUndefined({
+      ...entry,
+      userId,
+      updatedAt: new Date().toISOString()
+    } as Record<string, unknown>), { merge: true });
+  } catch (err) {
+    console.warn('Firestore save fitness entry note:', err);
+    throw err;
+  }
+}
+
+export async function deleteUserFitnessEntryFromFirestore(userId: string, entryId: string): Promise<void> {
+  try {
+    const entryRef = doc(db, 'users', userId, 'fitness', entryId);
+    await deleteDoc(entryRef);
+  } catch (err) {
+    console.warn('Firestore delete fitness entry note:', err);
+  }
+}
+
+export async function saveUserProfileToFirestore(userId: string, profile: UserProfile): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await setDoc(userRef, { fitnessProfile: profile }, { merge: true });
+  } catch (err) {
+    console.warn('Firestore save user profile note:', err);
+  }
+}
+
+export function subscribeToUserProfile(userId: string, onUpdate: (profile: UserProfile | null) => void) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    return onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.fitnessProfile) {
+          onUpdate(data.fitnessProfile as UserProfile);
+        }
+      }
+    }, (err) => {
+      console.warn('Firestore user profile subscription note:', err?.message || err);
+    });
+  } catch (err) {
+    return () => {};
   }
 }

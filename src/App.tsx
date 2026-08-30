@@ -60,6 +60,10 @@ import {
   deleteSingleNotificationFromFirestore,
   syncUserProfile,
   getLocalAuthSession,
+  subscribeToUserFitness,
+  saveFitnessEntryToFirestore,
+  saveUserProfileToFirestore,
+  subscribeToUserProfile,
   saveLocalAuthSession,
   clearLocalAuthSession
 } from './firebase';
@@ -312,11 +316,64 @@ export default function App() {
       }
     );
 
+    // Subscribe to fitness entries
+    const unsubscribeFitness = subscribeToUserFitness(
+      currentUser.uid,
+      (userFitness) => {
+        if (userFitness && userFitness.length > 0) {
+          setFitnessEntries(userFitness);
+        }
+      }
+    );
+
+    // Subscribe to user profile
+    const unsubscribeProfile = subscribeToUserProfile(
+      currentUser.uid,
+      (remoteProfile) => {
+        if (remoteProfile) {
+          setUserProfile(prev => {
+            // Deep merge: keep local muscleRanks if remote doesn't have them
+            const merged = { ...prev, ...remoteProfile };
+            if (remoteProfile.fitnessStats?.muscleRanks && Object.keys(remoteProfile.fitnessStats.muscleRanks).length > 0) {
+              merged.fitnessStats = { ...prev.fitnessStats, ...remoteProfile.fitnessStats };
+            }
+            return merged;
+          });
+        }
+      }
+    );
+
     return () => {
       unsubscribeTasks();
       unsubscribeCats();
       unsubscribeNotifs();
+      unsubscribeFitness();
+      unsubscribeProfile();
     };
+  }, [currentUser?.uid]);
+
+  // One-time migration: push local fitness data to Firestore on first login
+  useEffect(() => {
+    if (!currentUser?.uid || (currentUser as AuthUser).isGuest) return;
+    const migratedKey = `doit_fitness_migrated_${currentUser.uid}`;
+    if (localStorage.getItem(migratedKey)) return;
+
+    // Check if we have local data to migrate
+    const localEntries = JSON.parse(localStorage.getItem('doit_fitness_entries') || '[]');
+    const localProfile = JSON.parse(localStorage.getItem('doit_user_profile') || 'null');
+
+    if (localEntries.length > 0 || (localProfile && localProfile.fitnessStats?.xp > 0)) {
+      // Push local entries to Firestore
+      localEntries.forEach((entry: FitnessEntry) => {
+        saveFitnessEntryToFirestore(currentUser.uid, entry).catch(console.error);
+      });
+      // Push profile to Firestore
+      if (localProfile) {
+        saveUserProfileToFirestore(currentUser.uid, localProfile).catch(console.error);
+      }
+    }
+
+    localStorage.setItem(migratedKey, '1');
   }, [currentUser?.uid]);
 
   // Sync to localStorage as offline cache for current user / guest
@@ -335,10 +392,13 @@ export default function App() {
     storage.saveUserEmail(userEmail);
   }, [userEmail]);
 
-  // Fitness persistence
+  // Fitness persistence — localStorage + Firestore
   useEffect(() => {
     localStorage.setItem('doit_user_profile', JSON.stringify(userProfile));
-  }, [userProfile]);
+    if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
+      saveUserProfileToFirestore(currentUser.uid, userProfile).catch(console.error);
+    }
+  }, [userProfile, currentUser?.uid]);
 
   useEffect(() => {
     localStorage.setItem('doit_fitness_entries', JSON.stringify(fitnessEntries));
@@ -759,6 +819,10 @@ export default function App() {
       title: '🏋️ Workout Logged!',
       message: `${entry.exerciseName}: ${entry.sets.filter(s => s.completed).length} sets, ${entry.totalVolume} ${entry.sets[0]?.weightUnit || 'kg'}`,
     });
+    // Sync to Firestore
+    if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
+      saveFitnessEntryToFirestore(currentUser.uid, entry).catch(console.error);
+    }
   };
 
   const handleFitnessOnboardingComplete = (data: {
