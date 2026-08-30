@@ -72,6 +72,9 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
     const granted = await notificationEngine.requestPermission();
     setPushStatus(granted);
     if (granted) {
+      // Subscribe to push for background notifications
+      const { subscribeToPush } = await import('../utils/pushNotifications');
+      await subscribeToPush();
       notificationEngine.sendBrowserNotification('DoIT Notification Active', 'Instant deadline reminders are now enabled.');
       haptic.success();
     }

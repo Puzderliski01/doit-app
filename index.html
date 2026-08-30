@@ -16,6 +16,16 @@
   <body class="antialiased selection:bg-amber-500/20 selection:text-amber-300">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register Service Worker for push notifications
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.error('SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>
 

@@ -84,6 +84,11 @@ export const Settings: React.FC<SettingsProps> = ({
       setPushEnabled(false);
     } else {
       const result = await Notification.requestPermission();
+      if (result === 'granted') {
+        // Also subscribe to push for background notifications
+        const { subscribeToPush } = await import('../utils/pushNotifications');
+        await subscribeToPush();
+      }
       setPushEnabled(result === 'granted');
     }
     haptic.lightTap();

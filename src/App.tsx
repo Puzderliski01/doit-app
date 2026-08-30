@@ -24,6 +24,7 @@ import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
 import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from './utils/fitness';
 import { setLanguage, t } from './i18n';
+import { initPushNotifications, requestPermission as requestPushPermission, showLocalNotification, isPushSupported } from './utils/pushNotifications';
 
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -159,9 +160,10 @@ export default function App() {
     }
   }, [theme]);
 
-  // Request browser notification permission on mount
+  // Request browser notification permission and initialize push on mount
   useEffect(() => {
     notificationEngine.requestPermission();
+    initPushNotifications();
   }, []);
 
   const [userEmail, setUserEmail] = useState<string>(() => {
@@ -441,6 +443,17 @@ export default function App() {
 
     if (currentUser && !(currentUser as AuthUser).isGuest) {
       saveUserNotificationToFirestore(currentUser.uid, created).catch(console.error);
+    }
+
+    // Send push notification (system notification, works even when app is in background)
+    if (isPushSupported() && Notification.permission === 'granted') {
+      showLocalNotification({
+        title: created.title,
+        body: created.message,
+        tag: created.type,
+        taskId: created.taskId,
+        requireInteraction: created.type === 'urgent_priority' || created.type === 'overdue',
+      });
     }
   };
 
