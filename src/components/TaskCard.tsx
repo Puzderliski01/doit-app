@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Task, Category, Priority } from '../types';
 import { 
   Check, 
@@ -13,6 +13,7 @@ import {
   Copy, 
   Edit3, 
   Mail, 
+  X,
   AlertCircle,
   CalendarDays,
   CheckCircle2,
@@ -53,25 +54,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
-  const menuBtnRef = useRef<HTMLButtonElement>(null);
-
-  const toggleMenu = useCallback(() => {
-    if (!showMenu && menuBtnRef.current) {
-      const rect = menuBtnRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const menuHeight = 260;
-      if (spaceBelow < menuHeight) {
-        // Open above the button
-        setMenuPos({ top: rect.top - menuHeight - 4, right: window.innerWidth - rect.right });
-      } else {
-        // Open below the button
-        setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-      }
-    }
-    setShowMenu(!showMenu);
-    haptic.lightTap();
-  }, [showMenu]);
 
   const completedSubtasksCount = task.subtasks.filter(s => s.completed).length;
   const totalSubtasksCount = task.subtasks.length;
@@ -440,7 +422,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </div>
           </div>
 
-          {/* Card Right: Prominent Radial Ring & Actions Dropdown */}
+          {/* Card Right: Prominent Radial Ring & Actions Toggle */}
           <div className="flex items-center gap-2 shrink-0">
             {totalSubtasksCount > 0 && !isExpanded && (
               <RadialProgressRing
@@ -459,128 +441,91 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               />
             )}
 
-            <div className="relative">
-              <button
-                ref={menuBtnRef}
-                onClick={toggleMenu}
-                className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
-                  isLight 
-                    ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' 
-                    : 'text-white/40 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
+            <button
+              onClick={() => { haptic.lightTap(); setShowMenu(!showMenu); }}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-all cursor-pointer ${
+                showMenu
+                  ? isLight ? 'bg-orange-100 text-orange-600' : 'bg-orange-500/15 text-orange-400'
+                  : isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-white/50 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              {showMenu ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
 
-            {/* Popover Action Menu */}
-            <AnimatePresence>
-              {showMenu && menuPos && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-50" 
-                    onClick={() => setShowMenu(false)} 
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    style={{ top: menuPos.top, right: menuPos.right }}
-                    className={`fixed z-[60] w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
-                      isLight 
-                        ? 'bg-white/95 border-slate-200/80 text-slate-800 shadow-[0_8px_40px_rgba(0,0,0,0.12)]' 
-                        : 'bg-[#111111]/95 border-white/15 text-white shadow-[0_8px_40px_rgba(0,0,0,0.5)]'
+        {/* Inline Action Bar — appears below the card content when toggled */}
+        <AnimatePresence>
+          {showMenu && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className={`flex flex-wrap gap-2 pt-3 mt-3 border-t ${
+                isLight ? 'border-slate-100' : 'border-white/10'
+              }`}>
+                <button
+                  onClick={() => { setShowMenu(false); haptic.mediumClick(); onEdit(task); }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    isLight ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => { setShowMenu(false); onTriggerEmailReminder(task); }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    isLight ? 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20'
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Email
+                </button>
+
+                <button
+                  onClick={() => { setShowMenu(false); haptic.lightTap(); onDuplicate(task); }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    isLight ? 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Duplicate
+                </button>
+
+                {/* Priority quick-set */}
+                {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => { setShowMenu(false); haptic.lightTap(); onChangePriority(task.id, p); }}
+                    className={`px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                      task.priority === p
+                        ? p === 'urgent' ? 'bg-red-500 text-white border-red-400'
+                          : p === 'high' ? 'bg-orange-500 text-black border-orange-400'
+                          : p === 'medium' ? 'bg-sky-500 text-white border-sky-400'
+                          : 'bg-emerald-500 text-black border-emerald-400'
+                        : isLight ? 'bg-slate-50 text-slate-500 border-slate-200 hover:text-slate-900' : 'bg-white/5 text-white/40 border-white/10 hover:text-white'
                     }`}
                   >
-                    <button
-                      onClick={() => {
-                        setShowMenu(false);
-                        haptic.mediumClick();
-                        onEdit(task);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-left transition-colors cursor-pointer ${
-                        isLight ? 'hover:bg-slate-100 text-slate-800' : 'hover:bg-white/10 text-white'
-                      }`}
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-500" />
-                      Edit Task Details
-                    </button>
+                    {p}
+                  </button>
+                ))}
 
-                    <button
-                      onClick={() => {
-                        setShowMenu(false);
-                        onTriggerEmailReminder(task);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-left transition-colors cursor-pointer ${
-                        isLight ? 'hover:bg-slate-100 text-slate-800' : 'hover:bg-white/10 text-white'
-                      }`}
-                    >
-                      <Mail className="w-3.5 h-3.5 text-sky-500" />
-                      Send Email Reminder Now
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setShowMenu(false);
-                        haptic.lightTap();
-                        onDuplicate(task);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3.5 py-2.5 text-left transition-colors cursor-pointer ${
-                        isLight ? 'hover:bg-slate-100 text-slate-800' : 'hover:bg-white/10 text-white'
-                      }`}
-                    >
-                      <Copy className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-white/50'}`} />
-                      Duplicate Task
-                    </button>
-
-                    {/* Priority submenu */}
-                    <div className={`px-3.5 py-1.5 border-t text-[10px] uppercase font-bold tracking-wider ${
-                      isLight ? 'border-slate-100 text-slate-400' : 'border-white/10 text-white/40'
-                    }`}>
-                      Set Priority
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 px-2 pb-1">
-                      {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => {
-                            setShowMenu(false);
-                            haptic.priorityAlert();
-                            onChangePriority(task.id, p);
-                          }}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-bold capitalize transition-colors cursor-pointer ${
-                            task.priority === p 
-                              ? 'bg-orange-500 text-white shadow-sm' 
-                              : isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900' : 'bg-white/5 text-white/60 hover:bg-white/15 hover:text-white'
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className={`border-t mt-1 ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
-                      <button
-                        onClick={() => {
-                          setShowMenu(false);
-                          haptic.deleteAction();
-                          onDelete(task.id);
-                        }}
-                        className={`w-full flex items-center gap-2 px-3.5 py-2 text-red-500 text-left transition-colors cursor-pointer ${
-                          isLight ? 'hover:bg-red-50' : 'hover:bg-red-500/20 text-red-400'
-                        }`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete Task
-                      </button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-
-        </div>
-      </div>
+                <button
+                  onClick={() => { setShowMenu(false); haptic.deleteAction(); onDelete(task.id); }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 dark:hover:bg-red-500/20"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
     </motion.div>
   );
 };
