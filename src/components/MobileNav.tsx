@@ -37,14 +37,14 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   return (
     <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-bottom transition-all duration-300 ${
       isLight
-        ? 'bg-white/70 backdrop-blur-3xl border-t border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_-1px_3px_rgba(0,0,0,0.06)]'
-        : 'bg-white/[0.08] backdrop-blur-3xl border-t border-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_-1px_3px_rgba(0,0,0,0.3)]'
+        ? 'bg-white/80 backdrop-blur-3xl border-t border-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_-2px_10px_rgba(0,0,0,0.06)]'
+        : 'bg-[#111113]/90 backdrop-blur-3xl border-t border-white/[0.15] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_-2px_10px_rgba(0,0,0,0.4)]'
     }`}>
       {/* Liquid glass gradient overlay */}
       <div className={`absolute inset-0 pointer-events-none ${
         isLight
-          ? 'bg-gradient-to-t from-white/50 via-transparent to-white/20'
-          : 'bg-gradient-to-t from-white/[0.06] via-transparent to-white/[0.02]'
+          ? 'bg-gradient-to-t from-white/60 via-white/10 to-white/30'
+          : 'bg-gradient-to-t from-black/20 via-white/[0.03] to-white/[0.06]'
       }`} />
       <div className="relative flex items-center justify-around px-1 py-1">
         {navItems.map((item) => {
@@ -60,10 +60,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 isActive
                   ? isLight
                     ? 'text-orange-600 bg-orange-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]'
-                    : 'text-orange-400 bg-orange-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                    : 'text-orange-400 bg-orange-500/15 shadow-[0_0_12px_rgba(249,115,22,0.2)]'
                   : isLight
                     ? 'text-slate-400 active:text-slate-700'
-                    : 'text-white/40 active:text-white/70'
+                    : 'text-white/60 active:text-white/90'
               }`}
             >
               <div className="relative">

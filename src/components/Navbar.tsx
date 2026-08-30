@@ -66,14 +66,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className={`sticky top-0 z-40 relative transition-all duration-300 safe-area-top ${
       isLight
-        ? 'bg-white/70 backdrop-blur-3xl border-b border-white/40 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_3px_rgba(0,0,0,0.06)]'
-        : 'bg-white/[0.08] backdrop-blur-3xl border-b border-white/[0.12] text-[#e0e0e0] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_3px_rgba(0,0,0,0.3)]'
+        ? 'bg-white/80 backdrop-blur-3xl border-b border-white/50 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_10px_rgba(0,0,0,0.06)]'
+        : 'bg-[#111113]/90 backdrop-blur-3xl border-b border-white/[0.15] text-[#e0e0e0] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_10px_rgba(0,0,0,0.4)]'
     }`}>
       {/* Liquid glass gradient overlay */}
       <div className={`absolute inset-0 pointer-events-none ${
         isLight
-          ? 'bg-gradient-to-b from-white/50 via-transparent to-white/20'
-          : 'bg-gradient-to-b from-white/[0.06] via-transparent to-white/[0.02]'
+          ? 'bg-gradient-to-b from-white/60 via-white/10 to-white/30'
+          : 'bg-gradient-to-b from-black/20 via-white/[0.03] to-white/[0.06]'
       }`} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         
@@ -124,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Center View Navigation */}
         <nav className={`hidden lg:flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-2xl ${
-          isLight ? 'bg-white/60 border-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-white/[0.06] border-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.2)]'
+          isLight ? 'bg-white/60 border-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-[#111113]/80 border-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_8px_rgba(0,0,0,0.3)]'
         }`}>
           {navItems.map((item) => {
             const isActive = currentView === item.id;
