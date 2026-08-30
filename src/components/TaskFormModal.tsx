@@ -170,10 +170,10 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className={`w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-8 backdrop-blur-2xl max-h-[85vh] sm:max-h-[85vh] flex flex-col ${
+        className={`w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-8 backdrop-blur-3xl max-h-[85vh] sm:max-h-[85vh] flex flex-col ${
           isLight
-            ? 'bg-white border-slate-200 text-slate-900 shadow-[0_8px_40px_rgba(0,0,0,0.12)]'
-            : 'bg-[#0a0a0c]/95 border-white/10 text-white'
+            ? 'bg-white/80 border-white/40 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_40px_rgba(0,0,0,0.12)]'
+            : 'bg-[#0a0a0c]/80 border-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_40px_rgba(0,0,0,0.5)]'
         }`}
       >
         {/* Mobile drag handle */}
@@ -182,8 +182,8 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         </div>
 
         {/* Header */}
-        <div className={`flex items-center justify-between px-6 sm:px-8 py-5 border-b backdrop-blur-xl ${
-          isLight ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.02]'
+        <div className={`flex items-center justify-between px-6 sm:px-8 py-5 border-b backdrop-blur-2xl ${
+          isLight ? 'border-white/30 bg-white/40' : 'border-white/10 bg-white/[0.03]'
         }`}>
           <div className="flex items-center gap-3.5">
             <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.25)] ${
@@ -231,10 +231,10 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Finalize Multi-Cloud Synchronizer Architecture"
-              className={`w-full px-4 py-3 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${
+                className={`w-full px-4 py-3 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${
                 isLight
-                  ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400'
-                  : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'
+                  ? 'border-white/40 bg-white/50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400 backdrop-blur-xl'
+                  : 'border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-xl'
               }`}
             />
           </div>
@@ -252,10 +252,10 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add key deliverables, acceptance criteria, or technical constraints..."
               className={`w-full px-4 py-3 rounded-2xl border text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all resize-none ${
-                isLight
-                  ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400'
-                  : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'
-              }`}
+              isLight
+                ? 'border-white/40 bg-white/50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400 backdrop-blur-xl'
+                : 'border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-xl'
+            }`}
             />
           </div>
 
@@ -268,9 +268,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               }`}>
                 Priority Tier
               </label>
-              <div className={`grid grid-cols-4 gap-1.5 p-1 rounded-2xl border ${
-                isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
-              }`}>
+              <div className={`grid grid-cols-4 gap-1.5 p-1 rounded-2xl border liquid-glass-pill`}>
                 {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
                   <button
                     key={p}
@@ -424,9 +422,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </div>
 
           {/* Recurring Schedule */}
-          <div className={`p-4 rounded-2xl border space-y-3 ${
-            isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.03] border-white/10'
-          }`}>
+          <div className={`p-4 rounded-2xl border space-y-3 liquid-glass-card`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Repeat className="w-4 h-4 text-cyan-400" />
@@ -482,9 +478,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </div>
 
           {/* Email Notification & Reminder */}
-          <div className={`p-4 rounded-2xl border space-y-3 ${
-            isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.03] border-white/10'
-          }`}>
+          <div className={`p-4 rounded-2xl border space-y-3 liquid-glass-card`}>
             <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
               isLight ? 'text-slate-500' : 'text-white/60'
             }`}>
@@ -569,9 +563,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             </div>
 
             {subtasks.length > 0 && (
-              <div className={`space-y-1.5 max-h-36 overflow-y-auto p-2 rounded-2xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.02] border-white/10'
-              }`}>
+              <div className={`space-y-1.5 max-h-36 overflow-y-auto p-2 rounded-2xl border liquid-glass-subtle`}>
                 {subtasks.map((st) => (
                   <div key={st.id} className={`flex items-center justify-between gap-2 p-2 rounded-xl ${
                     isLight ? 'hover:bg-slate-100' : 'hover:bg-white/5'
@@ -628,8 +620,8 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-5 border-t sticky bottom-0 ${
-            isLight ? 'bg-white border-slate-200' : 'bg-[#0a0a0c]/95 border-white/10'
+          <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-5 border-t sticky bottom-0 backdrop-blur-2xl ${
+            isLight ? 'bg-white/80 border-white/30' : 'bg-[#0a0a0c]/80 border-white/10'
           }`}>
             <button
               type="button"

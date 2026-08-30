@@ -322,12 +322,12 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
     }`}>
       <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col ${
         isLight
-          ? 'bg-white border border-slate-200 text-slate-900'
-          : 'bg-[#121215] border border-white/15 text-white'
+          ? 'bg-white/80 border border-white/40 text-slate-900 backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_40px_rgba(0,0,0,0.12)]'
+          : 'bg-[#121215]/80 border border-white/15 text-white backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_40px_rgba(0,0,0,0.5)]'
       }`}>
         {/* Header */}
-        <div className="p-5 border-b flex items-center justify-between shrink-0"
-          style={{ borderColor: isLight ? 'rgb(226 232 240)' : 'rgba(255,255,255,0.1)' }}>
+        <div className="p-5 border-b flex items-center justify-between shrink-0 backdrop-blur-2xl"
+          style={{ borderColor: isLight ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center">
               <Dumbbell className="w-5 h-5 text-black" />

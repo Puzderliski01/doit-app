@@ -179,12 +179,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       className={`group relative p-5 sm:p-6 rounded-3xl transition-all duration-200 ${
         isLight
           ? task.priority === 'urgent' || task.priority === 'high'
-            ? 'bg-white border border-orange-200 shadow-[0_4px_20px_rgba(249,115,22,0.06)] hover:border-orange-300'
-            : 'bg-white border border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:border-slate-300 hover:shadow-md'
+            ? 'bg-white/70 border border-orange-200/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_20px_rgba(249,115,22,0.08)] hover:border-orange-300/60 backdrop-blur-2xl'
+            : 'bg-white/60 border border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_12px_rgba(0,0,0,0.04)] hover:border-white/60 hover:shadow-md backdrop-blur-2xl'
           : task.priority === 'urgent' || task.priority === 'high'
-            ? 'bg-gradient-to-r from-white/[0.08] to-white/[0.02] border border-white/10 backdrop-blur-md shadow-2xl hover:border-white/20'
-            : 'bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 backdrop-blur-sm shadow-lg'
-      } ${task.completed ? (isLight ? 'opacity-60 bg-slate-50' : 'opacity-55') : ''}`}
+            ? 'bg-gradient-to-r from-white/[0.1] to-white/[0.03] border border-white/[0.12] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.2)] hover:border-white/20'
+            : 'bg-white/[0.05] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.12] backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_2px_12px_rgba(0,0,0,0.15)]'
+      } ${task.completed ? (isLight ? 'opacity-60 bg-white/40' : 'opacity-55') : ''}`}
     >
       {/* Priority accent side glow indicator */}
       <div 

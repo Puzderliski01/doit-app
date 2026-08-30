@@ -1149,7 +1149,7 @@ export default function App() {
           {currentView === 'home' && (
             <div className="space-y-6">
               {/* Welcome Header */}
-              <div className={`p-6 rounded-3xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
+              <div className={`p-6 rounded-3xl border relative overflow-hidden ${isLight ? 'bg-white/70 border-white/40 backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_20px_rgba(0,0,0,0.06)]' : 'bg-white/[0.06] border-white/[0.1] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_20px_rgba(0,0,0,0.2)]'}`}>
                 <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {currentUser ? `${t('home.welcome')}, ${currentUser.displayName || 'User'}` : 'Welcome to DoIT'}
                 </h1>
@@ -1160,19 +1160,19 @@ export default function App() {
 
               {/* Quick Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
                   <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.pendingTasks')}</p>
                   <p className={`text-2xl font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>{pendingCount}</p>
                 </div>
-                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
                   <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.dueToday')}</p>
                   <p className="text-2xl font-bold mt-1 text-orange-500">{todayCount}</p>
                 </div>
-                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
                   <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.overdue')}</p>
                   <p className={`text-2xl font-bold mt-1 ${overdueCount > 0 ? 'text-red-500' : isLight ? 'text-slate-900' : 'text-white'}`}>{overdueCount}</p>
                 </div>
-                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                <div className={`p-4 rounded-2xl border liquid-glass-card ${isLight ? '' : ''}`}>
                   <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.completed')}</p>
                   <p className="text-2xl font-bold mt-1 text-emerald-500">{tasks.filter(task => task.completed).length}</p>
                 </div>
@@ -1182,7 +1182,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => { haptic.mediumClick(); setCurrentView('tasks'); }}
-                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${isLight ? 'bg-white border-slate-200 hover:border-orange-300' : 'bg-white/5 border-white/10 hover:border-orange-500/30'}`}
+                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer liquid-glass-card ${isLight ? 'hover:border-orange-300' : 'hover:border-orange-500/30'}`}
                 >
                   <CheckSquare className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
                   <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
@@ -1190,7 +1190,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
-                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${isLight ? 'bg-white border-slate-200 hover:border-orange-300' : 'bg-white/5 border-white/10 hover:border-orange-500/30'}`}
+                  className={`p-5 rounded-2xl border text-left transition-all cursor-pointer liquid-glass-card ${isLight ? 'hover:border-orange-300' : 'hover:border-orange-500/30'}`}
                 >
                   <Dumbbell className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
                   <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
@@ -1213,7 +1213,7 @@ export default function App() {
           {currentView === 'tasks' && (
             <div className="space-y-5">
               {/* Sub-view Toggle */}
-              <div className={`flex gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+              <div className={`flex gap-1 p-1 rounded-2xl border liquid-glass-pill`}>
                 {[
                   { id: 'list' as const, label: t('tasks.taskList'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
                   { id: 'matrix' as const, label: t('tasks.priorityMatrix'), icon: <LayoutGrid className="w-3.5 h-3.5" /> },
@@ -1237,7 +1237,7 @@ export default function App() {
               {taskSubView === 'list' && (
                 <div className="space-y-6">
                   <QuickAddBar categories={categories} theme={theme} onAddTask={handleQuickAdd} />
-                  <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl ${isLight ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/[0.03]'}`}>
+                  <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl liquid-glass-card`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="relative flex-1 max-w-md">
                         <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
@@ -1273,7 +1273,7 @@ export default function App() {
                         </select>
                       </div>
                     </div>
-                    <div className={`flex flex-wrap gap-1.5 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+                    <div className={`flex flex-wrap gap-1.5 pt-3 border-t ${isLight ? 'border-white/30' : 'border-white/10'}`}>
                       {[
                         { id: 'all', label: t('tasks.allTasks'), count: tasks.length },
                         { id: 'pending', label: t('tasks.pending'), count: pendingCount },
@@ -1286,8 +1286,8 @@ export default function App() {
                           onClick={() => { haptic.lightTap(); setStatusFilter(item.id as FilterStatus); }}
                           className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                             statusFilter === item.id
-                              ? isLight ? 'bg-slate-900 text-white' : 'bg-white text-black'
-                              : isLight ? 'bg-slate-100 text-slate-600 hover:text-slate-900' : 'bg-white/5 text-white/50 hover:text-white'
+                              ? isLight ? 'bg-white/80 text-slate-900 border border-white/50 shadow-sm backdrop-blur-xl' : 'bg-white/15 text-white border border-white/15 shadow-sm backdrop-blur-xl'
+                              : isLight ? 'bg-white/40 text-slate-600 hover:text-slate-900 border border-white/30 backdrop-blur-xl' : 'bg-white/[0.04] text-white/50 hover:text-white border border-white/[0.06] backdrop-blur-xl'
                           }`}
                         >
                           {item.label}
@@ -1346,7 +1346,7 @@ export default function App() {
           {currentView === 'fitness' && (
             <div className="space-y-5">
               {/* Sub-view Tabs */}
-              <div className={`flex gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+              <div className={`flex gap-1 p-1 rounded-2xl border liquid-glass-pill`}>
                 {[
                   { id: 'dashboard' as const, label: t('fitness.dashboard'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
                   { id: 'trainer' as const, label: t('fitness.trainer'), icon: <Sparkles className="w-3.5 h-3.5" /> },

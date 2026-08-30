@@ -87,10 +87,10 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <div className={`w-full rounded-3xl border transition-all overflow-hidden ${
+    <div className={`w-full rounded-3xl border transition-all overflow-hidden liquid-glass-card ${
       isLight 
-        ? 'border-slate-200 bg-white shadow-[0_4px_25px_rgba(0,0,0,0.06)] hover:border-slate-300' 
-        : 'border-white/10 bg-gradient-to-r from-white/[0.08] to-white/[0.02] backdrop-blur-xl shadow-2xl hover:border-white/20'
+        ? 'hover:border-orange-300' 
+        : 'hover:border-white/20'
     }`}>
       <form onSubmit={handleSubmit} className="p-4 sm:p-5">
         <div className="flex items-center gap-3.5">
@@ -130,8 +130,8 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
 
         {/* Quick controls expansion bar */}
         {isExpanded && (
-          <div className={`mt-3.5 pt-3.5 border-t space-y-3 animate-in fade-in slide-in-from-top-1 duration-150 ${
-            isLight ? 'border-slate-100' : 'border-white/10'
+            <div className={`mt-3.5 pt-3.5 border-t space-y-3 animate-in fade-in slide-in-from-top-1 duration-150 ${
+            isLight ? 'border-white/30' : 'border-white/10'
           }`}>
             
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 text-xs">
@@ -139,8 +139,8 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
               <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
                 
                 {/* Due Date Shortcut Selector */}
-                <div className={`flex items-center gap-1 p-1 rounded-full px-2 border ${
-                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
+                <div className={`flex items-center gap-1 p-1 rounded-full px-2 border liquid-glass-pill ${
+                  isLight ? '' : ''
                 }`}>
                   <Clock className={`w-3.5 h-3.5 ml-1 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                   <button
@@ -179,9 +179,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
                 </div>
 
                 {/* Priority Chips */}
-                <div className={`flex items-center gap-1 p-1 rounded-full px-2 border ${
-                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
-                }`}>
+                <div className={`flex items-center gap-1 p-1 rounded-full px-2 border liquid-glass-pill`}>
                   <Flag className={`w-3.5 h-3.5 ml-1 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                   {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
                     <button
@@ -200,9 +198,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
                 </div>
 
                 {/* Recurring Selector */}
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${
-                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
-                }`}>
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border liquid-glass-pill`}>
                   <Repeat className="w-3.5 h-3.5 text-orange-500" />
                   <select
                     value={recurringType}
@@ -223,9 +219,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
                 </div>
 
                 {/* Category Selector */}
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${
-                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
-                }`}>
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border liquid-glass-pill`}>
                   <Folder className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
                   <select
                     value={categoryId}

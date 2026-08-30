@@ -102,9 +102,9 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
         </div>
       </div>
 
-      <div className={`rounded-2xl p-5 border relative overflow-hidden ${
+      <div className={`rounded-2xl p-5 border relative overflow-hidden liquid-glass-card ${
         isLight
-          ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'
+          ? 'bg-gradient-to-br from-amber-50/80 to-orange-50/80 border-amber-200/50'
           : 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20'
       }`}>
         <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-30"
@@ -127,7 +127,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
             </p>
             {progress.nextRank && (
               <div className="mt-2">
-                <div className={`h-1.5 rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-white/10'}`}>
+                <div className={`h-1.5 rounded-full overflow-hidden liquid-glass-subtle`}>
                   <div className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${progress.percent}%`, background: rankInfo.color }} />
                 </div>
@@ -173,11 +173,9 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       </div>
 
       {Object.keys(stats.personalRecords).length > 0 && (
-        <div className={`rounded-2xl p-4 border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-        }`}>
-          <div className="flex items-center gap-2 mb-3">
-            <Trophy className="w-4 h-4 text-amber-400" />
+        <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="w-4 h-4 text-amber-400" />
             <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
               Personal Records
             </h3>
@@ -206,9 +204,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       )}
 
       {muscleStats.length > 0 && (
-        <div className={`rounded-2xl p-4 border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-        }`}>
+        <div className={`rounded-2xl p-4 border liquid-glass-card`}>
           <div className="flex items-center gap-2 mb-3">
             <Target className="w-4 h-4 text-purple-400" />
             <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -222,7 +218,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                 <span className={`text-xs w-20 ${isLight ? 'text-slate-700' : 'text-white/70'}`}>
                   {MUSCLE_GROUP_LABELS[group]}
                 </span>
-                <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>
+                <div className={`flex-1 h-1.5 rounded-full overflow-hidden liquid-glass-subtle`}>
                   <div className="h-full rounded-full transition-all"
                     style={{ width: `${percent}%`, background: MUSCLE_GROUP_COLORS[group] }} />
                 </div>
@@ -254,7 +250,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
               const muscleProgress = getProgressToNextRank(data.xp);
               return (
                 <div key={group}
-                  className={`p-2.5 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                  className={`p-2.5 rounded-xl liquid-glass-subtle`}>
                   <div className="flex items-center gap-1.5 mb-1">
                     <span className="text-sm">{MUSCLE_GROUP_ICONS[group]}</span>
                     <span className={`text-[10px] font-semibold truncate ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
@@ -267,7 +263,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                       {muscleRankInfo.rank}
                     </span>
                   </div>
-                  <div className={`mt-1.5 h-1 rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-white/10'}`}>
+                  <div className={`mt-1.5 h-1 rounded-full overflow-hidden liquid-glass-subtle`}>
                     <div className="h-full rounded-full transition-all"
                       style={{ width: `${muscleProgress.percent}%`, background: muscleRankInfo.color }} />
                   </div>
@@ -279,7 +275,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
             })}
           {(Object.entries(safeStats.muscleRanks) as [MuscleGroup, { xp: number; rank: Rank }][])
             .filter(([, data]) => data.xp === 0).length > 0 && (
-            <div className={`p-2.5 rounded-xl border border-dashed ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+            <div className={`p-2.5 rounded-xl border border-dashed liquid-glass-subtle`}>
               <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
                 Train more muscles to unlock their ranks
               </p>
@@ -289,9 +285,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       </div>
 
       {weeklyData.length > 0 && (
-        <div className={`rounded-2xl p-4 border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-        }`}>
+        <div className={`rounded-2xl p-4 border liquid-glass-card`}>
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="w-4 h-4 text-blue-400" />
             <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -322,9 +316,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       )}
 
       {topExercises.length > 0 && (
-        <div className={`rounded-2xl p-4 border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-        }`}>
+        <div className={`rounded-2xl p-4 border liquid-glass-card`}>
           <div className="flex items-center gap-2 mb-3">
             <Zap className="w-4 h-4 text-amber-400" />
             <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -336,9 +328,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
               <button
                 key={i}
                 onClick={() => exercise && onSelectExercise(exercise.id)}
-                className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-colors text-left ${
-                  isLight ? 'bg-slate-50 hover:bg-slate-100' : 'bg-white/5 hover:bg-white/10'
-                }`}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-colors text-left liquid-glass-subtle hover:bg-white/10 ${isLight ? 'hover:bg-white/70' : ''}`}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-amber-400 w-5">#{i + 1}</span>
@@ -356,9 +346,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       )}
 
       {recentEntries.length > 0 && (
-        <div className={`rounded-2xl p-4 border ${
-          isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-        }`}>
+        <div className={`rounded-2xl p-4 border liquid-glass-card`}>
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 text-green-400" />
             <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -368,7 +356,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
           <div className="space-y-2">
             {recentEntries.map((entry) => (
               <div key={entry.id}
-                className={`p-3 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                className={`p-3 rounded-xl liquid-glass-subtle`}>
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-semibold ${isLight ? 'text-slate-800' : 'text-white/90'}`}>
                     {entry.exerciseName}
@@ -397,9 +385,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       )}
 
       {stats.totalWorkouts === 0 && (
-        <div className={`text-center py-12 rounded-2xl border ${
-          isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'
-        }`}>
+        <div className={`text-center py-12 rounded-2xl border liquid-glass-card`}>
           <Dumbbell className={`w-12 h-12 mx-auto mb-3 ${isLight ? 'text-slate-300' : 'text-white/20'}`} />
           <p className={`text-sm font-medium ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
             No workouts logged yet
@@ -429,9 +415,7 @@ function StatCard({
   isLight: boolean;
 }) {
   return (
-    <div className={`rounded-2xl p-3 border ${
-      isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-    }`}>
+    <div className={`rounded-2xl p-3 border liquid-glass-card`}>
       <div className="flex items-center gap-1.5 mb-1.5" style={{ color }}>
         {icon}
         <span className={`text-[11px] font-medium ${isLight ? 'text-slate-500' : 'text-white/50'}`}>

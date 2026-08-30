@@ -103,11 +103,11 @@ export const Settings: React.FC<SettingsProps> = ({
   const Section = ({ id, title, icon, children }: { id: string; title: string; icon: React.ReactNode; children: React.ReactNode }) => {
     const isExpanded = expandedSection === id;
     return (
-      <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+      <div className={`rounded-2xl border overflow-hidden liquid-glass-card`}>
         <button
           onClick={() => { haptic.lightTap(); setExpandedSection(isExpanded ? null : id); }}
           className={`w-full flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer ${
-            isLight ? 'bg-white hover:bg-slate-50' : 'bg-white/5 hover:bg-white/10'
+            isLight ? 'hover:bg-white/60' : 'hover:bg-white/[0.06]'
           }`}
         >
           <span className={`${isLight ? 'text-slate-500' : 'text-white/50'}`}>{icon}</span>
@@ -123,7 +123,7 @@ export const Settings: React.FC<SettingsProps> = ({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className={`px-4 py-3 border-t space-y-3 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.02] border-white/10'}`}>
+              <div className={`px-4 py-3 border-t space-y-3 backdrop-blur-xl ${isLight ? 'bg-white/40 border-white/30' : 'bg-white/[0.02] border-white/10'}`}>
                 {children}
               </div>
             </motion.div>
@@ -309,7 +309,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         {/* EmailJS Configuration */}
-        <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+        <div className={`p-3 rounded-xl border liquid-glass-subtle`}>
           <div className="flex items-center gap-2 mb-3">
             <Send className="w-4 h-4 text-orange-500" />
             <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('settings.emailReminders')}</p>
@@ -440,7 +440,7 @@ export const Settings: React.FC<SettingsProps> = ({
       <Section id="categories" title={t('settings.categories')} icon={<Database className="w-4 h-4" />}>
         <div className="space-y-1.5">
           {categories.map(cat => (
-            <div key={cat.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-white' : 'bg-white/5'}`}>
+            <div key={cat.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg liquid-glass-subtle`}>
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
               <span className={`flex-1 text-xs font-semibold ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{cat.name}</span>
               <button
@@ -452,7 +452,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           ))}
         </div>
-        <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+        <div className={`p-3 rounded-xl border liquid-glass-subtle`}>
           <input
             type="text"
             placeholder={t('settings.newCategoryPlaceholder')}
@@ -489,7 +489,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* Sync Status */}
       <Section id="sync" title={t('settings.cloudSync')} icon={<Cloud className="w-4 h-4" />}>
-        <div className={`flex items-center gap-3 p-3 rounded-xl ${isLight ? 'bg-white' : 'bg-white/5'}`}>
+        <div className={`flex items-center gap-3 p-3 rounded-xl liquid-glass-subtle`}>
           {currentUser?.isGuest ? (
             <CloudOff className="w-5 h-5 text-amber-500" />
           ) : isOnline ? (

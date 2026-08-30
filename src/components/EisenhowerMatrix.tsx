@@ -143,10 +143,10 @@ export const EisenhowerMatrix: React.FC<EisenhowerMatrixProps> = ({
         {quadrants.map((quad) => (
           <div
             key={quad.id}
-            className={`rounded-3xl border p-6 flex flex-col min-h-[340px] transition-all ${
+            className={`rounded-3xl border p-6 flex flex-col min-h-[340px] transition-all liquid-glass-card ${
               isLight 
-                ? `${quad.borderClass} shadow-[0_2px_15px_rgba(0,0,0,0.03)] hover:shadow-md` 
-                : `${quad.borderClass} backdrop-blur-xl shadow-2xl hover:border-white/20`
+                ? `${quad.borderClass}` 
+                : `${quad.borderClass}`
             }`}
           >
             {/* Quadrant Header */}
@@ -190,11 +190,7 @@ export const EisenhowerMatrix: React.FC<EisenhowerMatrixProps> = ({
                     <motion.div
                       layout
                       key={task.id}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        isLight 
-                          ? 'bg-white border-slate-200 shadow-sm hover:border-slate-300 hover:shadow' 
-                          : 'border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/10 backdrop-blur-sm'
-                      }`}
+                      className={`p-4 rounded-2xl border transition-all liquid-glass-subtle`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
