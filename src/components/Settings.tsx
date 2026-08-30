@@ -1,0 +1,479 @@
+import React, { useState } from 'react';
+import { UserProfile, Category } from '../types';
+import {
+  Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
+  Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
+  Dumbbell, Cloud, CloudOff, Shield, Info, FileText, LogOut, Eye, EyeOff,
+  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check
+} from 'lucide-react';
+import { haptic } from '../utils/haptics';
+import { motion, AnimatePresence } from 'motion/react';
+
+interface SettingsProps {
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
+  userProfile: UserProfile;
+  onProfileUpdate: (updates: Partial<UserProfile>) => void;
+  currentUser: { uid: string; email?: string; displayName?: string; photoURL?: string; isGuest?: boolean } | null;
+  onOpenAuth: () => void;
+  onSignOut: () => void;
+  categories: Category[];
+  onCategoriesChange: (cats: Category[]) => void;
+  userEmail: string;
+  onUserEmailChange: (email: string) => void;
+  isOnline: boolean;
+  lastSyncTime: string | null;
+  onOpenDocs: () => void;
+  onExportData: () => void;
+  onClearData: () => void;
+}
+
+export const Settings: React.FC<SettingsProps> = ({
+  theme,
+  onToggleTheme,
+  userProfile,
+  onProfileUpdate,
+  currentUser,
+  onOpenAuth,
+  onSignOut,
+  categories,
+  onCategoriesChange,
+  userEmail,
+  onUserEmailChange,
+  isOnline,
+  lastSyncTime,
+  onOpenDocs,
+  onExportData,
+  onClearData,
+}) => {
+  const isLight = theme === 'light';
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return localStorage.getItem('doit_sound_enabled') !== 'false';
+  });
+  const [hapticEnabled, setHapticEnabled] = useState(() => {
+    return localStorage.getItem('doit_haptic_enabled') !== 'false';
+  });
+  const [pushEnabled, setPushEnabled] = useState(() => {
+    return Notification.permission === 'granted';
+  });
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#f59e0b');
+  const CATEGORY_COLORS = ['#f59e0b','#10b981','#ec4899','#38bdf8','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#6366f1'];
+
+  const toggleSound = () => {
+    const newVal = !soundEnabled;
+    setSoundEnabled(newVal);
+    localStorage.setItem('doit_sound_enabled', String(newVal));
+    haptic.lightTap();
+  };
+
+  const toggleHaptic = () => {
+    const newVal = !hapticEnabled;
+    setHapticEnabled(newVal);
+    localStorage.setItem('doit_haptic_enabled', String(newVal));
+  };
+
+  const togglePush = async () => {
+    if (pushEnabled) {
+      setPushEnabled(false);
+    } else {
+      const result = await Notification.requestPermission();
+      setPushEnabled(result === 'granted');
+    }
+    haptic.lightTap();
+  };
+
+  const handleDeleteCategory = (catId: string) => {
+    const newCats = categories.filter(c => c.id !== catId);
+    onCategoriesChange(newCats);
+    haptic.mediumClick();
+  };
+
+  const Section = ({ id, title, icon, children }: { id: string; title: string; icon: React.ReactNode; children: React.ReactNode }) => {
+    const isExpanded = expandedSection === id;
+    return (
+      <div className={`rounded-xl border overflow-hidden ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+        <button
+          onClick={() => { haptic.lightTap(); setExpandedSection(isExpanded ? null : id); }}
+          className={`w-full flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer ${
+            isLight ? 'bg-white hover:bg-slate-50' : 'bg-white/5 hover:bg-white/10'
+          }`}
+        >
+          <span className={`${isLight ? 'text-slate-500' : 'text-white/50'}`}>{icon}</span>
+          <span className={`flex-1 text-left text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{title}</span>
+          <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''} ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
+        </button>
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className={`px-4 py-3 border-t space-y-3 ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.02] border-white/10'}`}>
+                {children}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
+  const ToggleRow = ({ label, description, enabled, onToggle }: { label: string; description?: string; enabled: boolean; onToggle: () => void }) => (
+    <div className="flex items-center justify-between">
+      <div>
+        <p className={`text-xs font-semibold ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{label}</p>
+        {description && <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>{description}</p>}
+      </div>
+      <button
+        onClick={onToggle}
+        className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
+          enabled ? 'bg-orange-500' : isLight ? 'bg-slate-300' : 'bg-white/20'
+        }`}
+      >
+        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+          enabled ? 'translate-x-5.5' : 'translate-x-0.5'
+        }`} />
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5 pb-24">
+      {/* Header */}
+      <div>
+        <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          Settings
+        </h1>
+        <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
+          Customize your experience
+        </p>
+      </div>
+
+      {/* Account Section */}
+      <Section id="account" title="Account" icon={<User className="w-4 h-4" />}>
+        {currentUser ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              {currentUser.photoURL ? (
+                <img src={currentUser.photoURL} alt="" className="w-10 h-10 rounded-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-black font-bold text-sm">
+                  {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {currentUser.displayName || 'User'}
+                </p>
+                <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+                  {currentUser.email || 'Guest Account'}
+                </p>
+              </div>
+            </div>
+            {currentUser.isGuest && (
+              <button
+                onClick={() => { haptic.mediumClick(); onOpenAuth(); }}
+                className="w-full py-2 rounded-xl bg-orange-500 text-white text-xs font-bold cursor-pointer"
+              >
+                Sign In to Sync
+              </button>
+            )}
+            {!currentUser.isGuest && (
+              <button
+                onClick={() => { haptic.mediumClick(); onSignOut(); }}
+                className={`w-full py-2 rounded-xl border text-xs font-bold cursor-pointer flex items-center justify-center gap-2 ${
+                  isLight ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-red-500/20 text-red-400 hover:bg-red-500/10'
+                }`}
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => { haptic.mediumClick(); onOpenAuth(); }}
+            className="w-full py-2 rounded-xl bg-orange-500 text-white text-xs font-bold cursor-pointer"
+          >
+            Sign In
+          </button>
+        )}
+      </Section>
+
+      {/* Appearance */}
+      <Section id="appearance" title="Appearance" icon={<Palette className="w-4 h-4" />}>
+        <ToggleRow
+          label="Dark Mode"
+          description={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
+          enabled={!isLight}
+          onToggle={() => { haptic.lightTap(); onToggleTheme(); }}
+        />
+        <div>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Weight Unit</p>
+          <div className="flex gap-2">
+            {(['kg', 'lbs'] as const).map(unit => (
+              <button
+                key={unit}
+                onClick={() => { haptic.lightTap(); onProfileUpdate({ weightUnit: unit }); }}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  userProfile.weightUnit === unit
+                    ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                    : isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
+                }`}
+              >
+                {unit.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* Sound & Haptics */}
+      <Section id="sound" title="Sound & Haptics" icon={<Volume2 className="w-4 h-4" />}>
+        <ToggleRow
+          label="Notification Sounds"
+          description="Play sounds for alerts"
+          enabled={soundEnabled}
+          onToggle={toggleSound}
+        />
+        <ToggleRow
+          label="Haptic Feedback"
+          description="Vibration on interactions"
+          enabled={hapticEnabled}
+          onToggle={toggleHaptic}
+        />
+      </Section>
+
+      {/* Notifications */}
+      <Section id="notifications" title="Notifications" icon={<Bell className="w-4 h-4" />}>
+        <ToggleRow
+          label="Push Notifications"
+          description="Browser notifications for deadlines"
+          enabled={pushEnabled}
+          onToggle={togglePush}
+        />
+        <div>
+          <p className={`text-xs font-semibold mb-1 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Reminder Email</p>
+          <input
+            type="email"
+            value={userEmail}
+            onChange={(e) => onUserEmailChange(e.target.value)}
+            placeholder="your@email.com"
+            className={`w-full px-3 py-2 rounded-xl border text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
+              isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/10 bg-white/5 text-white'
+            }`}
+          />
+        </div>
+      </Section>
+
+      {/* Fitness Profile */}
+      <Section id="fitness" title="Fitness Profile" icon={<Dumbbell className="w-4 h-4" />}>
+        <div>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Goals</p>
+          <div className="flex flex-wrap gap-1.5">
+            {(['lose_weight', 'gain_muscle', 'maintain', 'strength', 'endurance'] as const).map(goal => (
+              <button
+                key={goal}
+                onClick={() => {
+                  haptic.lightTap();
+                  const goals = userProfile.goals || [];
+                  const newGoals = goals.includes(goal) ? goals.filter(g => g !== goal) : [...goals, goal];
+                  onProfileUpdate({ goals: newGoals });
+                }}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
+                  userProfile.goals?.includes(goal)
+                    ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                    : isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
+                }`}
+              >
+                {goal.replace(/_/g, ' ')}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Experience Level</p>
+          <div className="flex gap-2">
+            {(['beginner', 'intermediate', 'advanced'] as const).map(level => (
+              <button
+                key={level}
+                onClick={() => { haptic.lightTap(); onProfileUpdate({ experienceLevel: level }); }}
+                className={`flex-1 py-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                  userProfile.experienceLevel === level
+                    ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                    : isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
+        <ToggleRow
+          label="Public Leaderboard"
+          description="Show your profile on the leaderboard"
+          enabled={userProfile.leaderboardPublic}
+          onToggle={() => { haptic.lightTap(); onProfileUpdate({ leaderboardPublic: !userProfile.leaderboardPublic }); }}
+        />
+      </Section>
+
+      {/* Categories */}
+      <Section id="categories" title="Task Categories" icon={<Database className="w-4 h-4" />}>
+        <div className="space-y-1.5">
+          {categories.map(cat => (
+            <div key={cat.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-white' : 'bg-white/5'}`}>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+              <span className={`flex-1 text-xs font-semibold ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{cat.name}</span>
+              <button
+                onClick={() => handleDeleteCategory(cat.id)}
+                className={`p-1 rounded cursor-pointer ${isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'}`}
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+          <input
+            type="text"
+            placeholder="New category name..."
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            className={`w-full px-3 py-2 rounded-lg border text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 mb-2 ${
+              isLight ? 'border-slate-200 bg-slate-50 text-slate-900' : 'border-white/10 bg-white/5 text-white'
+            }`}
+          />
+          <div className="flex gap-1.5 mb-2">
+            {CATEGORY_COLORS.map(color => (
+              <button
+                key={color}
+                onClick={() => setNewCategoryColor(color)}
+                className={`w-5 h-5 rounded-full border-2 cursor-pointer ${newCategoryColor === color ? 'border-white scale-110' : 'border-transparent'}`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              if (!newCategoryName.trim()) return;
+              const id = 'cat-' + newCategoryName.trim().toLowerCase().replace(/\s+/g, '-');
+              onCategoriesChange([...categories, { id, name: newCategoryName.trim(), color: newCategoryColor, iconName: 'Folder' }]);
+              setNewCategoryName('');
+              haptic.mediumClick();
+            }}
+            className="w-full py-2 rounded-lg bg-orange-500 text-white text-xs font-bold cursor-pointer"
+          >
+            Add Category
+          </button>
+        </div>
+      </Section>
+
+      {/* Sync Status */}
+      <Section id="sync" title="Cloud Sync" icon={<Cloud className="w-4 h-4" />}>
+        <div className={`flex items-center gap-3 p-3 rounded-xl ${isLight ? 'bg-white' : 'bg-white/5'}`}>
+          {isOnline ? (
+            <Cloud className="w-5 h-5 text-emerald-500" />
+          ) : (
+            <CloudOff className="w-5 h-5 text-amber-500" />
+          )}
+          <div>
+            <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {isOnline ? 'Connected' : 'Offline Mode'}
+            </p>
+            <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+              {lastSyncTime ? `Last sync: ${new Date(lastSyncTime).toLocaleString()}` : 'Not synced yet'}
+            </p>
+          </div>
+        </div>
+        <div className={`text-[10px] space-y-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+          <p className="font-semibold">Synced data:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {['Tasks', 'Categories', 'Fitness Entries', 'Profile', 'Notifications'].map(item => (
+              <span key={item} className={`px-2 py-0.5 rounded-full ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>{item}</span>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* Data Management */}
+      <Section id="data" title="Data Management" icon={<Database className="w-4 h-4" />}>
+        <button
+          onClick={() => { haptic.mediumClick(); onExportData(); }}
+          className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
+            isLight ? 'border-slate-200 text-slate-700 hover:bg-slate-50' : 'border-white/10 text-white/70 hover:bg-white/5'
+          }`}
+        >
+          <Download className="w-4 h-4" />
+          Export All Data (JSON)
+        </button>
+        {!showClearConfirm ? (
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
+              isLight ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-red-500/20 text-red-400 hover:bg-red-500/10'
+            }`}
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear All Local Data
+          </button>
+        ) : (
+          <div className={`p-3 rounded-xl border ${isLight ? 'bg-red-50 border-red-200' : 'bg-red-500/10 border-red-500/20'}`}>
+            <div className="flex items-start gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+              <p className={`text-xs ${isLight ? 'text-red-700' : 'text-red-300'}`}>
+                This will delete all local data. Firebase data is safe. Are you sure?
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { haptic.mediumClick(); onClearData(); setShowClearConfirm(false); }}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-xs font-bold cursor-pointer"
+              >
+                Yes, Clear
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className={`flex-1 py-2 rounded-lg border text-xs font-bold cursor-pointer ${
+                  isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
+                }`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </Section>
+
+      {/* Docs */}
+      <Section id="docs" title="Documentation" icon={<FileText className="w-4 h-4" />}>
+        <button
+          onClick={() => { haptic.mediumClick(); onOpenDocs(); }}
+          className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
+            isLight ? 'border-slate-200 text-slate-700 hover:bg-slate-50' : 'border-white/10 text-white/70 hover:bg-white/5'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          View Deployment & Store Docs
+          <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+        </button>
+      </Section>
+
+      {/* About */}
+      <Section id="about" title="About" icon={<Info className="w-4 h-4" />}>
+        <div className={`text-center py-4 ${isLight ? 'text-slate-600' : 'text-white/50'}`}>
+          <p className="text-2xl font-bold mb-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            DoIT PRO
+          </p>
+          <p className="text-[10px] font-mono">v3.0.0</p>
+          <p className="text-[10px] mt-1">Task Management & Fitness Tracking</p>
+        </div>
+      </Section>
+    </div>
+  );
+};

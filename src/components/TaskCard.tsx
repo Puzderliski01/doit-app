@@ -460,14 +460,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               {showMenu && (
                 <>
                   <div 
-                    className="fixed inset-0 z-20" 
+                    className="fixed inset-0 z-50" 
                     onClick={() => setShowMenu(false)} 
                   />
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: -5 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className={`absolute right-0 top-10 z-30 w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
+                    className={`absolute right-0 top-10 z-[60] w-52 rounded-2xl border backdrop-blur-2xl shadow-2xl py-1.5 text-xs ${
                       isLight 
                         ? 'bg-white border-slate-200 text-slate-800' 
                         : 'bg-[#111111] border-white/15 text-white'

@@ -45,6 +45,7 @@ const ExerciseLogModal = lazy(() => import('./components/ExerciseLogModal').then
 const FitnessOnboarding = lazy(() => import('./components/FitnessOnboarding').then(m => ({ default: m.FitnessOnboarding })));
 const Leaderboard = lazy(() => import('./components/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const TrainerDashboard = lazy(() => import('./components/TrainerDashboard').then(m => ({ default: m.TrainerDashboard })));
+const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
 
 import { 
   auth,
@@ -86,7 +87,8 @@ import {
   LogIn,
   ShieldCheck,
   UserCheck,
-  Lock
+  Lock,
+  Trophy
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -913,6 +915,40 @@ export default function App() {
     setIsAuthModalOpen(false);
   };
 
+  const handleExportData = () => {
+    const data = {
+      tasks,
+      categories,
+      userProfile,
+      fitnessEntries,
+      exportDate: new Date().toISOString(),
+      version: '3.0.0',
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `doit-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleClearData = () => {
+    localStorage.removeItem('doit_tasks_v2');
+    localStorage.removeItem('doit_categories_v2');
+    localStorage.removeItem('doit_user_profile');
+    localStorage.removeItem('doit_fitness_entries');
+    localStorage.removeItem('doit_notification_logs_v2');
+    localStorage.removeItem('doit_user_email_v2');
+    localStorage.removeItem('doit_app_notifications_v1');
+    localStorage.removeItem('doit_current_view');
+    localStorage.removeItem('fitness-display-unit');
+    setTasks([]);
+    setCategories(storage.getCategories());
+    setFitnessEntries([]);
+    setAppNotifications([]);
+  };
+
   // If restoring existing device session, show sleek obsidian loader
   if (authLoading && !currentUser) {
     return (
@@ -1320,60 +1356,6 @@ export default function App() {
           )}
 
           {/* VIEW 5: BUILD & NATIVE APP STORE DOCS */}
-          {currentView === 'docs' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-6 sm:p-8 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <BookOpen className="w-5 h-5 text-orange-400" />
-                    <h2 className="text-lg font-light text-white tracking-tight">
-                      Cross-Platform Build & Mobile Architecture Documentation
-                    </h2>
-                  </div>
-                  <p className="text-xs text-white/50">
-                    Comprehensive setup guides for React Native (iOS & Android), Firebase sync, and store deployments.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsDocsModalOpen(true)}
-                  className="px-5 py-2.5 rounded-full bg-white text-black font-bold text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-white/90 active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
-                >
-                  Open Full Guide
-                </button>
-              </div>
-
-              {/* Inline preview of setup docs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/10 space-y-3">
-                  <h3 className="text-xs font-bold text-orange-400 uppercase tracking-widest">
-                    Target Project Path
-                  </h3>
-                  <code className="block p-3.5 rounded-2xl bg-black/60 text-xs font-mono text-white/80 border border-white/10">
-                    C:\Users\spuzd\OneDrive\Documents\VS Code\DoIT
-                  </code>
-                  <p className="text-xs text-white/50">
-                    Run <code className="text-orange-400 font-mono">npm run dev</code> for web, or <code className="text-cyan-400 font-mono">npx expo start</code> for simultaneous iOS & Android testing.
-                  </p>
-                </div>
-
-                <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/10 space-y-3">
-                  <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-widest">
-                    Simultaneous Store Releases
-                  </h3>
-                  <p className="text-xs text-white/50">
-                    Use EAS Build to compile Google Play Store <code className="text-white font-mono">.aab</code> and Apple App Store <code className="text-white font-mono">.ipa</code> binaries simultaneously with automated signing keys.
-                  </p>
-                  <button
-                    onClick={() => setIsDocsModalOpen(true)}
-                    className="text-xs font-bold text-orange-400 hover:underline cursor-pointer"
-                  >
-                    View EAS CLI Commands →
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* VIEW 6: FITNESS DASHBOARD */}
           {currentView === 'fitness' && (
             <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
@@ -1405,12 +1387,28 @@ export default function App() {
           {/* VIEW 7: LEADERBOARD */}
           {currentView === 'leaderboard' && (
             <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              <Leaderboard
-                theme={theme}
-                userProfile={userProfile}
-                onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
-                currentUserUid={currentUser?.uid}
-              />
+              {!currentUser || currentUser.isGuest ? (
+                <div className={`text-center py-16 rounded-2xl border mx-4 ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <Trophy className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
+                  <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Leaderboard</h2>
+                  <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>
+                    Sign in to see how you rank against others
+                  </p>
+                  <button
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Sign In to View Leaderboard
+                  </button>
+                </div>
+              ) : (
+                <Leaderboard
+                  theme={theme}
+                  userProfile={userProfile}
+                  onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+                  currentUserUid={currentUser?.uid}
+                />
+              )}
             </Suspense>
           )}
 
@@ -1424,6 +1422,30 @@ export default function App() {
                 onLogExercise={(_exerciseId, _exerciseName, _muscleGroup) => {
                   setIsExerciseLogModalOpen(true);
                 }}
+              />
+            </Suspense>
+          )}
+
+          {/* VIEW 9: SETTINGS */}
+          {currentView === 'settings' && (
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+              <Settings
+                theme={theme}
+                onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                userProfile={userProfile}
+                onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+                currentUser={currentUser}
+                onOpenAuth={() => setIsAuthModalOpen(true)}
+                onSignOut={handleLogout}
+                categories={categories}
+                onCategoriesChange={setCategories}
+                userEmail={userEmail}
+                onUserEmailChange={setUserEmail}
+                isOnline={isOnline}
+                lastSyncTime={lastSyncTime}
+                onOpenDocs={() => setIsDocsModalOpen(true)}
+                onExportData={handleExportData}
+                onClearData={handleClearData}
               />
             </Suspense>
           )}

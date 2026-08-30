@@ -9,6 +9,7 @@ import {
   Dumbbell,
   Trophy,
   Sparkles,
+  Settings,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -24,9 +25,7 @@ const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
   { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-5 h-5" /> },
   { id: 'trainer', label: 'Trainer', icon: <Sparkles className="w-5 h-5" /> },
   { id: 'leaderboard', label: 'Ranks', icon: <Trophy className="w-5 h-5" /> },
-  { id: 'calendar', label: 'Calendar', icon: <Calendar className="w-5 h-5" /> },
-  { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
-  { id: 'docs', label: 'Docs', icon: <BookOpen className="w-5 h-5" /> },
+  { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 export const MobileNav: React.FC<MobileNavProps> = ({
