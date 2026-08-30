@@ -1,6 +1,7 @@
 import React from 'react';
 import { ViewMode, AuthUser } from '../types';
 import { storage } from '../utils/storage';
+import { t } from '../i18n';
 import { 
   CheckSquare, 
   LayoutGrid, 
@@ -54,10 +55,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth
 }) => {
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-    { id: 'home', label: 'Home', icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: 'tasks', label: 'Tasks', icon: <CheckSquare className="w-3.5 h-3.5" /> },
-    { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-3.5 h-3.5" /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-3.5 h-3.5" /> },
+    { id: 'home', label: t('nav.home'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: 'tasks', label: t('nav.tasks'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
+    { id: 'fitness', label: t('nav.fitness'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
+    { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon className="w-3.5 h-3.5" /> },
   ];
 
   const isLight = theme === 'light';

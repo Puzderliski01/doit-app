@@ -239,6 +239,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   fitnessMode: false,
   fitnessStats: DEFAULT_FITNESS_STATS,
   weightUnit: 'kg',
+  language: 'en',
   onboardingCompleted: false,
   leaderboardPublic: false,
 };

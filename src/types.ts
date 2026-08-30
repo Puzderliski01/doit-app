@@ -193,6 +193,7 @@ export interface UserProfile {
   fitnessMode: boolean;
   fitnessStats: FitnessStats;
   weightUnit: 'kg' | 'lbs';
+  language: string;
   bodyWeight?: number;
   heightCm?: number;
   dateOfBirth?: string;

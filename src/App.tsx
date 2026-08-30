@@ -23,6 +23,7 @@ import { isOverdue, isDueToday, isDueThisWeek } from './utils/dateHelpers';
 import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
 import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from './utils/fitness';
+import { setLanguage, t } from './i18n';
 
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -204,6 +205,13 @@ export default function App() {
   });
   const [isExerciseLogModalOpen, setIsExerciseLogModalOpen] = useState(false);
   const [isFitnessOnboardingOpen, setIsFitnessOnboardingOpen] = useState(false);
+
+  // Apply language from user profile
+  useEffect(() => {
+    if (userProfile.language) {
+      setLanguage(userProfile.language as 'en' | 'sr' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'zh' | 'ar' | 'tr');
+    }
+  }, [userProfile.language]);
 
   // Filters and Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -1099,30 +1107,30 @@ export default function App() {
               {/* Welcome Header */}
               <div className={`p-6 rounded-3xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/[0.03] border-white/10'}`}>
                 <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  {currentUser ? `Welcome back, ${currentUser.displayName || 'User'}` : 'Welcome to DoIT'}
+                  {currentUser ? `${t('home.welcome')}, ${currentUser.displayName || 'User'}` : 'Welcome to DoIT'}
                 </h1>
                 <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {new Date().toLocaleDateString(userProfile.language === 'sr' ? 'sr-Latn' : userProfile.language || 'en', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </p>
               </div>
 
               {/* Quick Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Pending Tasks</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.pendingTasks')}</p>
                   <p className={`text-2xl font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>{pendingCount}</p>
                 </div>
                 <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Due Today</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.dueToday')}</p>
                   <p className="text-2xl font-bold mt-1 text-orange-500">{todayCount}</p>
                 </div>
                 <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Overdue</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.overdue')}</p>
                   <p className={`text-2xl font-bold mt-1 ${overdueCount > 0 ? 'text-red-500' : isLight ? 'text-slate-900' : 'text-white'}`}>{overdueCount}</p>
                 </div>
                 <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Completed</p>
-                  <p className="text-2xl font-bold mt-1 text-emerald-500">{tasks.filter(t => t.completed).length}</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{t('home.completed')}</p>
+                  <p className="text-2xl font-bold mt-1 text-emerald-500">{tasks.filter(task => task.completed).length}</p>
                 </div>
               </div>
 
@@ -1133,16 +1141,16 @@ export default function App() {
                   className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${isLight ? 'bg-white border-slate-200 hover:border-orange-300' : 'bg-white/5 border-white/10 hover:border-orange-500/30'}`}
                 >
                   <CheckSquare className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
-                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>View Tasks</p>
-                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} total tasks</p>
+                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
+                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} {t('home.totalTasks')}</p>
                 </button>
                 <button
                   onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
                   className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${isLight ? 'bg-white border-slate-200 hover:border-orange-300' : 'bg-white/5 border-white/10 hover:border-orange-500/30'}`}
                 >
                   <Dumbbell className={`w-6 h-6 mb-2 ${isLight ? 'text-slate-600' : 'text-white/60'}`} />
-                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Fitness</p>
-                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} workouts logged</p>
+                  <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
+                  <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} {t('home.workoutsLogged')}</p>
                 </button>
               </div>
 
@@ -1150,7 +1158,7 @@ export default function App() {
               {overdueCount > 0 && (
                 <div className={`p-4 rounded-2xl border ${isLight ? 'bg-red-50 border-red-200' : 'bg-red-500/10 border-red-500/20'}`}>
                   <p className={`text-xs font-bold ${isLight ? 'text-red-700' : 'text-red-400'}`}>
-                    ⚠️ {overdueCount} overdue task{overdueCount > 1 ? 's' : ''} need attention
+                    ⚠️ {overdueCount} {t('home.overdueAlert')}
                   </p>
                 </div>
               )}
@@ -1163,8 +1171,8 @@ export default function App() {
               {/* Sub-view Toggle */}
               <div className={`flex gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'}`}>
                 {[
-                  { id: 'list' as const, label: 'Task List', icon: <CheckSquare className="w-3.5 h-3.5" /> },
-                  { id: 'matrix' as const, label: 'Priority Matrix', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+                  { id: 'list' as const, label: t('tasks.taskList'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
+                  { id: 'matrix' as const, label: t('tasks.priorityMatrix'), icon: <LayoutGrid className="w-3.5 h-3.5" /> },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1194,7 +1202,7 @@ export default function App() {
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search tasks... (Press '/')"
+                          placeholder={t('tasks.searchPlaceholder')}
                           className={`w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${isLight ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'}`}
                         />
                       </div>
@@ -1204,9 +1212,9 @@ export default function App() {
                           onChange={(e) => { haptic.lightTap(); setSortBy(e.target.value as 'dueDate' | 'priority' | 'createdAt' | 'title'); }}
                           className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
                         >
-                          <option value="dueDate">Deadline</option>
-                          <option value="priority">Priority</option>
-                          <option value="createdAt">Created</option>
+                          <option value="dueDate">{t('tasks.deadline')}</option>
+                          <option value="priority">{t('tasks.priority')}</option>
+                          <option value="createdAt">{t('tasks.created')}</option>
                         </select>
                         <select
                           value={priorityFilter}
@@ -1223,11 +1231,11 @@ export default function App() {
                     </div>
                     <div className={`flex flex-wrap gap-1.5 pt-3 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
                       {[
-                        { id: 'all', label: 'All', count: tasks.length },
-                        { id: 'pending', label: 'Pending', count: pendingCount },
-                        { id: 'today', label: 'Today', count: todayCount },
-                        { id: 'overdue', label: 'Overdue', count: overdueCount },
-                        { id: 'completed', label: 'Done', count: tasks.filter(t => t.completed).length }
+                        { id: 'all', label: t('tasks.allTasks'), count: tasks.length },
+                        { id: 'pending', label: t('tasks.pending'), count: pendingCount },
+                        { id: 'today', label: t('tasks.dueToday'), count: todayCount },
+                        { id: 'overdue', label: t('home.overdue'), count: overdueCount },
+                        { id: 'completed', label: t('tasks.done'), count: tasks.filter(task => task.completed).length }
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -1248,7 +1256,7 @@ export default function App() {
                     {filteredTasks.length === 0 ? (
                       <div className="p-12 text-center rounded-3xl bg-white/[0.02] border border-dashed border-white/10">
                         <Inbox className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                        <p className="text-sm font-medium text-white/60">No tasks found</p>
+                        <p className="text-sm font-medium text-white/60">{t('tasks.noTasks')}</p>
                       </div>
                     ) : (
                       <AnimatePresence mode="popLayout">
@@ -1296,9 +1304,9 @@ export default function App() {
               {/* Sub-view Tabs */}
               <div className={`flex gap-1 p-1 rounded-xl border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'}`}>
                 {[
-                  { id: 'dashboard' as const, label: 'Dashboard', icon: <Dumbbell className="w-3.5 h-3.5" /> },
-                  { id: 'trainer' as const, label: 'Trainer', icon: <Sparkles className="w-3.5 h-3.5" /> },
-                  { id: 'ranks' as const, label: 'Ranks', icon: <Trophy className="w-3.5 h-3.5" /> },
+                  { id: 'dashboard' as const, label: t('fitness.dashboard'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
+                  { id: 'trainer' as const, label: t('fitness.trainer'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+                  { id: 'ranks' as const, label: t('fitness.ranks'), icon: <Trophy className="w-3.5 h-3.5" /> },
                 ].map(tab => (
                   <button
                     key={tab.id}

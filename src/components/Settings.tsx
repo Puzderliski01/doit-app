@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserProfile, Category } from '../types';
 import { storage } from '../utils/storage';
 import { getEmailJSConfig, saveEmailJSConfig, EmailJSConfig } from '../utils/notificationEngine';
+import { t, LANGUAGES, Language, setLanguage } from '../i18n';
 import {
   Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
   Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
@@ -151,15 +152,15 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Header */}
       <div>
         <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-          Settings
+          {t('settings.title')}
         </h1>
         <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
-          Customize your experience
+          {t('settings.subtitle')}
         </p>
       </div>
 
       {/* Account Section */}
-      <Section id="account" title="Account" icon={<User className="w-4 h-4" />}>
+      <Section id="account" title={t('settings.account')} icon={<User className="w-4 h-4" />}>
         {currentUser ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -184,7 +185,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 onClick={() => { haptic.mediumClick(); onOpenAuth(); }}
                 className="w-full py-2 rounded-xl bg-orange-500 text-white text-xs font-bold cursor-pointer"
               >
-                Sign In to Sync
+                {t('settings.signInToSync')}
               </button>
             )}
             {!currentUser.isGuest && (
@@ -195,7 +196,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 }`}
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Sign Out
+                {t('settings.signOutOfAccount')}
               </button>
             )}
           </div>
@@ -204,16 +205,16 @@ export const Settings: React.FC<SettingsProps> = ({
             onClick={() => { haptic.mediumClick(); onOpenAuth(); }}
             className="w-full py-2 rounded-xl bg-orange-500 text-white text-xs font-bold cursor-pointer"
           >
-            Sign In
+            {t('common.signIn')}
           </button>
         )}
       </Section>
 
       {/* Appearance */}
-      <Section id="appearance" title="Appearance" icon={<Palette className="w-4 h-4" />}>
+      <Section id="appearance" title={t('settings.appearance')} icon={<Palette className="w-4 h-4" />}>
         <ToggleRow
-          label="Dark Mode"
-          description={isLight ? 'Switch to dark theme' : 'Switch to light theme'}
+          label={t('settings.darkMode')}
+          description={isLight ? t('settings.darkModeDesc') : t('settings.lightModeDesc')}
           enabled={!isLight}
           onToggle={() => {
             haptic.lightTap();
@@ -223,7 +224,7 @@ export const Settings: React.FC<SettingsProps> = ({
           }}
         />
         <div>
-          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Weight Unit</p>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{t('settings.weightUnit')}</p>
           <div className="flex gap-2">
             {(['kg', 'lbs'] as const).map(unit => (
               <button
@@ -240,34 +241,57 @@ export const Settings: React.FC<SettingsProps> = ({
             ))}
           </div>
         </div>
+        <div>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{t('settings.language')}</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {LANGUAGES.map(lang => (
+              <button
+                key={lang.id}
+                onClick={() => {
+                  haptic.lightTap();
+                  setLanguage(lang.id);
+                  onProfileUpdate({ language: lang.id });
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left ${
+                  (userProfile.language || 'en') === lang.id
+                    ? 'border-orange-500 bg-orange-500/10 text-orange-500'
+                    : isLight ? 'border-slate-200 text-slate-600 hover:border-slate-300' : 'border-white/10 text-white/60 hover:border-white/20'
+                }`}
+              >
+                <span className="font-bold">{lang.nativeName}</span>
+                <span className={`ml-1 text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>({lang.name})</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </Section>
 
       {/* Sound & Haptics */}
-      <Section id="sound" title="Sound & Haptics" icon={<Volume2 className="w-4 h-4" />}>
+      <Section id="sound" title={t('settings.soundHaptics')} icon={<Volume2 className="w-4 h-4" />}>
         <ToggleRow
-          label="Notification Sounds"
-          description="Play sounds for alerts"
+          label={t('settings.notifSounds')}
+          description={t('settings.notifSoundsDesc')}
           enabled={soundEnabled}
           onToggle={toggleSound}
         />
         <ToggleRow
-          label="Haptic Feedback"
-          description="Vibration on interactions"
+          label={t('settings.hapticFeedback')}
+          description={t('settings.hapticFeedbackDesc')}
           enabled={hapticEnabled}
           onToggle={toggleHaptic}
         />
       </Section>
 
       {/* Notifications */}
-      <Section id="notifications" title="Notifications & Email" icon={<Bell className="w-4 h-4" />}>
+      <Section id="notifications" title={t('settings.notifications')} icon={<Bell className="w-4 h-4" />}>
         <ToggleRow
-          label="Push Notifications"
-          description="Browser notifications for deadlines"
+          label={t('settings.pushNotif')}
+          description={t('settings.pushNotifDesc')}
           enabled={pushEnabled}
           onToggle={togglePush}
         />
         <div>
-          <p className={`text-xs font-semibold mb-1 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Reminder Email</p>
+          <p className={`text-xs font-semibold mb-1 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{t('settings.reminderEmail')}</p>
           <input
             type="email"
             value={userEmail}
@@ -283,11 +307,11 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
           <div className="flex items-center gap-2 mb-3">
             <Send className="w-4 h-4 text-orange-500" />
-            <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Email Delivery (EmailJS)</p>
+            <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('settings.emailReminders')}</p>
           </div>
           <ToggleRow
-            label="Enable Email Reminders"
-            description="Send real emails when deadlines approach"
+            label={t('settings.emailReminders')}
+            description={t('settings.emailRemindersDesc')}
             enabled={emailjsConfig.enabled}
             onToggle={() => {
               haptic.lightTap();
@@ -299,7 +323,7 @@ export const Settings: React.FC<SettingsProps> = ({
           {emailjsConfig.enabled && (
             <div className="space-y-2 mt-3">
               <div>
-                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Service ID</p>
+                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>{t('settings.serviceId')}</p>
                 <input
                   type="text"
                   value={emailjsConfig.serviceId}
@@ -315,7 +339,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 />
               </div>
               <div>
-                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Template ID</p>
+                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>{t('settings.templateId')}</p>
                 <input
                   type="text"
                   value={emailjsConfig.templateId}
@@ -331,7 +355,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 />
               </div>
               <div>
-                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Public Key</p>
+                <p className={`text-[10px] font-semibold mb-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>{t('settings.publicKey')}</p>
                 <input
                   type="text"
                   value={emailjsConfig.publicKey}
@@ -348,7 +372,7 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
               <div className={`p-2 rounded-lg ${isLight ? 'bg-blue-50' : 'bg-blue-500/10'}`}>
                 <p className={`text-[10px] ${isLight ? 'text-blue-700' : 'text-blue-300'}`}>
-                  Get your keys at <span className="font-bold">emailjs.com</span> (free 200 emails/month). Create a service, template with variables: to_email, task_title, task_priority, due_date, estimated_minutes.
+                  {t('settings.emailjsInfo')}
                 </p>
               </div>
             </div>
@@ -357,9 +381,9 @@ export const Settings: React.FC<SettingsProps> = ({
       </Section>
 
       {/* Fitness Profile */}
-      <Section id="fitness" title="Fitness Profile" icon={<Dumbbell className="w-4 h-4" />}>
+      <Section id="fitness" title={t('settings.fitnessProfile')} icon={<Dumbbell className="w-4 h-4" />}>
         <div>
-          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Goals</p>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{t('settings.goals')}</p>
           <div className="flex flex-wrap gap-1.5">
             {(['lose_weight', 'gain_muscle', 'maintain', 'strength', 'endurance'] as const).map(goal => (
               <button
@@ -382,7 +406,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
         <div>
-          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>Experience Level</p>
+          <p className={`text-xs font-semibold mb-2 ${isLight ? 'text-slate-800' : 'text-white/90'}`}>{t('settings.experienceLevel')}</p>
           <div className="flex gap-2">
             {(['beginner', 'intermediate', 'advanced'] as const).map(level => (
               <button
@@ -400,7 +424,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
         <ToggleRow
-          label="Public Leaderboard"
+          label={t('settings.publicLeaderboard')}
           description="Show your profile on the leaderboard"
           enabled={userProfile.leaderboardPublic}
           onToggle={() => { haptic.lightTap(); onProfileUpdate({ leaderboardPublic: !userProfile.leaderboardPublic }); }}
@@ -408,7 +432,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </Section>
 
       {/* Categories */}
-      <Section id="categories" title="Task Categories" icon={<Database className="w-4 h-4" />}>
+      <Section id="categories" title={t('settings.categories')} icon={<Database className="w-4 h-4" />}>
         <div className="space-y-1.5">
           {categories.map(cat => (
             <div key={cat.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isLight ? 'bg-white' : 'bg-white/5'}`}>
@@ -426,7 +450,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className={`p-3 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
           <input
             type="text"
-            placeholder="New category name..."
+            placeholder={t('settings.newCategoryPlaceholder')}
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
             className={`w-full px-3 py-2 rounded-lg border text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 mb-2 ${
@@ -453,13 +477,13 @@ export const Settings: React.FC<SettingsProps> = ({
             }}
             className="w-full py-2 rounded-lg bg-orange-500 text-white text-xs font-bold cursor-pointer"
           >
-            Add Category
+            {t('settings.addCategory')}
           </button>
         </div>
       </Section>
 
       {/* Sync Status */}
-      <Section id="sync" title="Cloud Sync" icon={<Cloud className="w-4 h-4" />}>
+      <Section id="sync" title={t('settings.cloudSync')} icon={<Cloud className="w-4 h-4" />}>
         <div className={`flex items-center gap-3 p-3 rounded-xl ${isLight ? 'bg-white' : 'bg-white/5'}`}>
           {currentUser?.isGuest ? (
             <CloudOff className="w-5 h-5 text-amber-500" />
@@ -470,21 +494,21 @@ export const Settings: React.FC<SettingsProps> = ({
           )}
           <div>
             <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              {currentUser?.isGuest ? 'Guest Mode (Local Only)' : isOnline ? 'Connected' : 'Offline Mode'}
+              {currentUser?.isGuest ? t('settings.guestMode') : isOnline ? t('settings.connected') : t('settings.offlineMode')}
             </p>
             <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
               {currentUser?.isGuest
-                ? 'Sign in to enable cloud sync'
-                : lastSyncTime ? `Last sync: ${new Date(lastSyncTime).toLocaleString()}` : 'Not synced yet'
+                ? t('settings.signInToSync')
+                : lastSyncTime ? `${t('settings.lastSync')} ${new Date(lastSyncTime).toLocaleString()}` : t('settings.notSyncedYet')
               }
             </p>
           </div>
         </div>
         {!currentUser?.isGuest && (
           <div className={`text-[10px] space-y-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
-            <p className="font-semibold">Synced data:</p>
+            <p className="font-semibold">{t('settings.syncedData')}</p>
             <div className="flex flex-wrap gap-1.5">
-              {['Tasks', 'Categories', 'Fitness Entries', 'Profile', 'Notifications'].map(item => (
+              {[t('settings.tasks'), t('settings.categories'), t('settings.fitnessEntries'), t('settings.profile'), t('settings.notifications2')].map(item => (
                 <span key={item} className={`px-2 py-0.5 rounded-full ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>{item}</span>
               ))}
             </div>
@@ -493,7 +517,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </Section>
 
       {/* Data Management */}
-      <Section id="data" title="Data Management" icon={<Database className="w-4 h-4" />}>
+      <Section id="data" title={t('settings.dataManagement')} icon={<Database className="w-4 h-4" />}>
         <button
           onClick={() => { haptic.mediumClick(); onExportData(); }}
           className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
@@ -501,7 +525,7 @@ export const Settings: React.FC<SettingsProps> = ({
           }`}
         >
           <Download className="w-4 h-4" />
-          Export All Data (JSON)
+          {t('settings.exportData')}
         </button>
         {!showClearConfirm ? (
           <button
@@ -511,14 +535,14 @@ export const Settings: React.FC<SettingsProps> = ({
             }`}
           >
             <Trash2 className="w-4 h-4" />
-            Clear All Local Data
+            {t('settings.clearData')}
           </button>
         ) : (
           <div className={`p-3 rounded-xl border ${isLight ? 'bg-red-50 border-red-200' : 'bg-red-500/10 border-red-500/20'}`}>
             <div className="flex items-start gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
               <p className={`text-xs ${isLight ? 'text-red-700' : 'text-red-300'}`}>
-                This will delete all local data. Firebase data is safe. Are you sure?
+                {t('settings.clearDataConfirm')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -534,7 +558,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
                 }`}
               >
-                Cancel
+                {t('settings.cancel')}
               </button>
             </div>
           </div>
@@ -542,7 +566,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </Section>
 
       {/* Docs */}
-      <Section id="docs" title="Documentation" icon={<FileText className="w-4 h-4" />}>
+      <Section id="docs" title={t('settings.documentation')} icon={<FileText className="w-4 h-4" />}>
         <button
           onClick={() => { haptic.mediumClick(); onOpenDocs(); }}
           className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
@@ -550,19 +574,19 @@ export const Settings: React.FC<SettingsProps> = ({
           }`}
         >
           <FileText className="w-4 h-4" />
-          View Deployment & Store Docs
+          {t('settings.viewDocs')}
           <ChevronRight className="w-3.5 h-3.5 ml-auto" />
         </button>
       </Section>
 
       {/* About */}
-      <Section id="about" title="About" icon={<Info className="w-4 h-4" />}>
+      <Section id="about" title={t('settings.about')} icon={<Info className="w-4 h-4" />}>
         <div className={`text-center py-4 ${isLight ? 'text-slate-600' : 'text-white/50'}`}>
           <p className="text-2xl font-bold mb-1" style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             DoIT PRO
           </p>
-          <p className="text-[10px] font-mono">v3.0.0</p>
-          <p className="text-[10px] mt-1">Task Management & Fitness Tracking</p>
+          <p className="text-[10px] font-mono">{t('settings.version')}</p>
+          <p className="text-[10px] mt-1">{t('settings.taskManagement')}</p>
         </div>
       </Section>
     </div>

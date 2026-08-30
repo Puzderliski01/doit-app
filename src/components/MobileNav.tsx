@@ -1,5 +1,6 @@
 import React from 'react';
 import { ViewMode } from '../types';
+import { t } from '../i18n';
 import { 
   CheckSquare, 
   LayoutGrid, 
@@ -20,10 +21,10 @@ interface MobileNavProps {
 }
 
 const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'Home', icon: <Sparkles className="w-5 h-5" /> },
-  { id: 'tasks', label: 'Tasks', icon: <CheckSquare className="w-5 h-5" /> },
-  { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-5 h-5" /> },
-  { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
+  { id: 'home', label: t('nav.home'), icon: <Sparkles className="w-5 h-5" /> },
+  { id: 'tasks', label: t('nav.tasks'), icon: <CheckSquare className="w-5 h-5" /> },
+  { id: 'fitness', label: t('nav.fitness'), icon: <Dumbbell className="w-5 h-5" /> },
+  { id: 'settings', label: t('nav.settings'), icon: <Settings className="w-5 h-5" /> },
 ];
 
 export const MobileNav: React.FC<MobileNavProps> = ({
