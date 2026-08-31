@@ -172,9 +172,10 @@ export function subscribeToUserTasks(userId: string, onUpdate: (tasks: Task[]) =
       });
       // Sort by order or createdAt
       tasks.sort((a, b) => (a.order || 0) - (b.order || 0));
+      console.log('[Firestore] Tasks subscription fired:', tasks.length, 'tasks for user:', userId);
       onUpdate(tasks);
     }, (err) => {
-      console.warn('Firestore user tasks note:', err?.message || err);
+      console.warn('[Firestore] Tasks subscription ERROR:', err?.message || err);
       if (onError) onError(err);
     });
   } catch (err) {
@@ -201,13 +202,15 @@ function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
 export async function saveUserTaskToFirestore(userId: string, task: Task): Promise<void> {
   try {
     const taskRef = doc(db, 'users', userId, 'tasks', task.id);
+    console.log('[Firestore] Saving task:', task.id, task.title);
     await setDoc(taskRef, stripUndefined({
       ...task,
       userId,
       updatedAt: new Date().toISOString()
     } as Record<string, unknown>), { merge: true });
+    console.log('[Firestore] Task saved OK:', task.id);
   } catch (err) {
-    console.warn('Firestore save task note:', err);
+    console.warn('[Firestore] FAILED to save task:', task.id, err);
     throw err;
   }
 }

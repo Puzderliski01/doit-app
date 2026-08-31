@@ -59,6 +59,7 @@ const DailyBriefing = lazy(() => import('./components/DailyBriefing').then(m => 
 const WeeklyReport = lazy(() => import('./components/WeeklyReport').then(m => ({ default: m.WeeklyReport })));
 const DeadlinePredictor = lazy(() => import('./components/DeadlinePredictor').then(m => ({ default: m.DeadlinePredictor })));
 const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({ default: m.MealPlanView })));
+const QuickCaptureBar = lazy(() => import('./components/QuickCaptureBar').then(m => ({ default: m.QuickCaptureBar })));
 const TaskBreakdownModal = lazy(() => import('./components/TaskBreakdownModal').then(m => ({ default: m.TaskBreakdownModal })));
 
 import { 
@@ -163,7 +164,7 @@ export default function App() {
   });
 
   // Sub-views within grouped views
-  const [taskSubView, setTaskSubView] = useState<'list' | 'matrix'>('list');
+  const [taskSubView, setTaskSubView] = useState<'list' | 'matrix' | 'groups'>('list');
   const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer' | 'nutrition'>('dashboard');
 
   // Persist current view
@@ -356,9 +357,14 @@ export default function App() {
           const pending = pendingWritesRef.current;
           const deletes = pendingDeletesRef.current;
           if (pending.size === 0 && deletes.size === 0) {
-            storage.saveTasks(userTasks, currentUser.uid);
+            // No pending writes — use Firestore data directly
+            // But also include any local-only tasks (created while offline)
+            const firestoreIds = new Set(userTasks.map(t => t.id));
+            const localOnly = prev.filter(t => !firestoreIds.has(t.id));
+            const merged = [...userTasks, ...localOnly];
+            storage.saveTasks(merged, currentUser.uid);
             setLastSyncTime(new Date().toISOString());
-            return userTasks;
+            return merged;
           }
           // Start with Firestore data, excluding any pending deletes
           const firestoreMap = new Map(userTasks.filter(t => !deletes.has(t.id)).map(t => [t.id, t]));
@@ -456,6 +462,22 @@ export default function App() {
       }
     }
 
+    localStorage.setItem(migratedKey, '1');
+  }, [currentUser?.uid]);
+
+  // One-time migration: push local tasks to Firestore on first login
+  useEffect(() => {
+    if (!currentUser || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
+    const migratedKey = `doit_tasks_migrated_${currentUser.uid}`;
+    if (localStorage.getItem(migratedKey)) return;
+
+    const localTasks = storage.getTasks(currentUser.uid);
+    if (localTasks.length > 0) {
+      console.log('[Migration] Pushing', localTasks.length, 'local tasks to Firestore');
+      localTasks.forEach((task) => {
+        saveUserTaskToFirestore(currentUser.uid, task).catch(console.error);
+      });
+    }
     localStorage.setItem(migratedKey, '1');
   }, [currentUser?.uid]);
 
@@ -1215,52 +1237,86 @@ export default function App() {
         {/* Main Content Workspace */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacer">
           
-          {/* HOME VIEW - Dashboard Overview */}
+          {/* HOME VIEW - Redesigned Dashboard */}
           {currentView === 'home' && (
-            <div className="space-y-5">
-              {/* Hero Greeting + Progress Ring */}
+            <div className="space-y-4">
+              {/* 1. Hero Greeting - Animated gradient bg + enhanced layout */}
               <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 ${isLight
                 ? 'bg-gradient-to-br from-white via-white to-orange-50/50 border border-white/60 shadow-[0_8px_40px_rgba(0,0,0,0.06)]'
                 : 'bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-orange-500/[0.06] border border-white/[0.1] shadow-[0_8px_40px_rgba(0,0,0,0.3)]'
               }`}>
-                {/* Decorative gradient orb */}
-                <div className={`absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl pointer-events-none ${
+                {/* Animated gradient orbs */}
+                <div className={`absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl pointer-events-none animate-pulse ${
                   isLight ? 'bg-gradient-to-br from-orange-200/40 to-amber-100/30' : 'bg-gradient-to-br from-orange-500/15 to-amber-500/10'
-                }`} />
-                <div className={`absolute -bottom-16 -left-16 w-40 h-40 rounded-full blur-3xl pointer-events-none ${
+                }`} style={{ animationDuration: '4s' }} />
+                <div className={`absolute -bottom-16 -left-16 w-40 h-40 rounded-full blur-3xl pointer-events-none animate-pulse ${
                   isLight ? 'bg-gradient-to-tr from-sky-100/30 to-transparent' : 'bg-gradient-to-tr from-sky-500/10 to-transparent'
-                }`} />
+                }`} style={{ animationDuration: '6s' }} />
                 
                 <div className="relative flex items-center justify-between gap-6">
                   <div className="flex-1 min-w-0">
-                    <div className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-2 ${
-                      isLight ? 'text-orange-500' : 'text-orange-400'
-                    }`}>
+                    <motion.div 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-2 ${
+                        isLight ? 'text-orange-500' : 'text-orange-400'
+                      }`}
+                    >
                       {new Date().getHours() < 12 ? '☀️ Good Morning' : new Date().getHours() < 18 ? '🌤️ Good Afternoon' : '🌙 Good Evening'}
-                    </div>
-                    <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    </motion.div>
+                    <motion.h1 
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 }}
+                      className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}
+                    >
                       {currentUser?.displayName || 'Commander'}
-                    </h1>
-                    <p className={`text-sm mt-1.5 ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+                    </motion.h1>
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className={`text-sm mt-1.5 ${isLight ? 'text-slate-500' : 'text-white/50'}`}
+                    >
                       {new Date().toLocaleDateString(userProfile.language === 'sr' ? 'sr-Latn' : userProfile.language || 'en', { weekday: 'long', month: 'long', day: 'numeric' })}
-                    </p>
-                    {pendingCount > 0 && (
-                      <p className={`text-xs mt-3 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-                        You have <span className={`font-bold ${isLight ? 'text-orange-600' : 'text-orange-400'}`}>{pendingCount} pending</span> and{' '}
-                        {todayCount > 0 && <><span className={`font-bold ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>{todayCount} due today</span>{overdueCount > 0 ? ', ' : ''}</>}
-                        {overdueCount > 0 && <span className="font-bold text-red-500">{overdueCount} overdue</span>}
-                      </p>
-                    )}
-                    {pendingCount === 0 && (
-                      <p className={`text-xs mt-3 font-medium ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>
-                        ✨ All caught up! Enjoy your day.
-                      </p>
-                    )}
+                    </motion.p>
+                    {/* 2. Streak counter - combined task + fitness streak */}
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.15 }}
+                      className="flex items-center gap-3 mt-3"
+                    >
+                      {(userProfile.fitnessStats?.currentStreak || 0) > 0 && (
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                          isLight ? 'bg-amber-50 text-amber-600 border border-amber-200/50' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}>
+                          🔥 {userProfile.fitnessStats.currentStreak} day streak
+                        </span>
+                      )}
+                      {pendingCount > 0 ? (
+                        <span className={`text-[11px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                          {pendingCount} pending · {overdueCount > 0 && <span className="text-red-500">{overdueCount} overdue</span>}
+                        </span>
+                      ) : (
+                        <span className={`text-[11px] font-medium ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>
+                          ✨ All caught up!
+                        </span>
+                      )}
+                    </motion.div>
                   </div>
                   
-                  {/* Progress Ring */}
-                  <div className="relative shrink-0">
-                    <svg width="110" height="110" viewBox="0 0 110 110">
+                  {/* Progress Ring with glow */}
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                    className="relative shrink-0"
+                  >
+                    <div className={`absolute inset-0 rounded-full blur-xl opacity-40 ${
+                      isLight ? 'bg-gradient-to-br from-orange-300 to-amber-200' : 'bg-gradient-to-br from-orange-500/30 to-amber-500/20'
+                    }`} />
+                    <svg width="110" height="110" viewBox="0 0 110 110" className="relative">
                       <defs>
                         <linearGradient id="home-progress-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#f59e0b" />
@@ -1285,11 +1341,53 @@ export default function App() {
                         Done
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
 
-              {/* Stats Grid */}
+              {/* 3. Quick Capture Bar - instantly add task from home */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <QuickCaptureBar
+                  theme={theme}
+                  categories={categories}
+                  isLight={isLight}
+                  onAddTask={(title, categoryId, priority) => {
+                    const newTask: Task = {
+                      id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+                      title,
+                      description: '',
+                      completed: false,
+                      priority: priority as Task['priority'],
+                      categoryId: categoryId || categories[0]?.id || 'cat-default',
+                      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+                      estimatedMinutes: 30,
+                      recurring: { type: 'none' },
+                      subtasks: [],
+                      tags: [],
+                      reminderEmail: userEmail,
+                      reminderMinutesBefore: 30,
+                      reminderSent: false,
+                      isImportant: priority === 'urgent' || priority === 'high',
+                      isUrgent: priority === 'urgent',
+                      createdAt: new Date().toISOString(),
+                      order: 0
+                    };
+                    setTasks(prev => [newTask, ...prev]);
+                    if (canSyncToFirestore && currentUser?.uid && !(currentUser as any).isGuest) {
+                      pendingWritesRef.current.set(newTask.id, newTask);
+                      saveUserTaskToFirestore(currentUser.uid, newTask)
+                        .then(() => { pendingWritesRef.current.delete(newTask.id); })
+                        .catch(err => { console.error('[QuickCapture] Firestore save failed:', err); });
+                    }
+                  }}
+                />
+              </motion.div>
+
+              {/* 4. Stats Grid - enhanced with hover glow */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: t('home.pendingTasks'), value: pendingCount, icon: <Clock className="w-4 h-4" />, gradient: 'from-blue-500 to-cyan-400', bgLight: 'from-blue-50 to-cyan-50', bgDark: 'from-blue-500/10 to-cyan-500/10', borderColor: 'rgba(59,130,246,0.3)' },
@@ -1301,17 +1399,17 @@ export default function App() {
                     key={stat.label}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08, duration: 0.4 }}
-                    className={`relative overflow-hidden rounded-2xl p-4 border backdrop-blur-2xl ${
+                    transition={{ delay: 0.3 + i * 0.06, duration: 0.4 }}
+                    className={`group relative overflow-hidden rounded-2xl p-4 border backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
                       isLight
                         ? `bg-gradient-to-br ${stat.bgLight} border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)]`
                         : `bg-gradient-to-br ${stat.bgDark} border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.15)]`
                     }`}
                     style={{ borderColor: !isLight ? stat.borderColor : undefined }}
                   >
-                    <div className={`absolute -top-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-30 bg-gradient-to-br ${stat.gradient}`} />
-                    <div className={`flex items-center gap-1.5 mb-2 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
-                      <span className={`${stat.label === t('home.overdue') && overdueCount > 0 ? 'text-red-500' : ''}`}>{stat.icon}</span>
+                    <div className={`absolute -top-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-30 bg-gradient-to-br ${stat.gradient} group-hover:opacity-50 transition-opacity`} />
+                    <div className={`flex items-center gap-1.5 mb-2`}>
+                      <span className={`${stat.label === t('home.overdue') && overdueCount > 0 ? 'text-red-500' : `bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}`}>{stat.icon}</span>
                       <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{stat.label}</span>
                     </div>
                     <p className={`text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -1321,14 +1419,14 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* 5. Quick Actions - enhanced with subtle animations */}
+              <div className="grid grid-cols-3 gap-3">
                 <motion.button
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.4 }}
                   onClick={() => { haptic.mediumClick(); setCurrentView('tasks'); }}
-                  className={`group relative overflow-hidden p-5 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${
+                  className={`group relative overflow-hidden p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
                     isLight
                       ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-orange-300 hover:shadow-[0_8px_30px_rgba(249,115,22,0.12)]'
                       : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-orange-500/30 hover:shadow-[0_8px_30px_rgba(249,115,22,0.15)]'
@@ -1336,19 +1434,19 @@ export default function App() {
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/5 group-hover:to-transparent transition-all duration-500`} />
                   <div className="relative">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-gradient-to-br from-orange-500 to-amber-400 shadow-[0_4px_12px_rgba(249,115,22,0.3)]`}>
-                      <CheckSquare className="w-5 h-5 text-white" />
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br from-orange-500 to-amber-400 shadow-[0_4px_12px_rgba(249,115,22,0.3)]`}>
+                      <CheckSquare className="w-4 h-4 text-white" />
                     </div>
-                    <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
-                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} {t('home.totalTasks')}</p>
+                    <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
+                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} total</p>
                   </div>
                 </motion.button>
                 <motion.button
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.35 }}
+                  transition={{ delay: 0.45 }}
                   onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
-                  className={`group relative overflow-hidden p-5 rounded-2xl border text-left transition-all duration-300 cursor-pointer ${
+                  className={`group relative overflow-hidden p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
                     isLight
                       ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-purple-300 hover:shadow-[0_8px_30px_rgba(168,85,247,0.12)]'
                       : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-purple-500/30 hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]'
@@ -1356,11 +1454,32 @@ export default function App() {
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-transparent transition-all duration-500`} />
                   <div className="relative">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-gradient-to-br from-purple-500 to-pink-400 shadow-[0_4px_12px_rgba(168,85,247,0.3)]`}>
-                      <Dumbbell className="w-5 h-5 text-white" />
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br from-purple-500 to-pink-400 shadow-[0_4px_12px_rgba(168,85,247,0.3)]`}>
+                      <Dumbbell className="w-4 h-4 text-white" />
                     </div>
-                    <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
-                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} {t('home.workoutsLogged')}</p>
+                    <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
+                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} logged</p>
+                  </div>
+                </motion.button>
+                {/* 6. New task button */}
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                  onClick={() => { haptic.mediumClick(); setEditingTask(null); setIsTaskModalOpen(true); }}
+                  className={`group relative overflow-hidden p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
+                    isLight
+                      ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-emerald-300 hover:shadow-[0_8px_30px_rgba(16,185,129,0.12)]'
+                      : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-emerald-500/30 hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]'
+                  }`}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/5 group-hover:to-transparent transition-all duration-500`} />
+                  <div className="relative">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br from-emerald-500 to-green-400 shadow-[0_4px_12px_rgba(16,185,129,0.3)]`}>
+                      <Plus className="w-4 h-4 text-white" />
+                    </div>
+                    <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>New Task</p>
+                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Add one</p>
                   </div>
                 </motion.button>
               </div>
@@ -1396,9 +1515,13 @@ export default function App() {
                 </motion.div>
               )}
 
-              {/* Recent Tasks */}
+              {/* 7. Recent Tasks - enhanced with category badges */}
               {tasks.filter(t => !t.completed).length > 0 && (
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 }}
+                >
                   <div className="flex items-center justify-between mb-3">
                     <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Recent Tasks</h2>
                     <button
@@ -1416,7 +1539,7 @@ export default function App() {
                         key={task.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 + i * 0.05 }}
+                        transition={{ delay: 0.6 + i * 0.05 }}
                         onClick={() => { haptic.lightTap(); setEditingTask(task); setIsTaskModalOpen(true); }}
                         className={`flex items-center gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 ${
                           isLight
@@ -1433,9 +1556,13 @@ export default function App() {
                           <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                             {task.title}
                           </p>
-                          <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
-                            {task.categoryId ? categories.find(c => c.id === task.categoryId)?.name || '' : ''}
-                          </p>
+                          {task.categoryId && (
+                            <span className={`inline-block text-[9px] font-semibold px-1.5 py-0.5 rounded-full mt-1 ${
+                              isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/30'
+                            }`}>
+                              {categories.find(c => c.id === task.categoryId)?.name || ''}
+                            </span>
+                          )}
                         </div>
                         {task.dueDate && (
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
@@ -1449,10 +1576,10 @@ export default function App() {
                       </motion.div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               )}
 
-              {/* Daily Briefing + Deadline Predictor */}
+              {/* 8. Daily Briefing + Deadline Predictor */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Suspense fallback={null}>
                   <DailyBriefing
@@ -1470,7 +1597,7 @@ export default function App() {
                 </Suspense>
               </div>
 
-              {/* Achievement Tree + Weekly Report */}
+              {/* 9. Achievement Tree + Weekly Report */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Suspense fallback={null}>
                   <AchievementTree
@@ -1490,11 +1617,11 @@ export default function App() {
                 </Suspense>
               </div>
 
-              {/* Motivational Footer */}
+              {/* 10. Motivational Footer - animated fade in */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.7 }}
                 className={`text-center py-4 rounded-2xl border ${
                   isLight ? 'bg-gradient-to-r from-amber-50/50 to-orange-50/50 border-amber-200/30' : 'bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-amber-500/10'
                 }`}
@@ -1520,6 +1647,7 @@ export default function App() {
                 {[
                   { id: 'list' as const, label: t('tasks.taskList'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
                   { id: 'matrix' as const, label: t('tasks.priorityMatrix'), icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+                  { id: 'groups' as const, label: t('nav.groups'), icon: <Users className="w-3.5 h-3.5" /> },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1654,43 +1782,43 @@ export default function App() {
                   />
                 </Suspense>
               )}
+
+              {/* Groups View */}
+              {taskSubView === 'groups' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                  {!currentUser || currentUser.isGuest ? (
+                    <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                      <Users className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
+                      <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Groups</h2>
+                      <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>Sign in to create and join groups</p>
+                      <button
+                        onClick={() => setIsAuthModalOpen(true)}
+                        className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
+                      >
+                        Sign In
+                      </button>
+                    </div>
+                  ) : selectedGroup ? (
+                    <GroupTasksView
+                      theme={theme}
+                      group={selectedGroup}
+                      currentUser={currentUser as AuthUser}
+                      onBack={() => setSelectedGroup(null)}
+                    />
+                  ) : (
+                    <GroupsManager
+                      theme={theme}
+                      currentUser={currentUser as AuthUser}
+                      groups={userGroups}
+                      onSelectGroup={setSelectedGroup}
+                    />
+                  )}
+                </Suspense>
+              )}
             </div>
           )}
 
-          {/* GROUPS VIEW */}
-          {currentView === 'groups' && (
-            <div className="space-y-5">
-              <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-                {!currentUser || currentUser.isGuest ? (
-                  <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                    <Users className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
-                    <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Groups</h2>
-                    <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>Sign in to create and join groups</p>
-                    <button
-                      onClick={() => setIsAuthModalOpen(true)}
-                      className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
-                    >
-                      Sign In
-                    </button>
-                  </div>
-                ) : selectedGroup ? (
-                  <GroupTasksView
-                    theme={theme}
-                    group={selectedGroup}
-                    currentUser={currentUser as AuthUser}
-                    onBack={() => setSelectedGroup(null)}
-                  />
-                ) : (
-                  <GroupsManager
-                    theme={theme}
-                    currentUser={currentUser as AuthUser}
-                    groups={userGroups}
-                    onSelectGroup={setSelectedGroup}
-                  />
-                )}
-              </Suspense>
-            </div>
-          )}
+          {/* GROUPS are now a sub-tab within Tasks view */}
 
           {/* FITNESS VIEW - Dashboard + Trainer + Ranks */}
           {currentView === 'fitness' && (

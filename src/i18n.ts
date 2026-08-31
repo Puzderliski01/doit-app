@@ -56,6 +56,8 @@ type TranslationKeys = {
   'tasks.noTasks': string;
   'tasks.noTasksDesc': string;
   'tasks.deployNewTask': string;
+  'tasks.newTask': string;
+  'tasks.selectCategory': string;
   'tasks.signInToSync': string;
 
   // Fitness
@@ -168,6 +170,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'No tasks found',
     'tasks.noTasksDesc': 'No tasks in current view',
     'tasks.deployNewTask': 'Deploy New Task',
+    'tasks.newTask': 'Quick add task...',
+    'tasks.selectCategory': 'Select category',
     'tasks.signInToSync': 'Sign In to My Tasks',
     'fitness.dashboard': 'Dashboard',
     'fitness.trainer': 'Trainer',
@@ -272,6 +276,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'Nema zadataka',
     'tasks.noTasksDesc': 'Nema zadataka u trenutnom prikazu',
     'tasks.deployNewTask': 'Novi zadatak',
+    'tasks.newTask': 'Brzo dodaj zadatak...',
+    'tasks.selectCategory': 'Izaberi kategoriju',
     'tasks.signInToSync': 'Prijavi se za sinhronizaciju',
     'fitness.dashboard': 'Kontrolna tabla',
     'fitness.trainer': 'Trener',
@@ -376,6 +382,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'Keine Aufgaben gefunden',
     'tasks.noTasksDesc': 'Keine Aufgaben in dieser Ansicht',
     'tasks.deployNewTask': 'Neue Aufgabe',
+    'tasks.newTask': 'Aufgabe schnell hinzufügen...',
+    'tasks.selectCategory': 'Kategorie wählen',
     'tasks.signInToSync': 'Anmelden zum Synchronisieren',
     'fitness.dashboard': 'Dashboard',
     'fitness.trainer': 'Trainer',
@@ -480,6 +488,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'Aucune tâche trouvée',
     'tasks.noTasksDesc': 'Aucune tâche dans cette vue',
     'tasks.deployNewTask': 'Nouvelle tâche',
+    'tasks.newTask': 'Ajouter rapidement...',
+    'tasks.selectCategory': 'Choisir une catégorie',
     'tasks.signInToSync': 'Se connecter',
     'fitness.dashboard': 'Tableau de bord',
     'fitness.trainer': 'Entraîneur',
@@ -584,6 +594,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'No se encontraron tareas',
     'tasks.noTasksDesc': 'Sin tareas en esta vista',
     'tasks.deployNewTask': 'Nueva tarea',
+    'tasks.newTask': 'Agregar tarea rápido...',
+    'tasks.selectCategory': 'Seleccionar categoría',
     'tasks.signInToSync': 'Iniciar sesión',
     'fitness.dashboard': 'Panel',
     'fitness.trainer': 'Entrenador',
@@ -688,6 +700,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'Nenhuma tarefa encontrada',
     'tasks.noTasksDesc': 'Sem tarefas nesta visualização',
     'tasks.deployNewTask': 'Nova tarefa',
+    'tasks.newTask': 'Adicionar tarefa rápido...',
+    'tasks.selectCategory': 'Selecionar categoria',
     'tasks.signInToSync': 'Entrar',
     'fitness.dashboard': 'Painel',
     'fitness.trainer': 'Treinador',
@@ -792,6 +806,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'Задач не найдено',
     'tasks.noTasksDesc': 'Нет задач в этом виде',
     'tasks.deployNewTask': 'Новая задача',
+    'tasks.newTask': 'Быстро добавить задачу...',
+    'tasks.selectCategory': 'Выбрать категорию',
     'tasks.signInToSync': 'Войти',
     'fitness.dashboard': 'Панель',
     'fitness.trainer': 'Тренер',
@@ -896,6 +912,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': '没有找到任务',
     'tasks.noTasksDesc': '当前视图没有任务',
     'tasks.deployNewTask': '新建任务',
+    'tasks.newTask': '快速添加任务...',
+    'tasks.selectCategory': '选择类别',
     'tasks.signInToSync': '登录同步',
     'fitness.dashboard': '面板',
     'fitness.trainer': '教练',
@@ -1000,6 +1018,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'لا توجد مهام',
     'tasks.noTasksDesc': 'لا مهام في هذا العرض',
     'tasks.deployNewTask': 'مهام جديدة',
+    'tasks.newTask': 'إضافة مهمة سريعة...',
+    'tasks.selectCategory': 'اختر الفئة',
     'tasks.signInToSync': 'تسجيل الدخول',
     'fitness.dashboard': 'لوحة',
     'fitness.trainer': 'مدرب',
@@ -1104,6 +1124,8 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.noTasks': 'Görev bulunamadı',
     'tasks.noTasksDesc': 'Bu görüntüde görev yok',
     'tasks.deployNewTask': 'Yeni görev',
+    'tasks.newTask': 'Hızla görev ekle...',
+    'tasks.selectCategory': 'Kategori seçin',
     'tasks.signInToSync': 'Giriş yap',
     'fitness.dashboard': 'Panel',
     'fitness.trainer': 'Koç',
