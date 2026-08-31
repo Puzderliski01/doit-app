@@ -80,6 +80,7 @@ import {
   deleteSingleNotificationFromFirestore,
   syncUserProfile,
   getLocalAuthSession,
+  resolveGoogleRedirectResult,
   subscribeToUserFitness,
   saveFitnessEntryToFirestore,
   saveUserProfileToFirestore,
@@ -294,6 +295,9 @@ export default function App() {
 
   // Firebase Auth State Listener with device session retention
   useEffect(() => {
+    // Resolve any pending Google Sign-In redirect (started when a popup was blocked).
+    // This must run before/alongside onAuthStateChanged so the redirect flow completes.
+    resolveGoogleRedirectResult().catch(() => {});
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         const authUser: AuthUser = {

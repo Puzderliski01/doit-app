@@ -1,18 +1,19 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+  getRedirectResult,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInAnonymously,
-  signOut as fbSignOut, 
-  onAuthStateChanged, 
+  signOut as fbSignOut,
+  onAuthStateChanged,
   updateProfile,
   setPersistence,
   browserLocalPersistence,
-  User 
+  User
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -78,9 +79,32 @@ export async function signInWithGoogle(): Promise<User> {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error: any) {
+    // Popup was blocked or the user closed it. Fall back to a redirect flow
+    // (browsers reliably allow redirect-based OAuth), then resolve the result
+    // on the next page load via getRedirectResult().
+    if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+      console.warn('Google Sign-In popup blocked/closed, falling back to redirect.');
+      await signInWithRedirect(auth, googleProvider);
+      throw new Error('Redirecting to Google Sign-In…');
+    }
     console.error('Google Sign-In Popup failed:', error);
     throw error;
   }
+}
+
+// Resolve a pending Google Sign-In redirect (started in signInWithGoogle when the
+// popup was blocked). Call this on app startup; returns null if no redirect is pending.
+export async function resolveGoogleRedirectResult(): Promise<User | null> {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) return result.user;
+  } catch (error: any) {
+    // auth/no-current-auth-in-progress is expected when there is no pending redirect
+    if (error?.code !== 'auth/no-current-auth-in-progress') {
+      console.warn('Google redirect result resolution failed:', error);
+    }
+  }
+  return null;
 }
 
 export async function loginWithEmail(email: string, pass: string): Promise<User> {
