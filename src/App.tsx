@@ -60,6 +60,7 @@ const WeeklyReport = lazy(() => import('./components/WeeklyReport').then(m => ({
 const DeadlinePredictor = lazy(() => import('./components/DeadlinePredictor').then(m => ({ default: m.DeadlinePredictor })));
 const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({ default: m.MealPlanView })));
 const QuickCaptureBar = lazy(() => import('./components/QuickCaptureBar').then(m => ({ default: m.QuickCaptureBar })));
+const SyncStatus = lazy(() => import('./components/SyncStatus').then(m => ({ default: m.SyncStatus })));
 const TaskBreakdownModal = lazy(() => import('./components/TaskBreakdownModal').then(m => ({ default: m.TaskBreakdownModal })));
 
 import { 
@@ -68,6 +69,7 @@ import {
   saveUserTaskToFirestore,
   deleteUserTaskFromFirestore,
   batchUpdateTasksOrderInFirestore,
+  fetchUserTasks,
   subscribeToUserCategories,
   saveUserCategoryToFirestore,
   subscribeToUserNotifications,
@@ -115,6 +117,7 @@ import {
   ChevronRight,
   Users,
   Apple,
+  AlertTriangle,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -479,6 +482,41 @@ export default function App() {
       });
     }
     localStorage.setItem(migratedKey, '1');
+  }, [currentUser?.uid]);
+
+  // Polling fallback: fetch tasks from Firestore every 15s as backup for onSnapshot
+  useEffect(() => {
+    if (!currentUser?.uid || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
+
+    const poll = async () => {
+      try {
+        const firestoreTasks = await fetchUserTasks(currentUser!.uid);
+        if (firestoreTasks.length === 0) return; // Don't overwrite local data with empty
+
+        setTasks(prev => {
+          const firestoreIds = new Set(firestoreTasks.map(t => t.id));
+          const localOnly = prev.filter(t => !firestoreIds.has(t.id));
+          const merged = [...firestoreTasks, ...localOnly];
+          // Only update if something actually changed
+          if (merged.length !== prev.length || merged.some((t, i) => t.id !== prev[i]?.id)) {
+            storage.saveTasks(merged, currentUser!.uid);
+            return merged;
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.warn('[Polling] Failed:', err);
+      }
+    };
+
+    // Initial poll after 5 seconds
+    const initialTimeout = setTimeout(poll, 5000);
+    // Then every 15 seconds
+    const interval = setInterval(poll, 15000);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, [currentUser?.uid]);
 
   // Sync to localStorage as offline cache for current user / guest
@@ -1237,6 +1275,33 @@ export default function App() {
         {/* Main Content Workspace */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacer">
           
+          {/* Sync Issue Alert - visible on ALL views when not syncing */}
+          {currentUser && !canSyncToFirestore && tasks.length > 0 && (
+            <div className={`mb-4 p-3 rounded-2xl border flex items-center gap-3 ${
+              isLight ? 'bg-amber-50 border-amber-200/60' : 'bg-amber-500/10 border-amber-500/20'
+            }`}>
+              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className={`text-xs font-bold ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
+                  Tasks are stored locally only ({tasks.length} tasks)
+                </p>
+                <p className={`text-[10px] ${isLight ? 'text-amber-500' : 'text-amber-300/60'}`}>
+                  Sign in to enable cloud sync across devices
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer ${
+                  isLight ? 'bg-amber-500 text-white' : 'bg-amber-500 text-white'
+                }`}
+              >
+                Sign In
+              </button>
+            </div>
+          )}
+
           {/* HOME VIEW - Redesigned Dashboard */}
           {currentView === 'home' && (
             <div className="space-y-4">
@@ -1636,6 +1701,26 @@ export default function App() {
                   ][new Date().getDate() % 5]}
                 </p>
               </motion.div>
+
+              {/* Sync Debug Bar - always visible on Home */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-[10px] ${
+                  canSyncToFirestore
+                    ? isLight ? 'bg-emerald-50/50 border-emerald-200/40 text-emerald-600' : 'bg-emerald-500/5 border-emerald-500/15 text-emerald-400'
+                    : isLight ? 'bg-amber-50/50 border-amber-200/40 text-amber-600' : 'bg-amber-500/5 border-amber-500/15 text-amber-400'
+                }`}
+              >
+                <span className="flex items-center gap-1.5 font-medium">
+                  {canSyncToFirestore ? '☁️' : '💾'}
+                  {canSyncToFirestore ? 'Cloud Sync Active' : 'Local Only'}
+                </span>
+                <span className="font-mono opacity-60">
+                  {tasks.length} tasks · {currentUser?.uid?.substring(0, 8) || 'guest'}
+                </span>
+              </motion.div>
             </div>
           )}
 
@@ -1904,7 +1989,17 @@ export default function App() {
           {/* SETTINGS VIEW */}
           {currentView === 'settings' && (
             <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-              <Settings
+              <div className="space-y-4">
+                {/* Sync Status Panel */}
+                <SyncStatus
+                  theme={theme}
+                  currentUser={currentUser}
+                  tasks={tasks}
+                  canSync={!!canSyncToFirestore}
+                  lastSyncTime={lastSyncTime}
+                  isLight={isLight}
+                />
+                <Settings
                 theme={theme}
                 onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 userProfile={userProfile}
@@ -1922,6 +2017,7 @@ export default function App() {
                 onExportData={handleExportData}
                 onClearData={handleClearData}
               />
+              </div>
             </Suspense>
           )}
 

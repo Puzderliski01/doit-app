@@ -185,6 +185,46 @@ export function subscribeToUserTasks(userId: string, onUpdate: (tasks: Task[]) =
   }
 }
 
+// One-shot fetch of user tasks (used as polling fallback when onSnapshot fails)
+export async function fetchUserTasks(userId: string): Promise<Task[]> {
+  try {
+    const tasksRef = collection(db, 'users', userId, 'tasks');
+    const q = query(tasksRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const tasks: Task[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      tasks.push({
+        id: docSnap.id,
+        title: data.title || 'Untitled Task',
+        description: data.description || '',
+        priority: data.priority || 'medium',
+        categoryId: data.categoryId || 'cat-work',
+        completed: !!data.completed,
+        completedAt: data.completedAt,
+        createdAt: data.createdAt || new Date().toISOString(),
+        dueDate: data.dueDate || new Date().toISOString(),
+        estimatedMinutes: data.estimatedMinutes || 15,
+        recurring: data.recurring || { type: 'none' },
+        subtasks: data.subtasks || [],
+        tags: data.tags || [],
+        reminderEmail: data.reminderEmail || '',
+        reminderMinutesBefore: data.reminderMinutesBefore,
+        reminderSent: !!data.reminderSent,
+        isImportant: !!data.isImportant,
+        isUrgent: !!data.isUrgent,
+        order: typeof data.order === 'number' ? data.order : 0
+      });
+    });
+    tasks.sort((a, b) => (a.order || 0) - (b.order || 0));
+    console.log('[Firestore] Fetched', tasks.length, 'tasks for user:', userId);
+    return tasks;
+  } catch (err) {
+    console.warn('[Firestore] fetchUserTasks failed:', err);
+    return [];
+  }
+}
+
 // Task CRUD in Firestore
 function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   const cleaned: Record<string, unknown> = {};
