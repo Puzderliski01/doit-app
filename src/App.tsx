@@ -1131,6 +1131,40 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handleImportData = async (backupData: any) => {
+    if (!currentUser?.uid) { alert('Please sign in first.'); return; }
+    const uid = currentUser.uid;
+
+    // Import categories
+    if (backupData.categories?.length) {
+      for (const cat of backupData.categories) {
+        await saveUserCategoryToFirestore(uid, { ...cat });
+      }
+    }
+
+    // Import tasks
+    if (backupData.tasks?.length) {
+      for (const task of backupData.tasks) {
+        await saveUserTaskToFirestore(uid, { ...task });
+      }
+    }
+
+    // Import fitness entries
+    if (backupData.fitnessEntries?.length) {
+      for (const entry of backupData.fitnessEntries) {
+        await saveFitnessEntryToFirestore(uid, { ...entry, userId: uid });
+      }
+    }
+
+    // Import profile
+    if (backupData.userProfile) {
+      const { id: _, ...profileData } = backupData.userProfile;
+      await saveUserProfileToFirestore(uid, profileData as any);
+    }
+
+    alert('Import successful! All data restored.');
+  };
+
   const handleClearData = () => {
     localStorage.removeItem('doit_tasks_v2');
     localStorage.removeItem('doit_categories_v2');
@@ -2030,6 +2064,7 @@ export default function App() {
                 lastSyncTime={lastSyncTime}
                 onOpenDocs={() => setIsDocsModalOpen(true)}
                 onExportData={handleExportData}
+                onImportData={handleImportData}
                 onClearData={handleClearData}
                 onDeleteAccount={handleDeleteAccount}
               />

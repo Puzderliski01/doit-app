@@ -7,7 +7,7 @@ import {
   Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
   Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
   Dumbbell, Cloud, CloudOff, Shield, Info, FileText, LogOut, Eye, EyeOff,
-  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send
+  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send, Upload
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,6 +28,7 @@ interface SettingsProps {
   lastSyncTime: string | null;
   onOpenDocs: () => void;
   onExportData: () => void;
+  onImportData: (data: unknown) => void;
   onClearData: () => void;
   onDeleteAccount: () => void;
 }
@@ -48,6 +49,7 @@ export const Settings: React.FC<SettingsProps> = ({
   lastSyncTime,
   onOpenDocs,
   onExportData,
+  onImportData,
   onClearData,
   onDeleteAccount,
 }) => {
@@ -535,6 +537,33 @@ export const Settings: React.FC<SettingsProps> = ({
           <Download className="w-4 h-4" />
           {t('settings.exportData')}
         </button>
+        <label className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
+          isLight ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50' : 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
+        }`}>
+          <Upload className="w-4 h-4" />
+          Import from JSON Backup
+          <input
+            type="file"
+            accept=".json"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                haptic.mediumClick();
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  try {
+                    const data = JSON.parse(ev.target?.result as string);
+                    onImportData(data);
+                  } catch {
+                    alert('Invalid JSON file');
+                  }
+                };
+                reader.readAsText(file);
+              }
+            }}
+            className="hidden"
+          />
+        </label>
         {!showClearConfirm ? (
           <button
             onClick={() => setShowClearConfirm(true)}
