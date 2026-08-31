@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile, Category } from '../types';
+import { UserProfile, Category, AuthUser } from '../types';
 import { storage } from '../utils/storage';
 import { getEmailJSConfig, saveEmailJSConfig, EmailJSConfig } from '../utils/notificationEngine';
 import { t, LANGUAGES, Language, setLanguage } from '../i18n';
@@ -29,6 +29,7 @@ interface SettingsProps {
   onOpenDocs: () => void;
   onExportData: () => void;
   onClearData: () => void;
+  onDeleteAccount: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -48,6 +49,7 @@ export const Settings: React.FC<SettingsProps> = ({
   onOpenDocs,
   onExportData,
   onClearData,
+  onDeleteAccount,
 }) => {
   const isLight = theme === 'light';
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export const Settings: React.FC<SettingsProps> = ({
   });
   const [emailjsConfig, setEmailjsConfig] = useState<EmailJSConfig>(() => getEmailJSConfig());
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#f59e0b');
   const CATEGORY_COLORS = ['#f59e0b','#10b981','#ec4899','#38bdf8','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#6366f1'];
@@ -583,6 +586,48 @@ export const Settings: React.FC<SettingsProps> = ({
           <ChevronRight className="w-3.5 h-3.5 ml-auto" />
         </button>
       </Section>
+
+      {/* Danger Zone - Delete Account */}
+      {!currentUser?.isGuest && !(currentUser as AuthUser)?.isLocal && (
+        <Section id="danger" title="Danger Zone" icon={<AlertTriangle className="w-4 h-4" />}>
+          <div className={`p-3 rounded-xl border ${isLight ? 'bg-red-50/50 border-red-200/40' : 'bg-red-500/5 border-red-500/15'}`}>
+            <p className={`text-[11px] mb-3 ${isLight ? 'text-red-600' : 'text-red-400'}`}>
+              This will permanently delete your account and all associated data from our servers. This action cannot be undone.
+            </p>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold cursor-pointer hover:bg-red-600"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Account & All Data
+              </button>
+            ) : (
+              <div>
+                <p className={`text-[11px] font-bold mb-2 ${isLight ? 'text-red-700' : 'text-red-300'}`}>
+                  Are you absolutely sure? This cannot be undone.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { haptic.mediumClick(); onDeleteAccount(); setShowDeleteConfirm(false); }}
+                    className="flex-1 py-2 rounded-lg bg-red-600 text-white text-xs font-bold cursor-pointer"
+                  >
+                    Yes, Delete Forever
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className={`flex-1 py-2 rounded-lg border text-xs font-bold cursor-pointer ${
+                      isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
 
       {/* About */}
       <Section id="about" title={t('settings.about')} icon={<Info className="w-4 h-4" />}>

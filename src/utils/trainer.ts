@@ -22,7 +22,7 @@ export function detectWeakPoints(stats: FitnessStats): WeakPoint[] {
   for (const muscle of allMuscles) {
     const rankData = stats.muscleRanks[muscle];
     const xp = rankData?.xp || 0;
-    const rank = rankData?.rank || 'Loser';
+    const rank = rankData?.rank || 'Beginner';
     const frequency = stats.muscleGroupFrequency[muscle] || 0;
     const totalWorkouts = stats.totalWorkouts || 1;
     const avgWeeklyFrequency = Math.round((frequency / totalWorkouts) * 10) / 10;
@@ -31,7 +31,7 @@ export function detectWeakPoints(stats: FitnessStats): WeakPoint[] {
     const progress = getProgressToNextRank(xp);
     const rankIndex = RANKS.findIndex(r => r.rank === rank);
     const avgRankIndex = Math.floor(allMuscles.reduce((sum, m) => {
-      const r = getRankInfo(stats.muscleRanks[m]?.rank || 'Loser');
+      const r = getRankInfo(stats.muscleRanks[m]?.rank || 'Beginner');
       return sum + RANKS.findIndex(ri => ri.rank === r.rank);
     }, 0) / allMuscles.length);
 

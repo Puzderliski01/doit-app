@@ -12,7 +12,7 @@ import {
 // 30 ranks with differentiated badges
 // Within a tier (I/II/III): badge varies slightly (outline → filled → bold)
 export const RANKS: RankInfo[] = [
-  { rank: 'Loser', minXP: 0, color: '#78716c', icon: '💀', label: 'Loser' },
+  { rank: 'Beginner', minXP: 0, color: '#78716c', icon: '💀', label: 'Beginner' },
   { rank: 'Weak Rookie I', minXP: 500, color: '#a8a29e', icon: '🦴', label: 'Weak Rookie I' },
   { rank: 'Weak Rookie II', minXP: 1200, color: '#b0afa9', icon: '🩹', label: 'Weak Rookie II' },
   { rank: 'Weak Rookie III', minXP: 2200, color: '#d6d3d1', icon: '🤕', label: 'Weak Rookie III' },
@@ -214,9 +214,9 @@ export const DEFAULT_FITNESS_STATS: FitnessStats = {
   bestStreak: 0,
   lastWorkoutDate: null,
   xp: 0,
-  rank: 'Loser',
+  rank: 'Beginner',
   muscleRanks: Object.fromEntries(
-    MUSCLE_GROUPS_LIST.map((g) => [g, { xp: 0, rank: 'Loser' as Rank }])
+    MUSCLE_GROUPS_LIST.map((g) => [g, { xp: 0, rank: 'Beginner' as Rank }])
   ) as Record<MuscleGroup, { xp: number; rank: Rank }>,
   personalRecords: {},
   muscleGroupFrequency: {
@@ -366,7 +366,7 @@ export function getRankInfo(rank: Rank): RankInfo {
 }
 
 export function calculateRank(xp: number): Rank {
-  let rank: Rank = 'Loser';
+  let rank: Rank = 'Beginner';
   for (const r of RANKS) {
     if (xp >= r.minXP) rank = r.rank;
   }
@@ -550,7 +550,7 @@ export function updateFitnessStats(
     for (const [muscle, percent] of Object.entries(engagement)) {
       const muscleKey = muscle as MuscleGroup;
       const muscleXP = Math.round((finalXP * (percent as number)) / 100);
-      const currentMuscleData = newStats.muscleRanks[muscleKey] || { xp: 0, rank: 'Loser' as Rank };
+      const currentMuscleData = newStats.muscleRanks[muscleKey] || { xp: 0, rank: 'Beginner' as Rank };
       const newMuscleXP = currentMuscleData.xp + muscleXP;
       newStats.muscleRanks[muscleKey] = {
         xp: newMuscleXP,
@@ -560,7 +560,7 @@ export function updateFitnessStats(
   } else {
     // Fallback: give all XP to the primary muscle group
     const primaryMuscle = entry.muscleGroup;
-    const currentMuscleData = newStats.muscleRanks[primaryMuscle] || { xp: 0, rank: 'Loser' as Rank };
+    const currentMuscleData = newStats.muscleRanks[primaryMuscle] || { xp: 0, rank: 'Beginner' as Rank };
     newStats.muscleRanks[primaryMuscle] = {
       xp: currentMuscleData.xp + finalXP,
       rank: calculateRank(currentMuscleData.xp + finalXP),

@@ -3,6 +3,15 @@ import { haptic } from './haptics';
 import { formatDateTime } from './dateHelpers';
 import emailjs from '@emailjs/browser';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const NOTIFICATIONS_STORAGE_KEY = 'doit_notification_logs_v2';
 const APP_NOTIFICATIONS_STORAGE_KEY = 'doit_app_notifications_v1';
 const EMAILJS_CONFIG_KEY = 'doit_emailjs_config';
@@ -317,8 +326,8 @@ export const notificationEngine = {
     </div>
     <div class="content">
       <div style="font-size: 13px; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Upcoming Deadline Reminder</div>
-      <div class="task-title">${task.title}</div>
-      <div class="task-desc">${task.description || 'No additional notes provided for this task.'}</div>
+      <div class="task-title">${escapeHtml(task.title)}</div>
+      <div class="task-desc">${escapeHtml(task.description || 'No additional notes provided for this task.')}</div>
       
       <div class="meta-grid">
         <div class="meta-row">

@@ -68,6 +68,7 @@ import {
   subscribeToUserTasks,
   saveUserTaskToFirestore,
   deleteUserTaskFromFirestore,
+  deleteUserAccount,
   batchUpdateTasksOrderInFirestore,
   fetchUserTasks,
   subscribeToUserCategories,
@@ -1146,6 +1147,20 @@ export default function App() {
     setAppNotifications([]);
   };
 
+  const handleDeleteAccount = async () => {
+    if (!currentUser?.uid || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
+    try {
+      // Delete from Firestore
+      await deleteUserAccount(currentUser.uid);
+      // Clear local storage
+      handleClearData();
+      // Sign out
+      await handleLogout();
+    } catch (err) {
+      console.error('[Account] Delete failed:', err);
+    }
+  };
+
   // If restoring existing device session, show sleek obsidian loader
   if (authLoading && !currentUser) {
     return (
@@ -2016,6 +2031,7 @@ export default function App() {
                 onOpenDocs={() => setIsDocsModalOpen(true)}
                 onExportData={handleExportData}
                 onClearData={handleClearData}
+                onDeleteAccount={handleDeleteAccount}
               />
               </div>
             </Suspense>

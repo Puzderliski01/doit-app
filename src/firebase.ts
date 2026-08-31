@@ -673,3 +673,17 @@ export async function refreshGroupJoinCode(groupId: string): Promise<string> {
   await updateDoc(doc(db, 'groups', groupId), { joinCode: newCode });
   return newCode;
 }
+
+// Account & Data Deletion
+export async function deleteUserAccount(userId: string): Promise<void> {
+  // Delete all subcollections under users/{userId}
+  const subcollections = ['tasks', 'categories', 'notifications', 'fitnessEntries'];
+  for (const subcol of subcollections) {
+    const snap = await getDocs(collection(db, 'users', userId, subcol));
+    const batch = writeBatch(db);
+    snap.forEach((docSnap) => batch.delete(docSnap.ref));
+    await batch.commit().catch(() => {});
+  }
+  // Delete the user document itself
+  await deleteDoc(doc(db, 'users', userId)).catch(() => {});
+}

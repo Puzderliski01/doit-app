@@ -1,19 +1,80 @@
-// DoIT Service Worker — Push Notifications & Offline Support
-const CACHE_NAME = 'doit-v1';
+// DoIT Service Worker — Push Notifications & Offline Caching
+const CACHE_NAME = 'doit-v3';
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
+  '/apple-touch-icon.png',
+];
 
-// Install
+// Install — precache static assets
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS).catch(() => {});
+    })
+  );
   self.skipWaiting();
 });
 
-// Activate
+// Activate — clean old caches
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// Fetch — network-first with cache fallback for offline
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Skip Firebase/Google API calls (always need network)
+  if (request.url.includes('firebaseio.com') ||
+      request.url.includes('googleapis.com') ||
+      request.url.includes('firebase.google.com') ||
+      request.url.includes('gstatic.com') ||
+      request.url.includes('emailjs.com')) {
+    return;
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.ok) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Network failed — try cache
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
+          // If requesting a page, return the cached index.html (SPA fallback)
+          if (request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/index.html');
+          }
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        });
+      })
+  );
 });
 
 // Push notification received
 self.addEventListener('push', (event) => {
-  let data = { title: 'DoIT', body: '', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'doit-push', data: {} };
+  let data = { title: 'DoIT', body: '', icon: '/apple-touch-icon.png', badge: '/apple-touch-icon.png', tag: 'doit-push', data: {} };
 
   if (event.data) {
     try {
@@ -26,8 +87,8 @@ self.addEventListener('push', (event) => {
 
   const notifOptions = {
     body: data.body,
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
+    icon: data.icon || '/apple-touch-icon.png',
+    badge: data.badge || '/apple-touch-icon.png',
     tag: data.tag || 'doit-push',
     data: data.data || {},
     vibrate: [200, 100, 200],
@@ -48,7 +109,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If app window is already open, focus it
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus();
@@ -58,35 +118,11 @@ self.addEventListener('notificationclick', (event) => {
           return;
         }
       }
-      // Otherwise open new window
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }
     })
   );
-});
-
-// Notification action click
-self.addEventListener('notificationactionclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'complete_task' && event.notification.data?.taskId) {
-    event.waitUntil(
-      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-        for (const client of clientList) {
-          if (client.url.includes(self.location.origin)) {
-            client.focus();
-            client.postMessage({
-              type: 'NOTIFICATION_ACTION',
-              action: event.action,
-              taskId: event.notification.data.taskId,
-            });
-            return;
-          }
-        }
-      })
-    );
-  }
 });
 
 // Listen for messages from the app
@@ -95,13 +131,12 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 
-  // Main thread requests to show a notification
   if (event.data?.type === 'SHOW_NOTIFICATION' && event.data?.notification) {
     const n = event.data.notification;
     self.registration.showNotification(n.title, {
       body: n.body,
-      icon: n.icon || '/icon-192.png',
-      badge: n.badge || '/icon-192.png',
+      icon: n.icon || '/apple-touch-icon.png',
+      badge: n.badge || '/apple-touch-icon.png',
       tag: n.tag || 'doit-local',
       data: n.data || {},
       vibrate: [200, 100, 200],

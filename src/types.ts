@@ -151,7 +151,7 @@ export interface FitnessEntry {
 }
 
 export type Rank =
-  | 'Loser'
+  | 'Beginner'
   | 'Weak Rookie I' | 'Weak Rookie II' | 'Weak Rookie III'
   | 'Rookie I' | 'Rookie II' | 'Rookie III'
   | 'Amateur I' | 'Amateur II' | 'Amateur III'
