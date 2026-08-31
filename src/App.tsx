@@ -17,6 +17,8 @@ import {
   FitnessEntry,
   UserProfile,
   Group,
+  MealEntry,
+  DailyNutritionTarget,
 } from './types';
 import { storage } from './utils/storage';
 import { haptic } from './utils/haptics';
@@ -56,6 +58,8 @@ const AchievementTree = lazy(() => import('./components/AchievementTree').then(m
 const DailyBriefing = lazy(() => import('./components/DailyBriefing').then(m => ({ default: m.DailyBriefing })));
 const WeeklyReport = lazy(() => import('./components/WeeklyReport').then(m => ({ default: m.WeeklyReport })));
 const DeadlinePredictor = lazy(() => import('./components/DeadlinePredictor').then(m => ({ default: m.DeadlinePredictor })));
+const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({ default: m.MealPlanView })));
+const TaskBreakdownModal = lazy(() => import('./components/TaskBreakdownModal').then(m => ({ default: m.TaskBreakdownModal })));
 
 import { 
   auth,
@@ -109,6 +113,7 @@ import {
   Zap,
   ChevronRight,
   Users,
+  Apple,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -159,7 +164,7 @@ export default function App() {
 
   // Sub-views within grouped views
   const [taskSubView, setTaskSubView] = useState<'list' | 'matrix'>('list');
-  const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer'>('dashboard');
+  const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer' | 'nutrition'>('dashboard');
 
   // Persist current view
   useEffect(() => {
@@ -236,6 +241,25 @@ export default function App() {
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
+  // Nutrition State
+  const [mealEntries, setMealEntries] = useState<MealEntry[]>(() => {
+    try {
+      const stored = localStorage.getItem('doit_meal_entries');
+      if (stored) return JSON.parse(stored);
+    } catch { /* ignore */ }
+    return [];
+  });
+  const [nutritionTarget, setNutritionTarget] = useState<DailyNutritionTarget>(() => {
+    try {
+      const stored = localStorage.getItem('doit_nutrition_target');
+      if (stored) return JSON.parse(stored);
+    } catch { /* ignore */ }
+    return { calories: 2000, protein: 150, carbs: 250, fat: 65 };
+  });
+  const [isTaskBreakdownOpen, setIsTaskBreakdownOpen] = useState(false);
+  const [breakdownTaskTitle, setBreakdownTaskTitle] = useState('');
+  const [breakdownTaskDesc, setBreakdownTaskDesc] = useState('');
+
   // Apply language from user profile
   useEffect(() => {
     if (userProfile.language) {
@@ -254,14 +278,14 @@ export default function App() {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const anyModalOpen = isTaskModalOpen || isNotifModalOpen || isDocsModalOpen || isAuthModalOpen || isExerciseLogModalOpen || isFitnessOnboardingOpen;
+    const anyModalOpen = isTaskModalOpen || isNotifModalOpen || isDocsModalOpen || isAuthModalOpen || isExerciseLogModalOpen || isFitnessOnboardingOpen || isTaskBreakdownOpen;
     if (anyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [isTaskModalOpen, isNotifModalOpen, isDocsModalOpen, isAuthModalOpen, isExerciseLogModalOpen, isFitnessOnboardingOpen]);
+  }, [isTaskModalOpen, isNotifModalOpen, isDocsModalOpen, isAuthModalOpen, isExerciseLogModalOpen, isFitnessOnboardingOpen, isTaskBreakdownOpen]);
 
   // Firebase Auth State Listener with device session retention
   useEffect(() => {
@@ -462,6 +486,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('doit_fitness_entries', JSON.stringify(fitnessEntries));
   }, [fitnessEntries]);
+
+  useEffect(() => {
+    localStorage.setItem('doit_meal_entries', JSON.stringify(mealEntries));
+  }, [mealEntries]);
+
+  useEffect(() => {
+    localStorage.setItem('doit_nutrition_target', JSON.stringify(nutritionTarget));
+  }, [nutritionTarget]);
 
   const triggerAppNotification = (notif: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) => {
     const created = notificationEngine.pushAppNotification(notif);
@@ -1427,6 +1459,7 @@ export default function App() {
                     theme={theme}
                     tasks={tasks}
                     userProfile={userProfile}
+                    fitnessStats={userProfile.fitnessStats}
                   />
                 </Suspense>
                 <Suspense fallback={null}>
@@ -1598,6 +1631,7 @@ export default function App() {
                             onChangePriority={handleChangePriority}
                             onToggleSubtask={handleToggleSubtask}
                             onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
+                            onAIBreakdown={(t) => { setEditingTask(t); setBreakdownTaskTitle(t.title); setBreakdownTaskDesc(t.description || ''); setIsTaskBreakdownOpen(true); }}
                           />
                         ))}
                       </AnimatePresence>
@@ -1666,6 +1700,7 @@ export default function App() {
                 {[
                   { id: 'dashboard' as const, label: t('fitness.dashboard'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
                   { id: 'trainer' as const, label: t('fitness.trainer'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+                  { id: 'nutrition' as const, label: t('fitness.nutrition'), icon: <Apple className="w-3.5 h-3.5" /> },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1716,6 +1751,20 @@ export default function App() {
                     userProfile={userProfile}
                     fitnessEntries={fitnessEntries}
                     onLogExercise={() => setIsExerciseLogModalOpen(true)}
+                  />
+                </Suspense>
+              )}
+
+              {/* Nutrition View */}
+              {fitnessSubView === 'nutrition' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                  <MealPlanView
+                    theme={theme}
+                    entries={mealEntries}
+                    dailyTarget={nutritionTarget}
+                    onAddEntry={(entry) => setMealEntries(prev => [...prev, { ...entry, id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, createdAt: new Date().toISOString() }])}
+                    onDeleteEntry={(id) => setMealEntries(prev => prev.filter(e => e.id !== id))}
+                    onUpdateTarget={setNutritionTarget}
                   />
                 </Suspense>
               )}
@@ -1840,6 +1889,31 @@ export default function App() {
             onClose={() => setIsFitnessOnboardingOpen(false)}
             onComplete={handleFitnessOnboardingComplete}
             theme={theme}
+          />
+        </Suspense>
+
+        {/* AI Task Breakdown Modal */}
+        <Suspense fallback={null}>
+          <TaskBreakdownModal
+            isOpen={isTaskBreakdownOpen}
+            onClose={() => setIsTaskBreakdownOpen(false)}
+            theme={theme}
+            taskTitle={breakdownTaskTitle}
+            taskDescription={breakdownTaskDesc}
+            onApply={(subtasks) => {
+              if (editingTask) {
+                const updated = subtasks.map((s, i) => ({
+                  id: `bd-${Date.now()}-${i}`,
+                  title: s.title,
+                  completed: false,
+                }));
+                const newTask = { ...editingTask, subtasks: [...(editingTask.subtasks || []), ...updated] };
+                setTasks(prev => prev.map(t => t.id === editingTask.id ? newTask : t));
+                if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
+                  saveUserTaskToFirestore(currentUser.uid, newTask).catch(console.error);
+                }
+              }
+            }}
           />
         </Suspense>
 

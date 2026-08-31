@@ -310,3 +310,64 @@ export interface GroupTaskComment {
   text: string;
   createdAt: string;
 }
+
+// Nutrition & Meal Plan Types
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface FoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number; // grams
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  servingSize: string;
+  servingUnit: string;
+}
+
+export interface MealEntry {
+  id: string;
+  foodItem: FoodItem;
+  quantity: number;
+  mealType: MealType;
+  date: string;
+  createdAt: string;
+}
+
+export interface DailyNutritionTarget {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface MealPlan {
+  id: string;
+  name: string;
+  target: DailyNutritionTarget;
+  meals: {
+    mealType: MealType;
+    foods: { foodItem: FoodItem; quantity: number }[];
+    notes?: string;
+  }[];
+  generatedByAI: boolean;
+  createdAt: string;
+}
+
+export interface NutritionLog {
+  date: string;
+  entries: MealEntry[];
+  totals: DailyNutritionTarget;
+  target: DailyNutritionTarget;
+}
+
+export interface NutritionProfile {
+  dailyTarget: DailyNutritionTarget;
+  weightKg?: number;
+  heightCm?: number;
+  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  goal: 'lose_weight' | 'maintain' | 'gain_weight' | 'gain_muscle';
+  dietaryRestrictions: string[];
+  mealPlans: MealPlan[];
+}

@@ -61,6 +61,7 @@ type TranslationKeys = {
   // Fitness
   'fitness.dashboard': string;
   'fitness.trainer': string;
+  'fitness.nutrition': string;
   'fitness.ranks': string;
   'fitness.logWorkout': string;
   'fitness.startOnboarding': string;
@@ -170,6 +171,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Sign In to My Tasks',
     'fitness.dashboard': 'Dashboard',
     'fitness.trainer': 'Trainer',
+    'fitness.nutrition': 'Nutrition',
     'fitness.ranks': 'Ranks',
     'fitness.logWorkout': 'Log Workout',
     'fitness.startOnboarding': 'Start Onboarding',
@@ -273,6 +275,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Prijavi se za sinhronizaciju',
     'fitness.dashboard': 'Kontrolna tabla',
     'fitness.trainer': 'Trener',
+    'fitness.nutrition': 'Ishrana',
     'fitness.ranks': 'Rangovi',
     'fitness.logWorkout': 'Evidentiraj trening',
     'fitness.startOnboarding': 'Započni podešavanje',
@@ -376,6 +379,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Anmelden zum Synchronisieren',
     'fitness.dashboard': 'Dashboard',
     'fitness.trainer': 'Trainer',
+    'fitness.nutrition': 'Ernährung',
     'fitness.ranks': 'Rangfolge',
     'fitness.logWorkout': 'Workout erfassen',
     'fitness.startOnboarding': 'Einrichtung starten',
@@ -479,6 +483,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Se connecter',
     'fitness.dashboard': 'Tableau de bord',
     'fitness.trainer': 'Entraîneur',
+    'fitness.nutrition': 'Nutrition',
     'fitness.ranks': 'Classement',
     'fitness.logWorkout': 'Enregistrer',
     'fitness.startOnboarding': 'Commencer',
@@ -582,6 +587,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Iniciar sesión',
     'fitness.dashboard': 'Panel',
     'fitness.trainer': 'Entrenador',
+    'fitness.nutrition': 'Nutrición',
     'fitness.ranks': 'Rankings',
     'fitness.logWorkout': 'Registrar',
     'fitness.startOnboarding': 'Comenzar',
@@ -685,6 +691,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Entrar',
     'fitness.dashboard': 'Painel',
     'fitness.trainer': 'Treinador',
+    'fitness.nutrition': 'Nutrição',
     'fitness.ranks': 'Rankings',
     'fitness.logWorkout': 'Registrar',
     'fitness.startOnboarding': 'Começar',
@@ -788,6 +795,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Войти',
     'fitness.dashboard': 'Панель',
     'fitness.trainer': 'Тренер',
+    'fitness.nutrition': 'Питание',
     'fitness.ranks': 'Рейтинги',
     'fitness.logWorkout': 'Записать',
     'fitness.startOnboarding': 'Начать',
@@ -891,6 +899,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': '登录同步',
     'fitness.dashboard': '面板',
     'fitness.trainer': '教练',
+    'fitness.nutrition': '营养',
     'fitness.ranks': '排名',
     'fitness.logWorkout': '记录训练',
     'fitness.startOnboarding': '开始设置',
@@ -994,6 +1003,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'تسجيل الدخول',
     'fitness.dashboard': 'لوحة',
     'fitness.trainer': 'مدرب',
+    'fitness.nutrition': 'تغذية',
     'fitness.ranks': 'تصنيفات',
     'fitness.logWorkout': 'تسجيل',
     'fitness.startOnboarding': 'ابدأ',
@@ -1097,6 +1107,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tasks.signInToSync': 'Giriş yap',
     'fitness.dashboard': 'Panel',
     'fitness.trainer': 'Koç',
+    'fitness.nutrition': 'Beslenme',
     'fitness.ranks': 'Sıralamalar',
     'fitness.logWorkout': 'Kaydet',
     'fitness.startOnboarding': 'Başla',

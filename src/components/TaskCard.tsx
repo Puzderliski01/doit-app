@@ -38,6 +38,7 @@ interface TaskCardProps {
   onChangePriority: (taskId: string, priority: Priority) => void;
   onToggleSubtask: (taskId: string, subtaskId: string) => void;
   onTriggerEmailReminder: (task: Task) => void;
+  onAIBreakdown?: (task: Task) => void;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -50,7 +51,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDuplicate,
   onChangePriority,
   onToggleSubtask,
-  onTriggerEmailReminder
+  onTriggerEmailReminder,
+  onAIBreakdown,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -521,6 +523,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete
                 </button>
+
+                {onAIBreakdown && (
+                  <button
+                    onClick={() => { setShowMenu(false); haptic.mediumClick(); onAIBreakdown(task); }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      isLight ? 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    AI Breakdown
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
