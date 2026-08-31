@@ -45,7 +45,7 @@ export interface Category {
   description?: string;
 }
 
-export type ViewMode = 'home' | 'tasks' | 'fitness' | 'settings';
+export type ViewMode = 'home' | 'tasks' | 'fitness' | 'settings' | 'groups';
 
 export type FilterStatus = 'all' | 'pending' | 'completed' | 'today' | 'upcoming' | 'overdue';
 
@@ -271,4 +271,42 @@ export interface TrainerSuggestion {
   muscleGroup?: MuscleGroup;
   priority: 'high' | 'medium' | 'low';
   actionable: boolean;
+}
+
+// Group Types
+export interface GroupMember {
+  uid: string;
+  displayName: string;
+  email: string;
+  photoURL?: string;
+  role: 'admin' | 'member';
+  joinedAt: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  joinCode: string;
+  createdBy: string;
+  members: GroupMember[];
+  createdAt: string;
+  color?: string;
+}
+
+export interface GroupTask extends Task {
+  groupId: string;
+  createdBy: string;
+  createdByName: string;
+  assignedTo?: string;
+  assignedToName?: string;
+  comments: GroupTaskComment[];
+}
+
+export interface GroupTaskComment {
+  id: string;
+  uid: string;
+  displayName: string;
+  text: string;
+  createdAt: string;
 }

@@ -19,6 +19,7 @@ type TranslationKeys = {
   // Nav
   'nav.home': string;
   'nav.tasks': string;
+  'nav.groups': string;
   'nav.fitness': string;
   'nav.settings': string;
 
@@ -133,6 +134,7 @@ const translations: Record<Language, TranslationKeys> = {
   en: {
     'nav.home': 'Home',
     'nav.tasks': 'Tasks',
+    'nav.groups': 'Groups',
     'nav.fitness': 'Fitness',
     'nav.settings': 'Settings',
     'home.welcome': 'Welcome back',
@@ -235,6 +237,7 @@ const translations: Record<Language, TranslationKeys> = {
   sr: {
     'nav.home': 'Početna',
     'nav.tasks': 'Zadaci',
+    'nav.groups': 'Grupe',
     'nav.fitness': 'Fitnes',
     'nav.settings': 'Podešavanja',
     'home.welcome': 'Dobrodošao nazad',
@@ -337,6 +340,7 @@ const translations: Record<Language, TranslationKeys> = {
   de: {
     'nav.home': 'Startseite',
     'nav.tasks': 'Aufgaben',
+    'nav.groups': 'Gruppen',
     'nav.fitness': 'Fitness',
     'nav.settings': 'Einstellungen',
     'home.welcome': 'Willkommen zurück',
@@ -439,6 +443,7 @@ const translations: Record<Language, TranslationKeys> = {
   fr: {
     'nav.home': 'Accueil',
     'nav.tasks': 'Tâches',
+    'nav.groups': 'Groupes',
     'nav.fitness': 'Forme',
     'nav.settings': 'Paramètres',
     'home.welcome': 'Bon retour',
@@ -541,6 +546,7 @@ const translations: Record<Language, TranslationKeys> = {
   es: {
     'nav.home': 'Inicio',
     'nav.tasks': 'Tareas',
+    'nav.groups': 'Grupos',
     'nav.fitness': 'Fitness',
     'nav.settings': 'Ajustes',
     'home.welcome': 'Bienvenido',
@@ -643,6 +649,7 @@ const translations: Record<Language, TranslationKeys> = {
   pt: {
     'nav.home': 'Início',
     'nav.tasks': 'Tarefas',
+    'nav.groups': 'Grupos',
     'nav.fitness': 'Fitness',
     'nav.settings': 'Configurações',
     'home.welcome': 'Bem-vindo',
@@ -745,6 +752,7 @@ const translations: Record<Language, TranslationKeys> = {
   ru: {
     'nav.home': 'Главная',
     'nav.tasks': 'Задачи',
+    'nav.groups': 'Группы',
     'nav.fitness': 'Фитнес',
     'nav.settings': 'Настройки',
     'home.welcome': 'С возвращением',
@@ -847,6 +855,7 @@ const translations: Record<Language, TranslationKeys> = {
   zh: {
     'nav.home': '首页',
     'nav.tasks': '任务',
+    'nav.groups': '群组',
     'nav.fitness': '健身',
     'nav.settings': '设置',
     'home.welcome': '欢迎回来',
@@ -949,6 +958,7 @@ const translations: Record<Language, TranslationKeys> = {
   ar: {
     'nav.home': 'الرئيسية',
     'nav.tasks': 'المهام',
+    'nav.groups': 'المجموعات',
     'nav.fitness': 'اللياقة',
     'nav.settings': 'الإعدادات',
     'home.welcome': 'مرحباً بعودتك',
@@ -1051,6 +1061,7 @@ const translations: Record<Language, TranslationKeys> = {
   tr: {
     'nav.home': 'Ana Sayfa',
     'nav.tasks': 'Görevler',
+    'nav.groups': 'Gruplar',
     'nav.fitness': 'Spor',
     'nav.settings': 'Ayarlar',
     'home.welcome': 'Hoş geldiniz',

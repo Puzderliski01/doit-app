@@ -31,7 +31,7 @@ import {
   limit as firestoreLimit
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, Category, AppNotification, AuthUser, FitnessEntry, UserProfile } from './types';
+import { Task, Category, AppNotification, AuthUser, FitnessEntry, UserProfile, Group, GroupTask, GroupMember, GroupTaskComment } from './types';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -476,4 +476,157 @@ export function subscribeToUserProfile(userId: string, onUpdate: (profile: UserP
   } catch (err) {
     return () => {};
   }
+}
+
+// ===== GROUP FUNCTIONS =====
+
+function generateJoinCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+export async function createGroup(name: string, description: string, user: AuthUser): Promise<Group> {
+  const groupRef = doc(collection(db, 'groups'));
+  const group: Group = {
+    id: groupRef.id,
+    name,
+    description,
+    joinCode: generateJoinCode(),
+    createdBy: user.uid,
+    members: [{
+      uid: user.uid,
+      displayName: user.displayName || 'User',
+      email: user.email || '',
+      photoURL: user.photoURL || '',
+      role: 'admin',
+      joinedAt: new Date().toISOString(),
+    }],
+    createdAt: new Date().toISOString(),
+    color: '#f97316',
+  };
+  await setDoc(groupRef, group);
+  return group;
+}
+
+export async function joinGroup(joinCode: string, user: AuthUser): Promise<Group | null> {
+  const q = query(collection(db, 'groups'), where('joinCode', '==', joinCode.toUpperCase()));
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  const groupDoc = snapshot.docs[0];
+  const groupData = groupDoc.data() as Group;
+  if (groupData.members.some((m) => m.uid === user.uid)) return groupData;
+  const newMember: GroupMember = {
+    uid: user.uid,
+    displayName: user.displayName || 'User',
+    email: user.email || '',
+    photoURL: user.photoURL || '',
+    role: 'member',
+    joinedAt: new Date().toISOString(),
+  };
+  await updateDoc(doc(db, 'groups', groupDoc.id), {
+    members: [...groupData.members, newMember],
+  });
+  return { ...groupData, members: [...groupData.members, newMember] };
+}
+
+export async function leaveGroup(groupId: string, userId: string): Promise<void> {
+  const groupRef = doc(db, 'groups', groupId);
+  const snap = await getDoc(groupRef);
+  if (!snap.exists()) return;
+  const group = snap.data() as Group;
+  await updateDoc(groupRef, {
+    members: group.members.filter((m) => m.uid !== userId),
+  });
+}
+
+export async function deleteGroup(groupId: string): Promise<void> {
+  const tasksSnap = await getDocs(collection(db, 'groups', groupId, 'tasks'));
+  const batch = writeBatch(db);
+  tasksSnap.forEach((d) => batch.delete(d.ref));
+  batch.delete(doc(db, 'groups', groupId));
+  await batch.commit();
+}
+
+export function subscribeToUserGroups(userId: string, onUpdate: (groups: Group[]) => void) {
+  try {
+    const q = query(collection(db, 'groups'));
+    return onSnapshot(q, (snapshot) => {
+      const groups: Group[] = [];
+      snapshot.forEach((d) => {
+        const data = d.data() as Group;
+        if (data.members?.some((m) => m.uid === userId)) {
+          groups.push({ ...data, id: d.id });
+        }
+      });
+      onUpdate(groups);
+    }, (err) => {
+      console.warn('[Groups] Subscription error:', err);
+    });
+  } catch (err) {
+    console.warn('[Groups] Subscribe error:', err);
+    onUpdate([]);
+    return () => {};
+  }
+}
+
+export async function addGroupTask(groupId: string, task: Omit<GroupTask, 'id' | 'comments'>, user: AuthUser): Promise<string> {
+  const taskRef = doc(collection(db, 'groups', groupId, 'tasks'));
+  const fullTask: GroupTask = {
+    ...task,
+    id: taskRef.id,
+    groupId,
+    createdBy: user.uid,
+    createdByName: user.displayName || 'User',
+    comments: [],
+  } as GroupTask;
+  await setDoc(taskRef, stripUndefined(fullTask as unknown as Record<string, unknown>));
+  return taskRef.id;
+}
+
+export async function updateGroupTask(groupId: string, taskId: string, updates: Partial<GroupTask>): Promise<void> {
+  await updateDoc(doc(db, 'groups', groupId, 'tasks', taskId), updates as any);
+}
+
+export async function deleteGroupTask(groupId: string, taskId: string): Promise<void> {
+  await deleteDoc(doc(db, 'groups', groupId, 'tasks', taskId));
+}
+
+export async function addGroupTaskComment(groupId: string, taskId: string, comment: Omit<GroupTaskComment, 'id' | 'createdAt'>): Promise<void> {
+  const taskRef = doc(db, 'groups', groupId, 'tasks', taskId);
+  const snap = await getDoc(taskRef);
+  if (!snap.exists()) return;
+  const task = snap.data() as GroupTask;
+  const newComment: GroupTaskComment = {
+    ...comment,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+  };
+  await updateDoc(taskRef, { comments: [...(task.comments || []), newComment] });
+}
+
+export function subscribeToGroupTasks(groupId: string, onUpdate: (tasks: GroupTask[]) => void) {
+  try {
+    const q = query(collection(db, 'groups', groupId, 'tasks'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snapshot) => {
+      const tasks: GroupTask[] = [];
+      snapshot.forEach((d) => {
+        tasks.push(d.data() as GroupTask);
+      });
+      onUpdate(tasks);
+    }, (err) => {
+      console.warn('[GroupTasks] Subscription error:', err);
+    });
+  } catch (err) {
+    console.warn('[GroupTasks] Subscribe error:', err);
+    onUpdate([]);
+    return () => {};
+  }
+}
+
+export async function refreshGroupJoinCode(groupId: string): Promise<string> {
+  const newCode = generateJoinCode();
+  await updateDoc(doc(db, 'groups', groupId), { joinCode: newCode });
+  return newCode;
 }

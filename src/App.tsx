@@ -16,6 +16,7 @@ import {
   AuthUser,
   FitnessEntry,
   UserProfile,
+  Group,
 } from './types';
 import { storage } from './utils/storage';
 import { haptic } from './utils/haptics';
@@ -49,6 +50,8 @@ const FitnessOnboarding = lazy(() => import('./components/FitnessOnboarding').th
 const Leaderboard = lazy(() => import('./components/Leaderboard').then(m => ({ default: m.Leaderboard })));
 const TrainerDashboard = lazy(() => import('./components/TrainerDashboard').then(m => ({ default: m.TrainerDashboard })));
 const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
+const GroupsManager = lazy(() => import('./components/GroupsManager').then(m => ({ default: m.GroupsManager })));
+const GroupTasksView = lazy(() => import('./components/GroupTasksView').then(m => ({ default: m.GroupTasksView })));
 
 import { 
   auth,
@@ -70,7 +73,8 @@ import {
   saveUserProfileToFirestore,
   subscribeToUserProfile,
   saveLocalAuthSession,
-  clearLocalAuthSession
+  clearLocalAuthSession,
+  subscribeToUserGroups,
 } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
@@ -99,7 +103,8 @@ import {
   TrendingUp,
   Target,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Users,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -143,6 +148,7 @@ export default function App() {
       if (saved === 'tasks') return 'tasks';
       if (saved === 'home') return 'home';
       if (saved === 'settings') return 'settings';
+      if (saved === 'groups') return 'groups';
     } catch { /* ignore */ }
     return 'home';
   });
@@ -221,6 +227,10 @@ export default function App() {
   });
   const [isExerciseLogModalOpen, setIsExerciseLogModalOpen] = useState(false);
   const [isFitnessOnboardingOpen, setIsFitnessOnboardingOpen] = useState(false);
+
+  // Groups State
+  const [userGroups, setUserGroups] = useState<Group[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
   // Apply language from user profile
   useEffect(() => {
@@ -384,12 +394,16 @@ export default function App() {
       }
     );
 
+    // Subscribe to user groups
+    const unsubscribeGroups = subscribeToUserGroups(currentUser.uid, setUserGroups);
+
     return () => {
       unsubscribeTasks();
       unsubscribeCats();
       unsubscribeNotifs();
       unsubscribeFitness();
       unsubscribeProfile();
+      unsubscribeGroups();
     };
   }, [currentUser?.uid]);
 
@@ -1565,6 +1579,41 @@ export default function App() {
                   />
                 </Suspense>
               )}
+            </div>
+          )}
+
+          {/* GROUPS VIEW */}
+          {currentView === 'groups' && (
+            <div className="space-y-5">
+              <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                {!currentUser || currentUser.isGuest ? (
+                  <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                    <Users className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
+                    <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Groups</h2>
+                    <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>Sign in to create and join groups</p>
+                    <button
+                      onClick={() => setIsAuthModalOpen(true)}
+                      className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                  </div>
+                ) : selectedGroup ? (
+                  <GroupTasksView
+                    theme={theme}
+                    group={selectedGroup}
+                    currentUser={currentUser as AuthUser}
+                    onBack={() => setSelectedGroup(null)}
+                  />
+                ) : (
+                  <GroupsManager
+                    theme={theme}
+                    currentUser={currentUser as AuthUser}
+                    groups={userGroups}
+                    onSelectGroup={setSelectedGroup}
+                  />
+                )}
+              </Suspense>
             </div>
           )}
 
