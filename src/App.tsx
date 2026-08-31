@@ -52,6 +52,10 @@ const TrainerDashboard = lazy(() => import('./components/TrainerDashboard').then
 const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
 const GroupsManager = lazy(() => import('./components/GroupsManager').then(m => ({ default: m.GroupsManager })));
 const GroupTasksView = lazy(() => import('./components/GroupTasksView').then(m => ({ default: m.GroupTasksView })));
+const AchievementTree = lazy(() => import('./components/AchievementTree').then(m => ({ default: m.AchievementTree })));
+const DailyBriefing = lazy(() => import('./components/DailyBriefing').then(m => ({ default: m.DailyBriefing })));
+const WeeklyReport = lazy(() => import('./components/WeeklyReport').then(m => ({ default: m.WeeklyReport })));
+const DeadlinePredictor = lazy(() => import('./components/DeadlinePredictor').then(m => ({ default: m.DeadlinePredictor })));
 
 import { 
   auth,
@@ -1415,6 +1419,43 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {/* Daily Briefing + Deadline Predictor */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Suspense fallback={null}>
+                  <DailyBriefing
+                    theme={theme}
+                    tasks={tasks}
+                    userProfile={userProfile}
+                  />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <DeadlinePredictor
+                    theme={theme}
+                    tasks={tasks}
+                  />
+                </Suspense>
+              </div>
+
+              {/* Achievement Tree + Weekly Report */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Suspense fallback={null}>
+                  <AchievementTree
+                    theme={theme}
+                    completedTasks={tasks.filter(t => t.completed).length}
+                    totalWorkouts={userProfile.fitnessStats?.totalWorkouts || 0}
+                    currentStreak={userProfile.fitnessStats?.currentStreak || 0}
+                    xp={userProfile.fitnessStats?.xp || 0}
+                  />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <WeeklyReport
+                    theme={theme}
+                    tasks={tasks}
+                    userProfile={userProfile}
+                  />
+                </Suspense>
+              </div>
 
               {/* Motivational Footer */}
               <motion.div
