@@ -149,7 +149,7 @@ export default function App() {
 
   // Sub-views within grouped views
   const [taskSubView, setTaskSubView] = useState<'list' | 'matrix'>('list');
-  const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer' | 'ranks'>('dashboard');
+  const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer'>('dashboard');
 
   // Persist current view
   useEffect(() => {
@@ -1576,7 +1576,6 @@ export default function App() {
                 {[
                   { id: 'dashboard' as const, label: t('fitness.dashboard'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
                   { id: 'trainer' as const, label: t('fitness.trainer'), icon: <Sparkles className="w-3.5 h-3.5" /> },
-                  { id: 'ranks' as const, label: t('fitness.ranks'), icon: <Trophy className="w-3.5 h-3.5" /> },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1631,33 +1630,7 @@ export default function App() {
                 </Suspense>
               )}
 
-              {/* Ranks / Leaderboard */}
-              {fitnessSubView === 'ranks' && (
-                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-                  {!currentUser || currentUser.isGuest ? (
-                    <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
-                      <Trophy className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
-                      <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Leaderboard</h2>
-                      <p className={`text-sm mb-4 ${theme === 'light' ? 'text-slate-500' : 'text-white/50'}`}>Sign in to see how you rank</p>
-                      <button
-                        onClick={() => setIsAuthModalOpen(true)}
-                        className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
-                      >
-                        Sign In
-                      </button>
-                    </div>
-                  ) : (
-                    <Leaderboard
-                      theme={theme}
-                      userProfile={userProfile}
-                      onProfileUpdate={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
-                      currentUserUid={currentUser?.uid}
-                      isGuest={currentUser?.isGuest}
-                      userPhotoURL={currentUser?.photoURL}
-                    />
-                  )}
-                </Suspense>
-              )}
+              {/* Ranks / Leaderboard - deactivated */}
             </div>
           )}
 
