@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Brand Logo */}
         <div className="flex items-center gap-3 shrink-0">
           <div 
-            onClick={() => { haptic.lightTap(); onViewChange('list'); }}
+            onClick={() => { haptic.lightTap(); onViewChange('home'); }}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-500 to-amber-300 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-transform group-hover:scale-105">
@@ -104,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className={`hidden lg:flex items-center gap-2 px-3 py-1 rounded-full text-xs border ${
             isLight ? 'bg-slate-100/80 border-slate-200' : 'bg-white/5 border-white/10'
           }`}>
-            {currentUser?.isGuest ? (
+            {currentUser && (currentUser as AuthUser).isGuest ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]" />
                 <span className={`font-mono text-[11px] ${isLight ? 'text-amber-700 font-medium' : 'text-amber-300/90'}`}>
@@ -200,7 +200,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Account */}
           {currentUser ? (
-            currentUser.isGuest ? (
+            (currentUser as AuthUser).isGuest ? (
               <button
                 id="btn-user-guest"
                 onClick={() => {

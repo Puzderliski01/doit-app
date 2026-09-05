@@ -183,7 +183,7 @@ export const TrainerDashboard: React.FC<TrainerDashboardProps> = ({
               {(['chest', 'back', 'shoulders', 'legs', 'biceps', 'triceps', 'glutes', 'core'] as MuscleGroup[]).map(muscle => {
                 const rankData = stats.muscleRanks[muscle];
                 const xp = rankData?.xp || 0;
-                const rank = rankData?.rank || 'Loser';
+                const rank = rankData?.rank || 'Beginner';
                 const rankInfo = getRankInfo(rank);
                 const progress = getProgressToNextRank(xp);
                 const isWeak = weakPoints.some(w => w.muscleGroup === muscle && w.priority === 'high');

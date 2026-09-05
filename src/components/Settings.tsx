@@ -62,7 +62,11 @@ export const Settings: React.FC<SettingsProps> = ({
     return localStorage.getItem('doit_haptic_enabled') !== 'false';
   });
   const [pushEnabled, setPushEnabled] = useState(() => {
-    return Notification.permission === 'granted';
+    try {
+      return typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    } catch {
+      return false;
+    }
   });
   const [emailjsConfig, setEmailjsConfig] = useState<EmailJSConfig>(() => getEmailJSConfig());
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -88,13 +92,21 @@ export const Settings: React.FC<SettingsProps> = ({
     if (pushEnabled) {
       setPushEnabled(false);
     } else {
-      const result = await Notification.requestPermission();
-      if (result === 'granted') {
-        // Also subscribe to push for background notifications
-        const { subscribeToPush } = await import('../utils/pushNotifications');
-        await subscribeToPush();
+      try {
+        if (typeof Notification === 'undefined') {
+          setPushEnabled(false);
+          return;
+        }
+        const result = await Notification.requestPermission();
+        if (result === 'granted') {
+          // Also subscribe to push for background notifications
+          const { subscribeToPush } = await import('../utils/pushNotifications');
+          await subscribeToPush();
+        }
+        setPushEnabled(result === 'granted');
+      } catch {
+        setPushEnabled(false);
       }
-      setPushEnabled(result === 'granted');
     }
     haptic.lightTap();
   };

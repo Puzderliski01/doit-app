@@ -307,7 +307,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                         ? 'ring-2 ring-offset-1'
                         : isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
                     }`}
-                    style={categoryId === c.id ? { backgroundColor: c.color + '20', borderColor: c.color, color: c.color, ringColor: c.color } : undefined}
+                    style={categoryId === c.id ? { backgroundColor: c.color + '20', borderColor: c.color, color: c.color } : undefined}
                   >
                     {c.name}
                   </button>
@@ -565,26 +565,26 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             {subtasks.length > 0 && (
               <div className={`space-y-1.5 max-h-36 overflow-y-auto p-2 rounded-2xl border liquid-glass-subtle`}>
                 {subtasks.map((st) => (
-                  <div key={st.id} className={`flex items-center justify-between gap-2 p-2 rounded-xl ${
+                  <div key={st.id} className={`flex items-start justify-between gap-2 p-2 rounded-xl ${
                     isLight ? 'hover:bg-slate-100' : 'hover:bg-white/5'
                   }`}>
                     <button
                       type="button"
                       onClick={() => handleToggleSubtask(st.id)}
-                      className="flex items-center gap-2.5 flex-1 text-left cursor-pointer"
+                      className="flex items-start gap-2.5 flex-1 text-left cursor-pointer"
                     >
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs ${
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs mt-0.5 ${
                         st.completed ? 'bg-emerald-500 border-emerald-400 text-black' : isLight ? 'border-slate-300' : 'border-white/30'
                       }`}>
                         {st.completed && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
-                      <span className={`text-xs ${st.completed ? 'line-through' : ''} ${
+                      <div className={`text-xs flex-1 min-w-0 leading-relaxed ${st.completed ? 'line-through' : ''} ${
                         st.completed
                           ? isLight ? 'text-slate-400' : 'text-white/30'
                           : isLight ? 'text-slate-900' : 'text-white'
                       }`}>
                         {st.title}
-                      </span>
+                      </div>
                     </button>
                     <button
                       type="button"

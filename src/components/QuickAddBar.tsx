@@ -109,7 +109,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
               }
             }}
             onFocus={() => setIsExpanded(true)}
-            placeholder="Quick capture mission or task... (e.g. 'Review security audit tomorrow 5pm')"
+            placeholder="Quick capture task... (e.g. 'Review security audit tomorrow 5pm')"
             className={`flex-1 min-w-0 bg-transparent text-sm sm:text-base font-medium focus:outline-none ${
               isLight 
                 ? 'text-slate-900 placeholder:text-slate-400' 

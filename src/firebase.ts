@@ -699,7 +699,7 @@ export async function refreshGroupJoinCode(groupId: string): Promise<string> {
 // Account & Data Deletion
 export async function deleteUserAccount(userId: string): Promise<void> {
   // Delete all subcollections under users/{userId}
-  const subcollections = ['tasks', 'categories', 'notifications', 'fitnessEntries'];
+  const subcollections = ['tasks', 'categories', 'notifications', 'fitness'];
   for (const subcol of subcollections) {
     const snap = await getDocs(collection(db, 'users', userId, subcol));
     const batch = writeBatch(db);

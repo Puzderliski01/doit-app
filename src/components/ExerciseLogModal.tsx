@@ -487,7 +487,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 },
                 () => {
                   const last = sets[sets.length - 1];
-                  setSets([...sets, { reps: last?.reps || 0, weight: last?.weight || 0, defaultWeightUnit, completed: false }]);
+                  setSets([...sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit: defaultWeightUnit, completed: false }]);
                 },
                 (i) => { if (sets.length > 1) setSets(sets.filter((_, idx) => idx !== i)); },
               )}
@@ -615,7 +615,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                             },
                             () => {
                               const last = slot.sets[slot.sets.length - 1];
-                              handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, defaultWeightUnit, completed: false }]);
+                              handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit: defaultWeightUnit, completed: false }]);
                             },
                             (i) => { if (slot.sets.length > 1) handleUpdateSlotSets(idx, slot.sets.filter((_, j) => j !== i)); },
                           )}

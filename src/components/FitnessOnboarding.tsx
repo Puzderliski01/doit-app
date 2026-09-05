@@ -17,7 +17,7 @@ interface FitnessOnboardingProps {
     weightUnit: 'kg' | 'lbs';
     bodyWeight?: number;
     heightCm?: number;
-    goal?: 'lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance';
+    goals?: ('lose_weight' | 'gain_muscle' | 'maintain' | 'strength' | 'endurance')[];
     experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
   }) => void;
   theme: 'dark' | 'light';

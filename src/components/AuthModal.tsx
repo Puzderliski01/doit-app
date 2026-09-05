@@ -272,7 +272,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Already logged in */}
-        {currentUser && !currentUser.isGuest ? (
+        {currentUser && !(currentUser as AuthUser).isGuest ? (
           <div className="px-8 pb-10 space-y-5">
             <div className={`p-4 rounded-2xl border flex items-center gap-4 ${
               isLight ? 'bg-slate-50 border-slate-100' : 'bg-white/5 border-white/10'

@@ -392,26 +392,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                           <div 
                             key={sub.id}
                             onClick={() => handleSubtaskToggleInternal(sub.id)}
-                            className={`flex items-center gap-3 p-3 px-3.5 rounded-2xl cursor-pointer transition-colors border ${
+                            className={`flex items-start gap-3 p-3 px-3.5 rounded-2xl cursor-pointer transition-colors border ${
                               isLight 
                                 ? 'bg-slate-50 hover:bg-slate-100/90 border-slate-200/80 text-slate-800' 
                                 : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/5'
                             }`}
                           >
-                            <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs transition-all shrink-0 ${
+                            <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs transition-all shrink-0 mt-0.5 ${
                               sub.completed 
                                 ? 'bg-emerald-500 border-emerald-400 text-white shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
                                 : isLight ? 'border-slate-300 bg-white' : 'border-white/30 bg-transparent'
                             }`}>
                               {sub.completed && <Check className="w-3 h-3 stroke-[3]" />}
                             </div>
-                            <span className={`text-xs select-none ${
+                            <div className={`text-xs select-none flex-1 min-w-0 leading-relaxed ${
                               sub.completed 
                                 ? isLight ? 'line-through text-slate-400' : 'line-through text-white/30' 
                                 : isLight ? 'text-slate-800' : 'text-white/80'
                             }`}>
                               {sub.title}
-                            </span>
+                            </div>
                           </div>
                         ))}
                       </motion.div>

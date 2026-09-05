@@ -334,6 +334,8 @@ export default function App() {
   // Track pending local writes that haven't been confirmed by Firestore yet
   const pendingWritesRef = useRef<Map<string, Task>>(new Map());
   const pendingDeletesRef = useRef<Set<string>>(new Set());
+  const pendingFitnessWritesRef = useRef<Map<string, FitnessEntry>>(new Map());
+  const pendingFitnessDeletesRef = useRef<Set<string>>(new Set());
 
   // Real-time Firestore Sync for Authenticated User (Disabled in Guest & Local Mode)
   useEffect(() => {
@@ -413,9 +415,30 @@ export default function App() {
     const unsubscribeFitness = subscribeToUserFitness(
       currentUser.uid,
       (userFitness) => {
-        if (userFitness && userFitness.length > 0) {
-          setFitnessEntries(userFitness);
-        }
+        setFitnessEntries(prev => {
+          const pending = pendingFitnessWritesRef.current;
+          const deletes = pendingFitnessDeletesRef.current;
+          if (pending.size === 0 && deletes.size === 0) {
+            // No pending writes — use Firestore data directly
+            // But also include any local-only entries (created while offline)
+            const firestoreIds = new Set(userFitness.map(e => e.id));
+            const localOnly = prev.filter(e => !firestoreIds.has(e.id));
+            const merged = [...userFitness, ...localOnly];
+            storage.saveFitnessEntries(merged, currentUser.uid);
+            setLastSyncTime(new Date().toISOString());
+            return merged;
+          }
+          // Start with Firestore data, excluding any pending deletes
+          const firestoreMap = new Map(userFitness.filter(e => !deletes.has(e.id)).map(e => [e.id, e]));
+          // Overlay pending writes (new + edited entries)
+          for (const [id, localEntry] of pending) {
+            firestoreMap.set(id, localEntry);
+          }
+          const merged = Array.from(firestoreMap.values());
+          storage.saveFitnessEntries(merged, currentUser.uid);
+          setLastSyncTime(new Date().toISOString());
+          return merged;
+        });
       }
     );
 
@@ -550,7 +573,15 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('doit_fitness_entries', JSON.stringify(fitnessEntries));
-  }, [fitnessEntries]);
+    if (currentUser?.uid && !(currentUser as AuthUser).isGuest && !(currentUser as AuthUser).isLocal) {
+      // Sync to Firestore for non-guest users
+      fitnessEntries.forEach(entry => {
+        if (!pendingFitnessWritesRef.current.has(entry.id)) {
+          saveFitnessEntryToFirestore(currentUser.uid, entry).catch(console.error);
+        }
+      });
+    }
+  }, [fitnessEntries, currentUser?.uid]);
 
   useEffect(() => {
     localStorage.setItem('doit_meal_entries', JSON.stringify(mealEntries));
@@ -1025,9 +1056,12 @@ export default function App() {
       title: '🏋️ Workout Logged!',
       message: `${entry.exerciseName}: ${entry.sets.filter(s => s.completed).length} sets, ${entry.totalVolume} ${entry.sets[0]?.weightUnit || 'kg'}`,
     });
-    // Sync to Firestore
+    // Sync to Firestore with pending writes tracking
     if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
-      saveFitnessEntryToFirestore(currentUser.uid, entry).catch(console.error);
+      pendingFitnessWritesRef.current.set(entry.id, entry);
+      saveFitnessEntryToFirestore(currentUser.uid, entry)
+        .then(() => { pendingFitnessWritesRef.current.delete(entry.id); })
+        .catch(console.error);
     }
   };
 
@@ -1273,7 +1307,7 @@ export default function App() {
         />
 
         {/* Guest User Workspace Notice Banner */}
-        {currentUser?.isGuest && (
+        {(currentUser as AuthUser)?.isGuest && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
             <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
               <div className="flex items-center gap-3">
@@ -1924,7 +1958,7 @@ export default function App() {
               {/* Groups View */}
               {taskSubView === 'groups' && (
                 <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
-                  {!currentUser || currentUser.isGuest ? (
+                  {!currentUser || (currentUser as AuthUser).isGuest ? (
                     <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
                       <Users className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
                       <h2 className={`text-xl font-bold mb-2 ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>Groups</h2>

@@ -1,4 +1,4 @@
-import { Category, Task } from '../types';
+import { Category, Task, FitnessEntry } from '../types';
 import { formatISODateInput } from './dateHelpers';
 
 export const INITIAL_CATEGORIES: Category[] = [
@@ -238,6 +238,15 @@ export const storage = {
       return localStorage.getItem(STORAGE_KEYS.LAST_SYNC) || new Date().toISOString();
     } catch {
       return new Date().toISOString();
+    }
+  },
+
+  saveFitnessEntries(entries: FitnessEntry[], userId?: string) {
+    try {
+      const key = userId ? `doit_fitness_entries_${userId}` : 'doit_fitness_entries';
+      localStorage.setItem(key, JSON.stringify(entries));
+    } catch (e) {
+      console.error('Failed to persist fitness entries to local storage:', e);
     }
   }
 };
