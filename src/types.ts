@@ -147,6 +147,8 @@ export interface FitnessEntry {
   estimatedOneRepMax: number;
   weightUnit: 'kg' | 'lbs';
   notes?: string;
+  mood?: WorkoutMood;
+  durationMinutes?: number;
   createdAt: string;
 }
 
@@ -371,3 +373,42 @@ export interface NutritionProfile {
   dietaryRestrictions: string[];
   mealPlans: MealPlan[];
 }
+
+// Enhanced Fitness Types
+export interface BodyMetric {
+  id: string;
+  date: string;
+  weight?: number;
+  weightUnit: 'kg' | 'lbs';
+  bodyFatPercent?: number;
+  chestCm?: number;
+  waistCm?: number;
+  hipsCm?: number;
+  bicepCm?: number;
+  thighCm?: number;
+  notes?: string;
+  createdAt: string;
+}
+
+export type WorkoutMood = 'energized' | 'great' | 'good' | 'tired' | 'exhausted';
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: 'volume' | 'streak' | 'strength' | 'consistency' | 'milestone';
+  requirement: number;
+  unlockedAt?: string;
+}
+
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  exercises: { exerciseId: string; exerciseName: string; muscleGroup: MuscleGroup; sets: number; repsMin: number; repsMax: number }[];
+  lastUsed?: string;
+  useCount: number;
+  createdAt: string;
+}
+
+export type TimeSlot = 'early_morning' | 'morning' | 'midday' | 'afternoon' | 'evening' | 'night';

@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Cloud, CloudOff, CheckCircle, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
-import { Task, AuthUser } from '../types';
-import { saveUserTaskToFirestore } from '../firebase';
+import { RefreshCw, Cloud, CloudOff, CheckCircle, AlertTriangle, Wifi, WifiOff, Dumbbell } from 'lucide-react';
+import { Task, AuthUser, FitnessEntry } from '../types';
+import { saveUserTaskToFirestore, saveFitnessEntryToFirestore } from '../firebase';
 import { haptic } from '../utils/haptics';
 
 interface SyncStatusProps {
   theme: 'light' | 'dark';
   currentUser: AuthUser | null;
   tasks: Task[];
+  fitnessEntries: FitnessEntry[];
   canSync: boolean;
   lastSyncTime: string;
   isLight: boolean;
 }
 
-export function SyncStatus({ theme, currentUser, tasks, canSync, lastSyncTime, isLight }: SyncStatusProps) {
+export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync, lastSyncTime, isLight }: SyncStatusProps) {
   const [isPushing, setIsPushing] = useState(false);
   const [pushResult, setPushResult] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -35,20 +36,37 @@ export function SyncStatus({ theme, currentUser, tasks, canSync, lastSyncTime, i
     setIsPushing(true);
     setPushResult(null);
 
-    let successCount = 0;
-    let failCount = 0;
+    let taskSuccess = 0;
+    let taskFail = 0;
+    let fitnessSuccess = 0;
+    let fitnessFail = 0;
 
+    // Push tasks
     for (const task of tasks) {
       try {
         await saveUserTaskToFirestore(currentUser.uid, task);
-        successCount++;
+        taskSuccess++;
       } catch {
-        failCount++;
+        taskFail++;
+      }
+    }
+
+    // Push fitness entries
+    for (const entry of fitnessEntries) {
+      try {
+        await saveFitnessEntryToFirestore(currentUser.uid, entry);
+        fitnessSuccess++;
+      } catch {
+        fitnessFail++;
       }
     }
 
     setIsPushing(false);
-    setPushResult(`Synced ${successCount}/${tasks.length} tasks${failCount > 0 ? ` (${failCount} failed)` : ''}`);
+    const parts: string[] = [];
+    if (tasks.length > 0) parts.push(`${taskSuccess}/${tasks.length} tasks`);
+    if (fitnessEntries.length > 0) parts.push(`${fitnessSuccess}/${fitnessEntries.length} workouts`);
+    const totalFail = taskFail + fitnessFail;
+    setPushResult(`Synced ${parts.join(' + ')}${totalFail > 0 ? ` (${totalFail} failed)` : ''}`);
 
     setTimeout(() => setPushResult(null), 5000);
   };
@@ -97,6 +115,12 @@ export function SyncStatus({ theme, currentUser, tasks, canSync, lastSyncTime, i
           <span className={`text-[11px] font-bold ${isLight ? 'text-slate-700' : 'text-white/70'}`}>{tasks.length}</span>
         </div>
         <div className="flex items-center justify-between">
+          <span className={`text-[11px] flex items-center gap-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+            <Dumbbell className="w-3 h-3" /> Workouts
+          </span>
+          <span className={`text-[11px] font-bold ${isLight ? 'text-slate-700' : 'text-white/70'}`}>{fitnessEntries.length}</span>
+        </div>
+        <div className="flex items-center justify-between">
           <span className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Last Sync</span>
           <span className={`text-[11px] ${isLight ? 'text-slate-700' : 'text-white/70'}`}>
             {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString() : 'Never'}
@@ -104,7 +128,7 @@ export function SyncStatus({ theme, currentUser, tasks, canSync, lastSyncTime, i
         </div>
 
         {/* Force Sync Button */}
-        {canSync && tasks.length > 0 && (
+        {canSync && (tasks.length > 0 || fitnessEntries.length > 0) && (
           <button
             onClick={handleForceSync}
             disabled={isPushing}
@@ -117,7 +141,7 @@ export function SyncStatus({ theme, currentUser, tasks, canSync, lastSyncTime, i
             }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isPushing ? 'animate-spin' : ''}`} />
-            {isPushing ? 'Syncing...' : 'Force Push All Tasks to Cloud'}
+            {isPushing ? 'Syncing...' : 'Force Push All Data to Cloud'}
           </button>
         )}
 

@@ -1636,6 +1636,260 @@ export default function App() {
                 </motion.button>
               </div>
 
+              {/* Today's Focus - most important task */}
+              {tasks.filter(t => !t.completed).length > 0 && (() => {
+                const focusTask = tasks
+                  .filter(t => !t.completed)
+                  .sort((a, b) => {
+                    const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+                    const aOverdue = isOverdue(a.dueDate, a.completed) ? -1 : 0;
+                    const bOverdue = isOverdue(b.dueDate, b.completed) ? -1 : 0;
+                    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+                    return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
+                  })[0];
+                if (!focusTask) return null;
+                const category = categories.find(c => c.id === focusTask.categoryId);
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.38 }}
+                  >
+                    <div className={`flex items-center gap-2 mb-2`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${isOverdue(focusTask.dueDate, focusTask.completed) ? 'bg-red-500 animate-pulse' : 'bg-amber-500'}`} />
+                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>
+                        Today's Focus
+                      </span>
+                    </div>
+                    <motion.div
+                      onClick={() => { haptic.lightTap(); setEditingTask(focusTask); setIsTaskModalOpen(true); }}
+                      className={`relative overflow-hidden p-4 rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] ${
+                        isLight
+                          ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200/60 hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]'
+                          : 'bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-amber-500/20 hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)]'
+                      }`}
+                    >
+                      <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 bg-gradient-to-br from-amber-400 to-orange-300`} />
+                      <div className="relative flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isOverdue(focusTask.dueDate, focusTask.completed)
+                            ? 'bg-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.3)]'
+                            : 'bg-gradient-to-br from-amber-500 to-orange-400 shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
+                        }`}>
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {focusTask.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            {category && (
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
+                                isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/30'
+                              }`}>
+                                {category.name}
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              isOverdue(focusTask.dueDate, focusTask.completed)
+                                ? 'bg-red-500/10 text-red-500'
+                                : isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/40'
+                            }`}>
+                              {formatDeadlineRelative(focusTask.dueDate, focusTask.completed).text}
+                            </span>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
+                              focusTask.priority === 'urgent' ? 'bg-red-500/10 text-red-500' :
+                              focusTask.priority === 'high' ? 'bg-orange-500/10 text-orange-500' :
+                              focusTask.priority === 'medium' ? 'bg-sky-500/10 text-sky-500' :
+                              'bg-emerald-500/10 text-emerald-500'
+                            }`}>
+                              {focusTask.priority}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                );
+              })()}
+
+              {/* Weekly Activity Chart - last 7 days */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.42 }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>This Week</h2>
+                  <span className={`text-[10px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                    {tasks.filter(t => t.completed && (() => {
+                      const d = new Date(t.completedAt || t.createdAt);
+                      const now = new Date();
+                      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                      return d >= weekAgo;
+                    })()).length} completed
+                  </span>
+                </div>
+                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white/70 border-white/50' : 'bg-white/[0.04] border-white/[0.06]'}`}>
+                  <div className="flex items-end justify-between gap-1.5 h-20">
+                    {Array.from({ length: 7 }, (_, i) => {
+                      const dayDate = new Date();
+                      dayDate.setDate(dayDate.getDate() - (6 - i));
+                      const dayStr = dayDate.toISOString().slice(0, 10);
+                      const completedCount = tasks.filter(t =>
+                        t.completed && (t.completedAt || t.createdAt)?.startsWith(dayStr)
+                      ).length;
+                      const maxH = 64;
+                      const h = Math.min(maxH, completedCount * 12 + 4);
+                      const isToday = i === 6;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                          <div className={`w-full rounded-lg transition-all duration-500 ${
+                            isToday
+                              ? 'bg-gradient-to-t from-orange-500 to-amber-400'
+                              : completedCount > 0
+                                ? isLight ? 'bg-gradient-to-t from-slate-200 to-slate-100' : 'bg-gradient-to-t from-white/15 to-white/8'
+                                : isLight ? 'bg-slate-100' : 'bg-white/5'
+                          }`} style={{ height: `${h}px` }} />
+                          <span className={`text-[9px] font-semibold ${isToday ? (isLight ? 'text-orange-600' : 'text-orange-400') : (isLight ? 'text-slate-400' : 'text-white/30')}`}>
+                            {dayDate.toLocaleDateString('en', { weekday: 'short' }).charAt(0)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Category Progress */}
+              {tasks.length > 0 && (() => {
+                const catCounts = tasks.reduce((acc, t) => {
+                  const catId = t.categoryId || 'uncategorized';
+                  if (!acc[catId]) acc[catId] = { total: 0, completed: 0 };
+                  acc[catId].total++;
+                  if (t.completed) acc[catId].completed++;
+                  return acc;
+                }, {} as Record<string, { total: number; completed: number }>);
+                const topCats = Object.entries(catCounts)
+                  .filter(([id]) => id !== 'uncategorized')
+                  .sort((a, b) => b[1].total - a[1].total)
+                  .slice(0, 4);
+                if (topCats.length === 0) return null;
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.46 }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Categories</h2>
+                    </div>
+                    <div className={`p-4 rounded-2xl border space-y-3 ${isLight ? 'bg-white/70 border-white/50' : 'bg-white/[0.04] border-white/[0.06]'}`}>
+                      {topCats.map(([catId, data]) => {
+                        const cat = categories.find(c => c.id === catId);
+                        const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+                        return (
+                          <div key={catId}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-[11px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/70'}`}>
+                                {cat?.name || catId}
+                              </span>
+                              <span className={`text-[10px] font-bold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                                {data.completed}/{data.total}
+                              </span>
+                            </div>
+                            <div className={`h-1.5 rounded-full overflow-hidden ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-700"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                );
+              })()}
+
+              {/* Upcoming Deadlines - next 3 days */}
+              {tasks.filter(t => !t.completed && (() => {
+                const due = new Date(t.dueDate);
+                const now = new Date();
+                const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+                return due > now && due <= in3Days;
+              })()).length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Upcoming</h2>
+                    <button
+                      onClick={() => { haptic.lightTap(); setCurrentView('tasks'); }}
+                      className={`text-[11px] font-semibold flex items-center gap-0.5 cursor-pointer transition-colors ${
+                        isLight ? 'text-orange-600 hover:text-orange-700' : 'text-orange-400 hover:text-orange-300'
+                      }`}
+                    >
+                      View all <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {tasks
+                      .filter(t => !t.completed && (() => {
+                        const due = new Date(t.dueDate);
+                        const now = new Date();
+                        const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+                        return due > now && due <= in3Days;
+                      })())
+                      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+                      .slice(0, 3)
+                      .map((task, i) => {
+                        const due = new Date(task.dueDate);
+                        const now = new Date();
+                        const hoursLeft = Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60));
+                        const isTomorrow = hoursLeft <= 24;
+                        return (
+                          <motion.div
+                            key={task.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.52 + i * 0.05 }}
+                            onClick={() => { haptic.lightTap(); setEditingTask(task); setIsTaskModalOpen(true); }}
+                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all duration-200 ${
+                              isLight
+                                ? 'bg-white/70 border-white/50 hover:border-sky-200 hover:shadow-md backdrop-blur-xl'
+                                : 'bg-white/[0.04] border-white/[0.06] hover:border-sky-500/20 hover:bg-white/[0.06] backdrop-blur-xl'
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-bold ${
+                              isTomorrow
+                                ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white'
+                                : isLight ? 'bg-sky-50 text-sky-600' : 'bg-sky-500/10 text-sky-400'
+                            }`}>
+                              {hoursLeft <= 24 ? `${hoursLeft}h` : `${Math.ceil(hoursLeft / 24)}d`}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-medium truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                {task.title}
+                              </p>
+                              <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                                {due.toLocaleDateString('en', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <div className={`w-2 h-2 rounded-full shrink-0 ${
+                              task.priority === 'urgent' ? 'bg-red-500' :
+                              task.priority === 'high' ? 'bg-orange-500' :
+                              task.priority === 'medium' ? 'bg-sky-500' : 'bg-emerald-500'
+                            }`} />
+                          </motion.div>
+                        );
+                      })}
+                  </div>
+                </motion.div>
+              )}
+
               {/* Overdue Alert */}
               {overdueCount > 0 && (
                 <motion.div
@@ -1839,7 +2093,6 @@ export default function App() {
               {/* List View */}
               {taskSubView === 'list' && (
                 <div className="space-y-6">
-                  <QuickAddBar categories={categories} theme={theme} onAddTask={handleQuickAdd} />
                   <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl liquid-glass-card`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="relative flex-1 max-w-md">
@@ -2082,6 +2335,7 @@ export default function App() {
                   theme={theme}
                   currentUser={currentUser}
                   tasks={tasks}
+                  fitnessEntries={fitnessEntries}
                   canSync={!!canSyncToFirestore}
                   lastSyncTime={lastSyncTime}
                   isLight={isLight}

@@ -7,6 +7,8 @@ import {
   MuscleGroup,
   ExerciseSet,
   UserProfile,
+  Achievement,
+  TimeSlot,
 } from '../types';
 
 // 30 ranks with differentiated badges
@@ -643,4 +645,255 @@ export function getWeeklyVolumeData(stats: FitnessStats): { week: string; volume
 export function isBodyweightExercise(exerciseId: string): boolean {
   const exercise = ALL_EXERCISES.find((e) => e.id === exerciseId);
   return exercise?.type === 'bodyweight';
+}
+
+// === NEW FITNESS UTILITIES ===
+
+// Workout Calendar Heatmap - returns 365 days with workout counts
+export function getWorkoutHeatmapData(entries: FitnessEntry[]): Map<string, number> {
+  const heatmap = new Map<string, number>();
+  const now = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    heatmap.set(d.toISOString().slice(0, 10), 0);
+  }
+  entries.forEach(e => {
+    const dateStr = e.date.slice(0, 10);
+    if (heatmap.has(dateStr)) {
+      heatmap.set(dateStr, (heatmap.get(dateStr) || 0) + 1);
+    }
+  });
+  return heatmap;
+}
+
+// Achievement definitions
+export const ACHIEVEMENTS: Achievement[] = [
+  { id: 'first-workout', name: 'First Step', description: 'Log your first workout', icon: '🎯', category: 'milestone', requirement: 1 },
+  { id: 'workouts-10', name: 'Getting Started', description: 'Complete 10 workouts', icon: '🔥', category: 'consistency', requirement: 10 },
+  { id: 'workouts-50', name: 'Dedicated', description: 'Complete 50 workouts', icon: '💪', category: 'consistency', requirement: 50 },
+  { id: 'workouts-100', name: 'Centurion', description: 'Complete 100 workouts', icon: '🏆', category: 'consistency', requirement: 100 },
+  { id: 'workouts-250', name: 'Iron Will', description: 'Complete 250 workouts', icon: '⚡', category: 'consistency', requirement: 250 },
+  { id: 'workouts-500', name: 'Legend', description: 'Complete 500 workouts', icon: '👑', category: 'consistency', requirement: 500 },
+  { id: 'streak-7', name: 'Week Warrior', description: '7-day workout streak', icon: '📅', category: 'streak', requirement: 7 },
+  { id: 'streak-30', name: 'Monthly Master', description: '30-day workout streak', icon: '🌟', category: 'streak', requirement: 30 },
+  { id: 'streak-100', name: 'Unstoppable', description: '100-day workout streak', icon: '🔥', category: 'streak', requirement: 100 },
+  { id: 'volume-1000', name: 'Ton Lifter', description: 'Lift 1,000 kg total volume', icon: '🏋️', category: 'volume', requirement: 1000 },
+  { id: 'volume-10000', name: 'Power Source', description: 'Lift 10,000 kg total volume', icon: '⚡', category: 'volume', requirement: 10000 },
+  { id: 'volume-100000', name: 'Iron Mountain', description: 'Lift 100,000 kg total volume', icon: '🏔️', category: 'volume', requirement: 100000 },
+  { id: 'volume-1000000', name: 'Mega Ton', description: 'Lift 1,000,000 kg total volume', icon: '🌍', category: 'volume', requirement: 1000000 },
+  { id: 'pr-10', name: 'Record Breaker', description: 'Set 10 personal records', icon: '📈', category: 'strength', requirement: 10 },
+  { id: 'pr-25', name: 'PR Machine', description: 'Set 25 personal records', icon: '🚀', category: 'strength', requirement: 25 },
+  { id: 'pr-50', name: 'Strongest Ever', description: 'Set 50 personal records', icon: '💎', category: 'strength', requirement: 50 },
+  { id: 'all-muscles', name: 'Full Body', description: 'Train all muscle groups', icon: '🎯', category: 'milestone', requirement: 10 },
+  { id: 'rank-rookie', name: 'Rookie', description: 'Reach Rookie rank', icon: '⭐', category: 'milestone', requirement: 1 },
+  { id: 'rank-soldier', name: 'Soldier', description: 'Reach Soldier rank', icon: '🎖️', category: 'milestone', requirement: 1 },
+  { id: 'rank-master', name: 'Master', description: 'Reach Master rank', icon: '🏅', category: 'milestone', requirement: 1 },
+  { id: 'rank-titan', name: 'Titan', description: 'Reach Titan rank', icon: '🦾', category: 'milestone', requirement: 1 },
+  { id: 'rank-spartan', name: 'Spartan', description: 'Reach Spartan rank', icon: '⚔️', category: 'milestone', requirement: 1 },
+];
+
+export function getUnlockedAchievements(stats: FitnessStats): Achievement[] {
+  const prCount = Object.keys(stats.personalRecords).length;
+  const trainedMuscles = Object.entries(stats.muscleGroupFrequency).filter(([, c]) => c > 0).length;
+  
+  return ACHIEVEMENTS.filter(a => {
+    switch (a.category) {
+      case 'consistency': return stats.totalWorkouts >= a.requirement;
+      case 'streak': return stats.bestStreak >= a.requirement;
+      case 'volume': return stats.totalVolume >= a.requirement;
+      case 'strength': return prCount >= a.requirement;
+      case 'milestone': {
+        if (a.id === 'all-muscles') return trainedMuscles >= a.requirement;
+        if (a.id === 'rank-rookie') {
+          const idx = RANKS.findIndex(r => r.rank === stats.rank);
+          return idx >= RANKS.findIndex(r => r.rank === 'Rookie I');
+        }
+        if (a.id === 'rank-soldier') {
+          const idx = RANKS.findIndex(r => r.rank === stats.rank);
+          return idx >= RANKS.findIndex(r => r.rank === 'Soldier I');
+        }
+        if (a.id === 'rank-master') {
+          const idx = RANKS.findIndex(r => r.rank === stats.rank);
+          return idx >= RANKS.findIndex(r => r.rank === 'Master I');
+        }
+        if (a.id === 'rank-titan') {
+          const idx = RANKS.findIndex(r => r.rank === stats.rank);
+          return idx >= RANKS.findIndex(r => r.rank === 'Titan I');
+        }
+        if (a.id === 'rank-spartan') {
+          const idx = RANKS.findIndex(r => r.rank === stats.rank);
+          return idx >= RANKS.findIndex(r => r.rank === 'Spartan');
+        }
+        if (a.id === 'first-workout') return stats.totalWorkouts >= 1;
+        return false;
+      }
+      default: return false;
+    }
+  });
+}
+
+// Body metrics trend (weight)
+export function getWeightTrend(entries: { date: string; weight: number }[]): { date: string; weight: number; trend: number }[] {
+  if (entries.length < 2) return entries.map(e => ({ ...e, trend: e.weight }));
+  return entries.map((e, i) => {
+    const windowSize = Math.min(7, i + 1);
+    const slice = entries.slice(i - windowSize + 1, i + 1);
+    const avg = slice.reduce((s, v) => s + v.weight, 0) / slice.length;
+    return { date: e.date, weight: e.weight, trend: Math.round(avg * 10) / 10 };
+  });
+}
+
+// Muscle balance score (0-100)
+export function getMuscleBalanceScore(stats: FitnessStats): number {
+  const muscleGroups: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'core'];
+  const ranks = muscleGroups.map(m => {
+    const rankData = stats.muscleRanks[m];
+    if (!rankData) return 0;
+    return RANKS.findIndex(r => r.rank === rankData.rank);
+  });
+  const maxRank = Math.max(...ranks, 1);
+  const normalized = ranks.map(r => r / maxRank);
+  const avg = normalized.reduce((a, b) => a + b, 0) / normalized.length;
+  const variance = normalized.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / normalized.length;
+  return Math.round((1 - Math.sqrt(variance)) * 100);
+}
+
+// Get time slot from hour
+export function getTimeSlot(hour: number): TimeSlot {
+  if (hour < 6) return 'early_morning';
+  if (hour < 9) return 'morning';
+  if (hour < 12) return 'midday';
+  if (hour < 17) return 'afternoon';
+  if (hour < 21) return 'evening';
+  return 'night';
+}
+
+// Best time to train analysis
+export function getBestTimeToTrain(entries: FitnessEntry[]): { slot: TimeSlot; avgVolume: number; count: number; label: string }[] {
+  const slotData: Record<TimeSlot, { totalVolume: number; count: number }> = {
+    early_morning: { totalVolume: 0, count: 0 },
+    morning: { totalVolume: 0, count: 0 },
+    midday: { totalVolume: 0, count: 0 },
+    afternoon: { totalVolume: 0, count: 0 },
+    evening: { totalVolume: 0, count: 0 },
+    night: { totalVolume: 0, count: 0 },
+  };
+  const slotLabels: Record<TimeSlot, string> = {
+    early_morning: '5-9 AM',
+    morning: '9-12 PM',
+    midday: '12-2 PM',
+    afternoon: '2-5 PM',
+    evening: '5-9 PM',
+    night: '9-12 AM',
+  };
+  entries.forEach(e => {
+    const hour = new Date(e.createdAt).getHours();
+    const slot = getTimeSlot(hour);
+    slotData[slot].totalVolume += e.totalVolume;
+    slotData[slot].count++;
+  });
+  return (Object.entries(slotData) as [TimeSlot, { totalVolume: number; count: number }][])
+    .map(([slot, data]) => ({
+      slot,
+      avgVolume: data.count > 0 ? Math.round(data.totalVolume / data.count) : 0,
+      count: data.count,
+      label: slotLabels[slot],
+    }))
+    .filter(s => s.count > 0)
+    .sort((a, b) => b.avgVolume - a.avgVolume);
+}
+
+// Fatigue score (0-100, higher = more fatigued)
+export function getFatigueScore(entries: FitnessEntry[]): number {
+  const now = new Date();
+  const last7Days = entries.filter(e => {
+    const d = new Date(e.date);
+    return (now.getTime() - d.getTime()) < 7 * 24 * 60 * 60 * 1000;
+  });
+  const last30Days = entries.filter(e => {
+    const d = new Date(e.date);
+    return (now.getTime() - d.getTime()) < 30 * 24 * 60 * 60 * 1000;
+  });
+  if (last7Days.length === 0) return 0;
+  const weeklyVolume = last7Days.reduce((s, e) => s + e.totalVolume, 0);
+  const monthlyAvgWeekly = last30Days.length > 0 ? (last30Days.reduce((s, e) => s + e.totalVolume, 0) / 4) : weeklyVolume;
+  const volumeRatio = monthlyAvgWeekly > 0 ? weeklyVolume / monthlyAvgWeekly : 1;
+  const frequencyScore = Math.min(last7Days.length / 5, 1) * 40;
+  const volumeScore = Math.min(volumeRatio, 2) * 30;
+  const daysSinceLast = entries.length > 0 ? Math.min((now.getTime() - new Date(entries[0].date).getTime()) / (24 * 60 * 60 * 1000), 7) : 7;
+  const restScore = Math.max(0, (1 - daysSinceLast / 7)) * 30;
+  return Math.round(Math.min(frequencyScore + volumeScore + restScore, 100));
+}
+
+// Monthly summary
+export function getMonthlySummary(entries: FitnessEntry[]): { month: string; workouts: number; volume: number; topExercise: string; avgDuration: number }[] {
+  const monthMap = new Map<string, { workouts: Set<string>; volume: number; exercises: Map<string, number>; totalDuration: number; durationCount: number }>();
+  entries.forEach(e => {
+    const month = e.date.slice(0, 7);
+    if (!monthMap.has(month)) {
+      monthMap.set(month, { workouts: new Set(), volume: 0, exercises: new Map(), totalDuration: 0, durationCount: 0 });
+    }
+    const data = monthMap.get(month)!;
+    data.workouts.add(e.date.slice(0, 10));
+    data.volume += e.totalVolume;
+    data.exercises.set(e.exerciseName, (data.exercises.get(e.exerciseName) || 0) + 1);
+    if (e.durationMinutes) {
+      data.totalDuration += e.durationMinutes;
+      data.durationCount++;
+    }
+  });
+  return Array.from(monthMap.entries())
+    .map(([month, data]) => ({
+      month,
+      workouts: data.workouts.size,
+      volume: data.volume,
+      topExercise: Array.from(data.exercises.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || '-',
+      avgDuration: data.durationCount > 0 ? Math.round(data.totalDuration / data.durationCount) : 0,
+    }))
+    .sort((a, b) => b.month.localeCompare(a.month))
+    .slice(0, 6);
+}
+
+// Exercise substitution map
+export const EXERCISE_SUBSTITUTIONS: Record<string, { name: string; reason: string }[]> = {
+  'barbell-bench-press': [
+    { name: 'Dumbbell Bench Press', reason: 'Better range of motion' },
+    { name: 'Incline Barbell Press', reason: 'Upper chest focus' },
+    { name: 'Push-ups', reason: 'Bodyweight alternative' },
+  ],
+  'barbell-squat': [
+    { name: 'Goblet Squat', reason: 'Easier form' },
+    { name: 'Leg Press', reason: 'Lower back friendly' },
+    { name: 'Bulgarian Split Squat', reason: 'Unilateral strength' },
+  ],
+  'deadlift': [
+    { name: 'Romanian Deadlift', reason: 'Hamstring focus' },
+    { name: 'Hip Thrust', reason: 'Glute emphasis' },
+    { name: 'Good Morning', reason: 'Posterior chain' },
+  ],
+  'barbell-row': [
+    { name: 'Dumbbell Row', reason: 'Better isolation' },
+    { name: 'Cable Row', reason: 'Constant tension' },
+    { name: 'Pull-ups', reason: 'Bodyweight alternative' },
+  ],
+  'overhead-press': [
+    { name: 'Dumbbell Shoulder Press', reason: 'Balanced development' },
+    { name: 'Lateral Raise', reason: 'Medial delt focus' },
+    { name: 'Arnold Press', reason: 'Full shoulder activation' },
+  ],
+  'barbell-curl': [
+    { name: 'Dumbbell Curl', reason: 'Better grip options' },
+    { name: 'Hammer Curl', reason: 'Brachialis focus' },
+    { name: 'Preacher Curl', reason: 'Strict form' },
+  ],
+  'tricep-pushdown': [
+    { name: 'Close-grip Bench Press', reason: 'Compound movement' },
+    { name: 'Skull Crushers', reason: 'Long head focus' },
+    { name: 'Dips', reason: 'Bodyweight alternative' },
+  ],
+};
+
+export function getExerciseSubstitutions(exerciseId: string): { name: string; reason: string }[] {
+  return EXERCISE_SUBSTITUTIONS[exerciseId] || [];
 }

@@ -21,6 +21,7 @@ import {
   Dumbbell,
   Trophy,
   Settings as SettingsIcon,
+  Home,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { User } from 'firebase/auth';
@@ -55,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth
 }) => {
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-    { id: 'home', label: t('nav.home'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: 'home', label: t('nav.home'), icon: <Home className="w-3.5 h-3.5" /> },
     { id: 'tasks', label: t('nav.tasks'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
     { id: 'fitness', label: t('nav.fitness'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
     { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon className="w-3.5 h-3.5" /> },
