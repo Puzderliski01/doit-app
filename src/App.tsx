@@ -899,6 +899,7 @@ export default function App() {
 
   const handleDeleteTask = (taskId: string) => {
     setTasks(prev => prev.filter(t => t.id !== taskId));
+    pendingWritesRef.current.delete(taskId);
     if (canSyncToFirestore) {
       pendingDeletesRef.current.add(taskId);
       deleteUserTaskFromFirestore(currentUser!.uid, taskId)
@@ -912,6 +913,7 @@ export default function App() {
     if (completedIds.length === 0) return;
     haptic.deleteAction();
     setTasks(prev => prev.filter(t => !t.completed));
+    completedIds.forEach(id => pendingWritesRef.current.delete(id));
     if (canSyncToFirestore) {
       completedIds.forEach(id => {
         pendingDeletesRef.current.add(id);
