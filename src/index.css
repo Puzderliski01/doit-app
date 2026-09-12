@@ -1,27 +1,51 @@
 @import "tailwindcss";
 
+@theme {
+  --color-mint-50: #f0faf5;
+  --color-mint-100: #d1f2e1;
+  --color-mint-200: #a8e6c8;
+  --color-mint-300: #7ec8a8;
+  --color-mint-400: #5eb991;
+  --color-mint-500: #3da578;
+  --color-mint-600: #2e8b63;
+  --color-mint-700: #236e4d;
+  --color-mint-800: #1a5439;
+  --color-mint-900: #123b29;
+
+  --color-peach-50: #fff5ef;
+  --color-peach-100: #ffe8d6;
+  --color-peach-200: #ffd0ad;
+  --color-peach-300: #ffb088;
+  --color-peach-400: #f59060;
+  --color-peach-500: #e87540;
+  --color-peach-600: #d05e2d;
+  --color-peach-700: #a94a24;
+  --color-peach-800: #833a1e;
+  --color-peach-900: #5e2b17;
+
+  --color-cream-50: #fefcf8;
+  --color-cream-100: #fdf8ef;
+  --color-cream-200: #faf0de;
+  --color-cream-300: #f5e6c8;
+  --color-cream-400: #eddab0;
+
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
 @layer base {
   :root {
-    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    color-scheme: dark;
-  }
-
-  :root.light, html.light, body.light {
     color-scheme: light;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #050508;
-    color: #f4f4f5;
+    background-color: #faf8f5;
+    color: #1a2332;
     transition: background-color 0.2s ease, color 0.2s ease;
-  }
-
-  body.light {
-    background-color: #f8fafc;
-    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
@@ -35,8 +59,8 @@
 
 /* Smooth custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -44,72 +68,59 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.light ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-}
-
-.light ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* Immersive UI Tokens & Glow Utilities */
-.immersive-bg {
-  background-color: #050508;
-  color: #f4f4f5;
-}
-
-.light .immersive-bg {
-  background-color: #f8fafc;
-  color: #0f172a;
-}
-
-.immersive-card {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.light .immersive-card {
+/* New Design System - Mint/Cream/Soft */
+.app-soft-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.immersive-card-subtle {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.app-soft-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-.light .immersive-card-subtle {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+.app-soft-card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-.immersive-glow-orange {
-  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+.app-mint-gradient {
+  background: linear-gradient(135deg, #8dd5be 0%, #a8e6c8 50%, #d1f2e1 100%);
 }
 
-.immersive-glow-white {
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+.app-peach-gradient {
+  background: linear-gradient(135deg, #f59060 0%, #ffb088 100%);
 }
 
-.light .immersive-glow-white {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+.app-warm-gradient {
+  background: linear-gradient(135deg, #faf8f5 0%, #fdf8ef 50%, #fff5ef 100%);
 }
 
-.immersive-pill-accent {
-  box-shadow: 5px 0 15px rgba(249, 115, 22, 0.4);
+.app-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #6b7a8d;
+}
+
+/* Progress Ring */
+.progress-ring-bg {
+  stroke: #eef2f6;
+}
+
+.progress-ring-fill {
+  stroke: url(#mint-progress-grad);
+  transition: stroke-dashoffset 1s ease-out;
 }
 
 /* Custom checkbox ripple */
@@ -123,59 +134,13 @@
   animation: checkPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Liquid Glass Effect Utilities */
-.liquid-glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 3px rgba(0, 0, 0, 0.3);
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.light .liquid-glass {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-.liquid-glass-subtle {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.light .liquid-glass-subtle {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.liquid-glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.light .liquid-glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 4px 20px rgba(0, 0, 0, 0.06);
-}
-
-.liquid-glass-pill {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(30px) saturate(170%);
-  -webkit-backdrop-filter: blur(30px) saturate(170%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.light .liquid-glass-pill {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 8px rgba(0, 0, 0, 0.04);
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out;
 }
 
 /* Safe area insets for notched phones */
@@ -193,4 +158,3 @@
     padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 }
-

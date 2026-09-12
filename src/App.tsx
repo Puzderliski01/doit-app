@@ -1456,107 +1456,93 @@ export default function App() {
             </div>
           )}
 
-          {/* HOME VIEW - Redesigned Dashboard */}
+              {/* HOME VIEW - Redesigned Dashboard */}
           {currentView === 'home' && (
-            <div className="space-y-4">
-              {/* 1. Hero Greeting - Animated gradient bg + enhanced layout */}
-              <div className={`relative overflow-hidden rounded-[2rem] p-6 sm:p-8 ${isLight
-                ? 'bg-gradient-to-br from-white via-white to-orange-50/50 border border-white/60 shadow-[0_8px_40px_rgba(0,0,0,0.06)]'
-                : 'bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-orange-500/[0.06] border border-white/[0.1] shadow-[0_8px_40px_rgba(0,0,0,0.3)]'
-              }`}>
-                {/* Animated gradient orbs */}
-                <div className={`absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl pointer-events-none animate-pulse ${
-                  isLight ? 'bg-gradient-to-br from-orange-200/40 to-amber-100/30' : 'bg-gradient-to-br from-orange-500/15 to-amber-500/10'
-                }`} style={{ animationDuration: '4s' }} />
-                <div className={`absolute -bottom-16 -left-16 w-40 h-40 rounded-full blur-3xl pointer-events-none animate-pulse ${
-                  isLight ? 'bg-gradient-to-tr from-sky-100/30 to-transparent' : 'bg-gradient-to-tr from-sky-500/10 to-transparent'
-                }`} style={{ animationDuration: '6s' }} />
+            <div className="space-y-5">
+              {/* 1. Hero Greeting - Clean warm gradient */}
+              <div className="relative overflow-hidden rounded-[24px] p-6 sm:p-7 bg-white border border-black/[0.04] shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
+                {/* Soft gradient orbs */}
+                <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl pointer-events-none bg-gradient-to-br from-mint-200/40 to-mint-100/20" />
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full blur-3xl pointer-events-none bg-gradient-to-tr from-peach-200/30 to-transparent" />
                 
                 <div className="relative flex items-center justify-between gap-6">
                   <div className="flex-1 min-w-0">
                     <motion.div 
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-2 ${
-                        isLight ? 'text-orange-500' : 'text-orange-400'
-                      }`}
+                      className="text-[11px] font-bold uppercase tracking-[0.2em] text-mint-500 mb-1.5"
                     >
-                      {new Date().getHours() < 12 ? '☀️ Good Morning' : new Date().getHours() < 18 ? '🌤️ Good Afternoon' : '🌙 Good Evening'}
+                      {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}
                     </motion.div>
                     <motion.h1 
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.05 }}
-                      className={`text-2xl sm:text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}
+                      className="text-[22px] sm:text-[28px] font-bold tracking-tight text-[#1a2332]"
                     >
-                      {currentUser?.displayName || 'Commander'}
+                      {currentUser?.displayName || 'Commander'} <span className="inline-block" role="img" aria-label="wave">👋</span>
                     </motion.h1>
                     <motion.p 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1 }}
-                      className={`text-sm mt-1.5 ${isLight ? 'text-slate-500' : 'text-white/50'}`}
+                      className="text-[13px] mt-1 text-[#8a96a8]"
                     >
-                      {new Date().toLocaleDateString(userProfile.language === 'sr' ? 'sr-Latn' : userProfile.language || 'en', { weekday: 'long', month: 'long', day: 'numeric' })}
+                      Ready to crush your goals?
                     </motion.p>
-                    {/* 2. Streak counter - combined task + fitness streak */}
+                    {/* Streak + pending info */}
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.15 }}
-                      className="flex items-center gap-3 mt-3"
+                      className="flex items-center gap-2.5 mt-3"
                     >
                       {(userProfile.fitnessStats?.currentStreak || 0) > 0 && (
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                          isLight ? 'bg-amber-50 text-amber-600 border border-amber-200/50' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-peach-50 text-peach-600 border border-peach-200">
                           🔥 {userProfile.fitnessStats.currentStreak} day streak
                         </span>
                       )}
                       {pendingCount > 0 ? (
-                        <span className={`text-[11px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-                          {pendingCount} pending · {overdueCount > 0 && <span className="text-red-500">{overdueCount} overdue</span>}
+                        <span className="text-[11px] font-medium text-[#8a96a8]">
+                          {pendingCount} pending · {overdueCount > 0 && <span className="text-red-500 font-semibold">{overdueCount} overdue</span>}
                         </span>
                       ) : (
-                        <span className={`text-[11px] font-medium ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>
+                        <span className="text-[11px] font-medium text-mint-600">
                           ✨ All caught up!
                         </span>
                       )}
                     </motion.div>
                   </div>
                   
-                  {/* Progress Ring with glow */}
+                  {/* Progress Ring - mint gradient */}
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                     className="relative shrink-0"
                   >
-                    <div className={`absolute inset-0 rounded-full blur-xl opacity-40 ${
-                      isLight ? 'bg-gradient-to-br from-orange-300 to-amber-200' : 'bg-gradient-to-br from-orange-500/30 to-amber-500/20'
-                    }`} />
-                    <svg width="110" height="110" viewBox="0 0 110 110" className="relative">
+                    <svg width="100" height="100" viewBox="0 0 100 100" className="relative">
                       <defs>
                         <linearGradient id="home-progress-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#f59e0b" />
-                          <stop offset="50%" stopColor="#f97316" />
-                          <stop offset="100%" stopColor="#ef4444" />
+                          <stop offset="0%" stopColor="#8dd5be" />
+                          <stop offset="50%" stopColor="#5eb991" />
+                          <stop offset="100%" stopColor="#3da578" />
                         </linearGradient>
                       </defs>
-                      <circle cx="55" cy="55" r="46" fill="none" strokeWidth="7" className={isLight ? 'stroke-slate-100' : 'stroke-white/[0.06]'} />
+                      <circle cx="50" cy="50" r="40" fill="none" strokeWidth="7" className="progress-ring-bg" />
                       <circle
-                        cx="55" cy="55" r="46" fill="none" strokeWidth="7" strokeLinecap="round"
+                        cx="50" cy="50" r="40" fill="none" strokeWidth="7" strokeLinecap="round"
                         stroke="url(#home-progress-grad)"
                         className="rotate-[-90deg] origin-center transition-all duration-1000 ease-out"
-                        strokeDasharray={`${2 * Math.PI * 46}`}
-                        strokeDashoffset={`${2 * Math.PI * 46 * (1 - (homeTasks.length > 0 ? homeTasks.filter(t => t.completed).length / homeTasks.length : 0))}`}
+                        strokeDasharray={`${2 * Math.PI * 40}`}
+                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - (homeTasks.length > 0 ? homeTasks.filter(t => t.completed).length / homeTasks.length : 0))}`}
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      <span className="text-[22px] font-bold text-[#1a2332]">
                         {homeTasks.length > 0 ? Math.round((homeTasks.filter(t => t.completed).length / homeTasks.length) * 100) : 0}%
                       </span>
-                      <span className={`text-[9px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-[#b0bcc8]">
                         Done
                       </span>
                     </div>
@@ -1606,58 +1592,47 @@ export default function App() {
                 />
               </motion.div>
 
-              {/* 4. Stats Grid - enhanced with hover glow */}
+              {/* 4. Stats Grid - clean soft cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: t('home.pendingTasks'), value: pendingCount, icon: <Clock className="w-4 h-4" />, gradient: 'from-blue-500 to-cyan-400', bgLight: 'from-blue-50 to-cyan-50', bgDark: 'from-blue-500/10 to-cyan-500/10', borderColor: 'rgba(59,130,246,0.3)' },
-                  { label: t('home.dueToday'), value: todayCount, icon: <Zap className="w-4 h-4" />, gradient: 'from-amber-500 to-orange-400', bgLight: 'from-amber-50 to-orange-50', bgDark: 'from-amber-500/10 to-orange-500/10', borderColor: 'rgba(245,158,11,0.3)' },
-                  { label: t('home.overdue'), value: overdueCount, icon: <Flame className="w-4 h-4" />, gradient: 'from-red-500 to-rose-400', bgLight: 'from-red-50 to-rose-50', bgDark: 'from-red-500/10 to-rose-500/10', borderColor: 'rgba(239,68,68,0.3)' },
-                  { label: t('home.completed'), value: homeTasks.filter(t => t.completed).length, icon: <Target className="w-4 h-4" />, gradient: 'from-emerald-500 to-green-400', bgLight: 'from-emerald-50 to-green-50', bgDark: 'from-emerald-500/10 to-green-500/10', borderColor: 'rgba(16,185,129,0.3)' },
+                  { label: t('home.pendingTasks'), value: pendingCount, icon: <Clock className="w-4 h-4" />, color: 'text-[#5a8af2]', bg: 'bg-[#eef4ff]', border: 'border-[#d8e6ff]' },
+                  { label: t('home.dueToday'), value: todayCount, icon: <Zap className="w-4 h-4" />, color: 'text-peach-500', bg: 'bg-peach-50', border: 'border-peach-200' },
+                  { label: t('home.overdue'), value: overdueCount, icon: <Flame className="w-4 h-4" />, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' },
+                  { label: t('home.completed'), value: homeTasks.filter(t => t.completed).length, icon: <Target className="w-4 h-4" />, color: 'text-mint-600', bg: 'bg-mint-50', border: 'border-mint-200' },
                 ].map((stat, i) => (
                   <motion.div
                     key={stat.label}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + i * 0.06, duration: 0.4 }}
-                    className={`group relative overflow-hidden rounded-2xl p-4 border backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${
-                      isLight
-                        ? `bg-gradient-to-br ${stat.bgLight} border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)]`
-                        : `bg-gradient-to-br ${stat.bgDark} border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.15)]`
-                    }`}
-                    style={{ borderColor: !isLight ? stat.borderColor : undefined }}
+                    className={`relative overflow-hidden rounded-[16px] p-4 border transition-all duration-200 hover:shadow-md ${stat.bg} ${stat.border}`}
                   >
-                    <div className={`absolute -top-4 -right-4 w-16 h-16 rounded-full blur-2xl opacity-30 bg-gradient-to-br ${stat.gradient} group-hover:opacity-50 transition-opacity`} />
-                    <div className={`flex items-center gap-1.5 mb-2`}>
-                      <span className={`${stat.label === t('home.overdue') && overdueCount > 0 ? 'text-red-500' : `bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}`}>{stat.icon}</span>
-                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{stat.label}</span>
+                    <div className={`flex items-center gap-1.5 mb-2 ${stat.color}`}>
+                      {stat.icon}
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">{stat.label}</span>
                     </div>
-                    <p className={`text-3xl font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    <p className="text-[26px] font-bold tracking-tight text-[#1a2332]">
                       {stat.value}
                     </p>
                   </motion.div>
                 ))}
               </div>
 
-              {/* 5. Quick Actions - enhanced with subtle animations */}
+              {/* 5. Quick Actions - clean pill buttons */}
               <div className="grid grid-cols-3 gap-3">
                 <motion.button
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
                   onClick={() => { haptic.mediumClick(); setCurrentView('tasks'); }}
-                  className={`group relative overflow-hidden p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
-                    isLight
-                      ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-orange-300 hover:shadow-[0_8px_30px_rgba(249,115,22,0.12)]'
-                      : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-orange-500/30 hover:shadow-[0_8px_30px_rgba(249,115,22,0.15)]'
-                  }`}
+                  className="group relative overflow-hidden p-4 rounded-[18px] border border-black/[0.04] text-left transition-all duration-200 cursor-pointer hover:shadow-md bg-white"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/5 group-hover:to-transparent transition-all duration-500`} />
                   <div className="relative">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br from-orange-500 to-amber-400 shadow-[0_4px_12px_rgba(249,115,22,0.3)]`}>
-                      <CheckSquare className="w-4 h-4 text-white" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-mint-500 shadow-[0_4px_12px_rgba(61,165,120,0.25)]">
+                      <CheckSquare className="w-5 h-5 text-white" />
                     </div>
-                    <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
-                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{homeTasks.length} total</p>
+                    <p className="text-[13px] font-bold text-[#1a2332]">{t('home.viewTasks')}</p>
+                    <p className="text-[11px] mt-0.5 text-[#8a96a8]">{homeTasks.length} total</p>
                   </div>
                 </motion.button>
                 <motion.button
@@ -1665,40 +1640,29 @@ export default function App() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.45 }}
                   onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
-                  className={`group relative overflow-hidden p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
-                    isLight
-                      ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-purple-300 hover:shadow-[0_8px_30px_rgba(168,85,247,0.12)]'
-                      : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-purple-500/30 hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]'
-                  }`}
+                  className="group relative overflow-hidden p-4 rounded-[18px] border border-black/[0.04] text-left transition-all duration-200 cursor-pointer hover:shadow-md bg-white"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br from-purple-500/0 to-purple-500/0 group-hover:from-purple-500/5 group-hover:to-transparent transition-all duration-500`} />
                   <div className="relative">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br from-purple-500 to-pink-400 shadow-[0_4px_12px_rgba(168,85,247,0.3)]`}>
-                      <Dumbbell className="w-4 h-4 text-white" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-peach-400 shadow-[0_4px_12px_rgba(245,144,96,0.25)]">
+                      <Dumbbell className="w-5 h-5 text-white" />
                     </div>
-                    <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.fitness')}</p>
-                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{fitnessEntries.length} logged</p>
+                    <p className="text-[13px] font-bold text-[#1a2332]">{t('home.fitness')}</p>
+                    <p className="text-[11px] mt-0.5 text-[#8a96a8]">{fitnessEntries.length} logged</p>
                   </div>
                 </motion.button>
-                {/* 6. New task button */}
                 <motion.button
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
                   onClick={() => { haptic.mediumClick(); setEditingTask(null); setIsTaskModalOpen(true); }}
-                  className={`group relative overflow-hidden p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
-                    isLight
-                      ? 'bg-gradient-to-br from-white to-slate-50/50 border-slate-200/60 hover:border-emerald-300 hover:shadow-[0_8px_30px_rgba(16,185,129,0.12)]'
-                      : 'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border-white/[0.08] hover:border-emerald-500/30 hover:shadow-[0_8px_30px_rgba(16,185,129,0.15)]'
-                  }`}
+                  className="group relative overflow-hidden p-4 rounded-[18px] border border-black/[0.04] text-left transition-all duration-200 cursor-pointer hover:shadow-md bg-white"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/0 group-hover:from-emerald-500/5 group-hover:to-transparent transition-all duration-500`} />
                   <div className="relative">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br from-emerald-500 to-green-400 shadow-[0_4px_12px_rgba(16,185,129,0.3)]`}>
-                      <Plus className="w-4 h-4 text-white" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-gradient-to-br from-mint-400 to-peach-400 shadow-[0_4px_12px_rgba(94,185,145,0.25)]">
+                      <Plus className="w-5 h-5 text-white" />
                     </div>
-                    <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>New Task</p>
-                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>Add one</p>
+                    <p className="text-[13px] font-bold text-[#1a2332]">New Task</p>
+                    <p className="text-[11px] mt-0.5 text-[#8a96a8]">Add one</p>
                   </div>
                 </motion.button>
               </div>
@@ -1722,53 +1686,46 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.38 }}
                   >
-                    <div className={`flex items-center gap-2 mb-2`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${isOverdue(focusTask.dueDate, focusTask.completed) ? 'bg-red-500 animate-pulse' : 'bg-amber-500'}`} />
-                      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <div className={`w-1.5 h-1.5 rounded-full ${isOverdue(focusTask.dueDate, focusTask.completed) ? 'bg-red-500 animate-pulse' : 'bg-peach-400'}`} />
+                      <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-peach-500">
                         Today's Focus
                       </span>
                     </div>
                     <motion.div
                       onClick={() => { haptic.lightTap(); setEditingTask(focusTask); setIsTaskModalOpen(true); }}
-                      className={`relative overflow-hidden p-4 rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] ${
-                        isLight
-                          ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200/60 hover:shadow-[0_8px_30px_rgba(245,158,11,0.15)]'
-                          : 'bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-amber-500/20 hover:shadow-[0_8px_30px_rgba(245,158,11,0.2)]'
-                      }`}
+                      className="relative overflow-hidden p-4 rounded-[18px] border border-peach-200 cursor-pointer transition-all duration-200 hover:shadow-md bg-gradient-to-r from-peach-50/80 to-white"
                     >
-                      <div className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-20 bg-gradient-to-br from-amber-400 to-orange-300`} />
                       <div className="relative flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
                           isOverdue(focusTask.dueDate, focusTask.completed)
-                            ? 'bg-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.3)]'
-                            : 'bg-gradient-to-br from-amber-500 to-orange-400 shadow-[0_4px_12px_rgba(245,158,11,0.3)]'
+                            ? 'bg-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.25)]'
+                            : 'bg-peach-400 shadow-[0_4px_12px_rgba(245,144,96,0.25)]'
                         }`}>
                           <Zap className="w-5 h-5 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                          <p className="text-[14px] font-bold truncate text-[#1a2332]">
                             {focusTask.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1.5">
                             {category && (
-                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
-                                isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/30'
-                              }`}>
+                              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-cream-100 text-[#6b7a8d] border border-cream-200">
                                 {category.name}
                               </span>
                             )}
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                               isOverdue(focusTask.dueDate, focusTask.completed)
-                                ? 'bg-red-500/10 text-red-500'
-                                : isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/40'
+                                ? 'bg-red-50 text-red-500 border border-red-200'
+                                : 'bg-cream-100 text-[#6b7a8d] border border-cream-200'
                             }`}>
                               {formatDeadlineRelative(focusTask.dueDate, focusTask.completed).text}
                             </span>
                             <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
-                              focusTask.priority === 'urgent' ? 'bg-red-500/10 text-red-500' :
-                              focusTask.priority === 'high' ? 'bg-orange-500/10 text-orange-500' :
-                              focusTask.priority === 'medium' ? 'bg-sky-500/10 text-sky-500' :
-                              'bg-emerald-500/10 text-emerald-500'
+                              focusTask.priority === 'urgent' ? 'bg-red-50 text-red-600 border border-red-200' :
+                              focusTask.priority === 'high' ? 'bg-peach-50 text-peach-600 border border-peach-200' :
+                              focusTask.priority === 'medium' ? 'bg-mint-50 text-mint-600 border border-mint-200' :
+                              'bg-cream-100 text-[#6b7a8d] border border-cream-200'
                             }`}>
                               {focusTask.priority}
                             </span>
@@ -1787,8 +1744,8 @@ export default function App() {
                 transition={{ delay: 0.42 }}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>This Week</h2>
-                  <span className={`text-[10px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                  <h2 className="text-[14px] font-bold text-[#1a2332]">Weekly Activity</h2>
+                  <span className="text-[11px] font-semibold text-[#8a96a8]">
                     {homeTasks.filter(t => t.completed && (() => {
                       const d = new Date(t.completedAt || t.createdAt);
                       const now = new Date();
@@ -1797,7 +1754,7 @@ export default function App() {
                     })()).length} completed
                   </span>
                 </div>
-                <div className={`p-4 rounded-2xl border ${isLight ? 'bg-white/70 border-white/50' : 'bg-white/[0.04] border-white/[0.06]'}`}>
+                <div className="p-4 rounded-[18px] border border-black/[0.04] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
                   <div className="flex items-end justify-between gap-1.5 h-20">
                     {Array.from({ length: 7 }, (_, i) => {
                       const dayDate = new Date();
@@ -1806,20 +1763,21 @@ export default function App() {
                       const completedCount = homeTasks.filter(t =>
                         t.completed && (t.completedAt || t.createdAt)?.startsWith(dayStr)
                       ).length;
-                      const maxH = 64;
-                      const h = Math.min(maxH, completedCount * 12 + 4);
-                      const isToday = i === 6;
+                      const maxCount = Math.max(1, ...Array.from({ length: 7 }, (_, j) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (6 - j));
+                        const ds = d.toISOString().slice(0, 10);
+                        return homeTasks.filter(t => t.completed && (t.completedAt || t.createdAt)?.startsWith(ds)).length;
+                      }));
+                      const heightPct = completedCount > 0 ? Math.max(12, (completedCount / maxCount) * 100) : 8;
+                      const isToday = dayStr === new Date().toISOString().slice(0, 10);
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                          <div className={`w-full rounded-lg transition-all duration-500 ${
-                            isToday
-                              ? 'bg-gradient-to-t from-orange-500 to-amber-400'
-                              : completedCount > 0
-                                ? isLight ? 'bg-gradient-to-t from-slate-200 to-slate-100' : 'bg-gradient-to-t from-white/15 to-white/8'
-                                : isLight ? 'bg-slate-100' : 'bg-white/5'
-                          }`} style={{ height: `${h}px` }} />
-                          <span className={`text-[9px] font-semibold ${isToday ? (isLight ? 'text-orange-600' : 'text-orange-400') : (isLight ? 'text-slate-400' : 'text-white/30')}`}>
-                            {dayDate.toLocaleDateString('en', { weekday: 'short' }).charAt(0)}
+                          <div className={`w-full rounded-[6px] transition-all duration-500 ${
+                            isToday ? 'bg-mint-400' : completedCount > 0 ? 'bg-mint-200' : 'bg-[#eef2f6]'
+                          }`} style={{ height: `${heightPct}%`, minHeight: '6px' }} />
+                          <span className={`text-[10px] font-semibold ${isToday ? 'text-mint-600' : 'text-[#b0bcc8]'}`}>
+                            {dayDate.toLocaleDateString('en', { weekday: 'narrow' })}
                           </span>
                         </div>
                       );
@@ -1849,25 +1807,25 @@ export default function App() {
                     transition={{ delay: 0.46 }}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Categories</h2>
+                      <h2 className="text-[14px] font-bold text-[#1a2332]">Categories</h2>
                     </div>
-                    <div className={`p-4 rounded-2xl border space-y-3 ${isLight ? 'bg-white/70 border-white/50' : 'bg-white/[0.04] border-white/[0.06]'}`}>
+                    <div className="p-4 rounded-[18px] border border-black/[0.04] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-3">
                       {topCats.map(([catId, data]) => {
                         const cat = categories.find(c => c.id === catId);
                         const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
                         return (
                           <div key={catId}>
                             <div className="flex items-center justify-between mb-1">
-                              <span className={`text-[11px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/70'}`}>
+                              <span className="text-[12px] font-semibold text-[#3a4658]">
                                 {cat?.name || catId}
                               </span>
-                              <span className={`text-[10px] font-bold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                              <span className="text-[10px] font-bold text-[#b0bcc8]">
                                 {data.completed}/{data.total}
                               </span>
                             </div>
-                            <div className={`h-1.5 rounded-full overflow-hidden ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>
+                            <div className="h-2 rounded-full overflow-hidden bg-[#eef2f6]">
                               <div
-                                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-700"
+                                className="h-full rounded-full bg-gradient-to-r from-mint-400 to-mint-500 transition-all duration-700"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>

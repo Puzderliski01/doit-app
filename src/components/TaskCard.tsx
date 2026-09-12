@@ -160,55 +160,40 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      className={`group relative p-5 sm:p-6 rounded-3xl transition-all duration-200 border-2 ${
-        isLight
-          ? 'bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] backdrop-blur-2xl'
-          : 'bg-gradient-to-r from-white/[0.1] to-white/[0.03] backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_20px_rgba(0,0,0,0.2)]'
-      } ${task.completed ? (isLight ? 'opacity-60 bg-white/40' : 'opacity-55') : ''}`}
-      style={{ borderColor: currentPriorityStyle.borderColor, borderRadius: '1.5rem' }}
+      className={`group relative p-5 sm:p-6 rounded-[20px] bg-white transition-all duration-200 border border-black/[0.04] ${
+        task.completed ? 'opacity-55' : ''
+      }`}
+      style={{ boxShadow: task.completed ? '0 1px 4px rgba(0,0,0,0.03)' : '0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)' }}
     >
-      {/* Priority accent side glow indicator — now a subtle inner glow instead of line */}
-      {!task.completed && (task.priority === 'urgent' || task.priority === 'high') && (
-        <div 
-          className={`absolute inset-0 rounded-3xl pointer-events-none transition-all ${
-            isLight ? 'shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]' : 'shadow-[inset_0_0_20px_rgba(249,115,22,0.08)]'
-          }`} 
-        />
-      )}
-
       <div className="flex items-start justify-between gap-4">
           
           {/* Checkbox and Title Area */}
-          <div className="flex items-start gap-4 flex-1 min-w-0">
+          <div className="flex items-start gap-3.5 flex-1 min-w-0">
             
             {/* Custom Interactive Circular Checkbox */}
             <button
               id={`task-check-${task.id}`}
               onClick={handleCheckboxClick}
-              className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 ${
+              className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 ${
                 task.completed
-                  ? 'bg-emerald-500 border-2 border-emerald-400 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                  ? 'bg-mint-500 border-2 border-mint-400 text-white shadow-[0_0_10px_rgba(61,165,120,0.3)]'
                   : task.priority === 'urgent' || task.priority === 'high'
-                  ? isLight
-                    ? 'border-2 border-orange-500 hover:bg-orange-50 text-orange-500'
-                    : 'border-2 border-orange-500 hover:bg-orange-500/20 text-orange-400'
-                  : isLight
-                    ? 'border-2 border-slate-300 hover:border-slate-500 text-slate-400'
-                    : 'border-2 border-white/20 hover:border-white/50 text-white/40'
+                    ? 'border-2 border-peach-400 hover:bg-peach-50 text-peach-400'
+                    : 'border-2 border-[#d4dde8] hover:border-mint-400 text-[#b0bcc8]'
               }`}
             >
-              {task.completed && <Check className="w-4 h-4 stroke-[3]" />}
+              {task.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
             </button>
 
             {/* Task Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 
                 {/* Title */}
-                <h3 className={`font-medium text-base sm:text-xl leading-snug break-words tracking-tight ${
+                <h3 className={`font-semibold text-[15px] sm:text-lg leading-snug break-words tracking-tight ${
                   task.completed 
-                    ? isLight ? 'line-through text-slate-400' : 'line-through text-white/40' 
-                    : isLight ? 'text-slate-900' : 'text-white'
+                    ? 'line-through text-[#b0bcc8]' 
+                    : 'text-[#1a2332]'
                 }`}>
                   {task.title}
                 </h3>
@@ -217,13 +202,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {task.recurring.type !== 'none' && (
                   <span 
                     title={getRecurringLabel(task.recurring)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                      isLight 
-                        ? 'bg-slate-100 border-slate-200 text-slate-600' 
-                        : 'bg-white/5 border-white/10 text-white/50'
-                    }`}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-mint-50 text-mint-600 border border-mint-200"
                   >
-                    <Repeat className="w-3 h-3 text-orange-500" />
+                    <Repeat className="w-3 h-3" />
                     <span>{task.recurring.type}</span>
                   </span>
                 )}
@@ -231,31 +212,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
               {/* Description */}
               {task.description && (
-                <p className={`text-xs sm:text-sm line-clamp-2 mb-3 ${
-                  isLight ? 'text-slate-600' : 'text-white/50'
-                }`}>
+                <p className="text-xs sm:text-sm line-clamp-2 mb-2.5 text-[#6b7a8d]">
                   {task.description}
                 </p>
               )}
 
               {/* Badges and Metadata in Pill formatting */}
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 
                 {/* Priority Chip */}
-                <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider border ${currentPriorityStyle.bg} ${currentPriorityStyle.text} ${currentPriorityStyle.ring}`}>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider ${currentPriorityStyle.bg} ${currentPriorityStyle.text} border ${currentPriorityStyle.ring}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${currentPriorityStyle.dot}`} />
                   {currentPriorityStyle.label}
                 </span>
 
                 {/* Category Chip */}
                 {category && (
-                  <span 
-                    className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider border ${
-                      isLight 
-                        ? 'bg-slate-100 text-slate-700 border-slate-200' 
-                        : 'bg-white/5 text-white/60 border border-white/10'
-                    }`}
-                  >
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider bg-cream-100 text-[#6b7a8d] border border-cream-300">
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
                     {category.name}
                   </span>
@@ -263,19 +236,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
                 {/* Deadline Tracking Badge */}
                 {task.dueDate && (
-                  <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider border ${
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider border ${
                     overdue 
-                      ? isLight ? 'bg-red-50 text-red-600 border-red-200 animate-pulse font-extrabold' : 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse'
+                      ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
                       : deadlineInfo.status === 'today'
-                      ? isLight ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                      : isLight ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-white/5 text-white/40 border border-white/10'
+                        ? 'bg-peach-50 text-peach-600 border-peach-200'
+                        : 'bg-cream-100 text-[#6b7a8d] border-cream-300'
                   }`}>
                     <Clock className="w-3 h-3" />
                     <span>{deadlineInfo.text}</span>
                   </span>
                 )}
 
-                {/* Radial Progress Mini Badge (for quick scan) */}
+                {/* Radial Progress Mini Badge */}
                 {totalSubtasksCount > 0 && (
                   <button
                     onClick={(e) => {
@@ -283,11 +256,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       haptic.lightTap();
                       setIsExpanded(!isExpanded);
                     }}
-                    className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full border text-[9px] sm:text-[10px] font-bold transition-all cursor-pointer ${
-                      isLight 
-                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700' 
-                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70 hover:text-white'
-                    }`}
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] sm:text-[10px] font-bold transition-all cursor-pointer bg-cream-100 hover:bg-cream-200 border-cream-300 text-[#5a6678]"
                     title="Click to toggle subtasks"
                   >
                     <RadialProgressRing 
@@ -307,19 +276,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {task.tags.slice(0, 3).map((tag) => (
                   <span 
                     key={tag} 
-                    className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border ${
-                      isLight 
-                        ? 'text-slate-500 bg-slate-100 border-slate-200' 
-                        : 'text-white/40 bg-white/5 border-white/5'
-                    }`}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono bg-cream-100 text-[#8a96a8] border border-cream-200"
                   >
                     #{tag}
                   </span>
                 ))}
                 {task.tags.length > 3 && (
-                  <span className={`text-[9px] sm:text-[10px] font-mono ${
-                    isLight ? 'text-slate-400' : 'text-white/30'
-                  }`}>
+                  <span className="text-[9px] sm:text-[10px] font-mono text-[#b0bcc8]">
                     +{task.tags.length - 3}
                   </span>
                 )}
@@ -327,7 +290,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
               {/* Subtasks Progress with Radial Ring */}
               {totalSubtasksCount > 0 && (
-                <div className={`mt-4 pt-3.5 border-t ${isLight ? 'border-slate-100' : 'border-white/10'}`}>
+                <div className="mt-3 pt-3 border-t border-[#eef2f6]">
                   <div className="flex items-center justify-between gap-3">
                     
                     {/* Left: Interactive Toggle Header with Radial Ring */}
@@ -336,9 +299,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         haptic.lightTap();
                         setIsExpanded(!isExpanded);
                       }}
-                      className={`flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer group/subhead ${
-                        isLight ? 'text-slate-800 hover:text-slate-950' : 'text-white/80 hover:text-white'
-                      }`}
+                      className="flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer group/subhead text-[#5a6678] hover:text-[#1a2332]"
                     >
                       <RadialProgressRing
                         completed={completedSubtasksCount}
@@ -351,13 +312,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                       />
                       
                       <div className="text-left">
-                        <div className={`flex items-center gap-1.5 text-xs font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-[#1a2332]">
                           <span>Subtasks Progress</span>
-                          <span className={`text-[10px] font-mono font-normal ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                          <span className="text-[10px] font-mono font-normal text-[#b0bcc8]">
                             ({completedSubtasksCount} of {totalSubtasksCount})
                           </span>
                         </div>
-                        <div className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+                        <div className="text-[11px] text-[#8a96a8]">
                           {Math.round(subtasksProgress)}% completed · Click to {isExpanded ? 'collapse' : 'expand'}
                         </div>
                       </div>
@@ -369,11 +330,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         haptic.lightTap();
                         setIsExpanded(!isExpanded);
                       }}
-                      className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
-                        isLight 
-                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-600' 
-                          : 'bg-white/5 hover:bg-white/10 text-white/50 hover:text-white'
-                      }`}
+                      className="p-1.5 rounded-xl transition-colors cursor-pointer bg-cream-100 hover:bg-cream-200 text-[#6b7a8d]"
                     >
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
@@ -386,29 +343,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mt-3.5 space-y-2 overflow-hidden"
+                        className="mt-3 space-y-1.5 overflow-hidden"
                       >
                         {task.subtasks.map((sub) => (
                           <div 
                             key={sub.id}
                             onClick={() => handleSubtaskToggleInternal(sub.id)}
-                            className={`flex items-start gap-3 p-3 px-3.5 rounded-2xl cursor-pointer transition-colors border ${
-                              isLight 
-                                ? 'bg-slate-50 hover:bg-slate-100/90 border-slate-200/80 text-slate-800' 
-                                : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/5'
-                            }`}
+                            className="flex items-start gap-3 p-3 rounded-2xl cursor-pointer transition-colors bg-cream-50 hover:bg-cream-100 border border-cream-200/60"
                           >
                             <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs transition-all shrink-0 mt-0.5 ${
                               sub.completed 
-                                ? 'bg-emerald-500 border-emerald-400 text-white shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
-                                : isLight ? 'border-slate-300 bg-white' : 'border-white/30 bg-transparent'
+                                ? 'bg-mint-500 border-mint-400 text-white shadow-[0_0_6px_rgba(61,165,120,0.3)]' 
+                                : 'border-[#d4dde8] bg-white'
                             }`}>
                               {sub.completed && <Check className="w-3 h-3 stroke-[3]" />}
                             </div>
                             <div className={`text-xs select-none flex-1 min-w-0 leading-relaxed ${
                               sub.completed 
-                                ? isLight ? 'line-through text-slate-400' : 'line-through text-white/30' 
-                                : isLight ? 'text-slate-800' : 'text-white/80'
+                                ? 'line-through text-[#b0bcc8]' 
+                                : 'text-[#3a4658]'
                             }`}>
                               {sub.title}
                             </div>
@@ -444,10 +397,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
             <button
               onClick={() => { haptic.lightTap(); setShowMenu(!showMenu); }}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-all cursor-pointer ${
+              className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all cursor-pointer ${
                 showMenu
-                  ? isLight ? 'bg-orange-100 text-orange-600' : 'bg-orange-500/15 text-orange-400'
-                  : isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-white/50 hover:text-white hover:bg-white/10'
+                  ? 'bg-peach-100 text-peach-600'
+                  : 'text-[#b0bcc8] hover:text-[#6b7a8d] hover:bg-cream-100'
               }`}
             >
               {showMenu ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
@@ -465,14 +418,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className={`flex flex-wrap gap-2 pt-3 mt-3 border-t ${
-                isLight ? 'border-slate-100' : 'border-white/10'
-              }`}>
+              <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-[#eef2f6]">
                 <button
                   onClick={() => { setShowMenu(false); haptic.mediumClick(); onEdit(task); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isLight ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
-                  }`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-peach-50 text-peach-600 border border-peach-200 hover:bg-peach-100"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   Edit
@@ -480,9 +429,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
                 <button
                   onClick={() => { setShowMenu(false); onTriggerEmailReminder(task); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isLight ? 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20'
-                  }`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-mint-50 text-mint-600 border border-mint-200 hover:bg-mint-100"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   Email
@@ -490,9 +437,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
                 <button
                   onClick={() => { setShowMenu(false); haptic.lightTap(); onDuplicate(task); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    isLight ? 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100' : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                  }`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-cream-100 text-[#6b7a8d] border border-cream-300 hover:bg-cream-200"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   Duplicate
@@ -506,10 +451,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     className={`px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                       task.priority === p
                         ? p === 'urgent' ? 'bg-red-500 text-white border-red-400'
-                          : p === 'high' ? 'bg-orange-500 text-black border-orange-400'
-                          : p === 'medium' ? 'bg-sky-500 text-white border-sky-400'
-                          : 'bg-emerald-500 text-black border-emerald-400'
-                        : isLight ? 'bg-slate-50 text-slate-500 border-slate-200 hover:text-slate-900' : 'bg-white/5 text-white/40 border-white/10 hover:text-white'
+                          : p === 'high' ? 'bg-peach-500 text-white border-peach-400'
+                          : p === 'medium' ? 'bg-mint-500 text-white border-mint-400'
+                          : 'bg-cream-300 text-[#4a5568] border-cream-400'
+                        : 'bg-cream-50 text-[#8a96a8] border-cream-200 hover:text-[#3a4658]'
                     }`}
                   >
                     {p}
@@ -518,7 +463,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
                 <button
                   onClick={() => { setShowMenu(false); haptic.deleteAction(); onDelete(task.id); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 dark:hover:bg-red-500/20"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete
@@ -527,9 +472,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {onAIBreakdown && (
                   <button
                     onClick={() => { setShowMenu(false); haptic.mediumClick(); onAIBreakdown(task); }}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                      isLight ? 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20'
-                    }`}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-mint-50 text-mint-700 border border-mint-200 hover:bg-mint-100"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     AI Breakdown
