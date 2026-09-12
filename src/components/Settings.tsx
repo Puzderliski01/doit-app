@@ -131,14 +131,14 @@ export const Settings: React.FC<SettingsProps> = ({
           <span className={`flex-1 text-left text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{title}</span>
           <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''} ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
         </button>
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {isExpanded && (
             <motion.div
+              key="content"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
+              transition={{ height: { duration: 0.25, ease: 'easeInOut' }, opacity: { duration: 0.15 } }}
             >
               <div className={`px-4 py-3 border-t space-y-3 backdrop-blur-xl ${isLight ? 'bg-white/40 border-white/30' : 'bg-white/[0.02] border-white/10'}`}>
                 {children}
