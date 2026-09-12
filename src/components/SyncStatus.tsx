@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, Cloud, CloudOff, CheckCircle, AlertTriangle, Wifi, WifiOff, Dumbbell } from 'lucide-react';
-import { Task, AuthUser, FitnessEntry } from '../types';
-import { saveUserTaskToFirestore, saveFitnessEntryToFirestore } from '../firebase';
+import { Task, AuthUser, FitnessEntry, Category, UserProfile } from '../types';
+import { saveUserTaskToFirestore, saveFitnessEntryToFirestore, saveUserCategoryToFirestore, saveUserProfileToFirestore } from '../firebase';
 import { haptic } from '../utils/haptics';
 
 interface SyncStatusProps {
@@ -9,12 +9,14 @@ interface SyncStatusProps {
   currentUser: AuthUser | null;
   tasks: Task[];
   fitnessEntries: FitnessEntry[];
+  categories: Category[];
+  userProfile: UserProfile | null;
   canSync: boolean;
   lastSyncTime: string;
   isLight: boolean;
 }
 
-export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync, lastSyncTime, isLight }: SyncStatusProps) {
+export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, categories, userProfile, canSync, lastSyncTime, isLight }: SyncStatusProps) {
   const [isPushing, setIsPushing] = useState(false);
   const [pushResult, setPushResult] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -40,13 +42,17 @@ export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync,
     let taskFail = 0;
     let fitnessSuccess = 0;
     let fitnessFail = 0;
+    let catSuccess = 0;
+    let catFail = 0;
+    let profileOk = false;
 
     // Push tasks
     for (const task of tasks) {
       try {
         await saveUserTaskToFirestore(currentUser.uid, task);
         taskSuccess++;
-      } catch {
+      } catch (err) {
+        console.error('[ForcePush] Task failed:', task.id, err);
         taskFail++;
       }
     }
@@ -56,8 +62,30 @@ export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync,
       try {
         await saveFitnessEntryToFirestore(currentUser.uid, entry);
         fitnessSuccess++;
-      } catch {
+      } catch (err) {
+        console.error('[ForcePush] Fitness entry failed:', entry.id, err);
         fitnessFail++;
+      }
+    }
+
+    // Push categories
+    for (const cat of categories) {
+      try {
+        await saveUserCategoryToFirestore(currentUser.uid, cat);
+        catSuccess++;
+      } catch (err) {
+        console.error('[ForcePush] Category failed:', cat.id, err);
+        catFail++;
+      }
+    }
+
+    // Push user profile
+    if (userProfile) {
+      try {
+        await saveUserProfileToFirestore(currentUser.uid, userProfile);
+        profileOk = true;
+      } catch (err) {
+        console.error('[ForcePush] Profile failed:', err);
       }
     }
 
@@ -65,7 +93,9 @@ export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync,
     const parts: string[] = [];
     if (tasks.length > 0) parts.push(`${taskSuccess}/${tasks.length} tasks`);
     if (fitnessEntries.length > 0) parts.push(`${fitnessSuccess}/${fitnessEntries.length} workouts`);
-    const totalFail = taskFail + fitnessFail;
+    if (categories.length > 0) parts.push(`${catSuccess}/${categories.length} categories`);
+    if (userProfile) parts.push(profileOk ? 'profile OK' : 'profile FAILED');
+    const totalFail = taskFail + fitnessFail + catFail + (!profileOk && userProfile ? 1 : 0);
     setPushResult(`Synced ${parts.join(' + ')}${totalFail > 0 ? ` (${totalFail} failed)` : ''}`);
 
     setTimeout(() => setPushResult(null), 5000);
@@ -121,6 +151,10 @@ export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync,
           <span className={`text-[11px] font-bold ${isLight ? 'text-slate-700' : 'text-white/70'}`}>{fitnessEntries.length}</span>
         </div>
         <div className="flex items-center justify-between">
+          <span className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Categories</span>
+          <span className={`text-[11px] font-bold ${isLight ? 'text-slate-700' : 'text-white/70'}`}>{categories.length}</span>
+        </div>
+        <div className="flex items-center justify-between">
           <span className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Last Sync</span>
           <span className={`text-[11px] ${isLight ? 'text-slate-700' : 'text-white/70'}`}>
             {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString() : 'Never'}
@@ -128,7 +162,7 @@ export function SyncStatus({ theme, currentUser, tasks, fitnessEntries, canSync,
         </div>
 
         {/* Force Sync Button */}
-        {canSync && (tasks.length > 0 || fitnessEntries.length > 0) && (
+        {canSync && (tasks.length > 0 || fitnessEntries.length > 0 || categories.length > 0 || !!userProfile) && (
           <button
             onClick={handleForceSync}
             disabled={isPushing}

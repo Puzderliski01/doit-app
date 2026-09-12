@@ -396,7 +396,7 @@ export default function App() {
     const unsubscribeCats = subscribeToUserCategories(
       currentUser.uid,
       (userCats) => {
-        if (userCats && userCats.length > 0) {
+        if (userCats) {
           setCategories(userCats);
         }
       }
@@ -522,9 +522,16 @@ export default function App() {
         if (firestoreTasks.length === 0) return; // Don't overwrite local data with empty
 
         setTasks(prev => {
+          const pending = pendingWritesRef.current;
+          const deletes = pendingDeletesRef.current;
           const firestoreIds = new Set(firestoreTasks.map(t => t.id));
-          const localOnly = prev.filter(t => !firestoreIds.has(t.id));
-          const merged = [...firestoreTasks, ...localOnly];
+          const localOnly = prev.filter(t => !firestoreIds.has(t.id) && !deletes.has(t.id));
+          const firestoreMap = new Map(firestoreTasks.map(t => [t.id, t]));
+          // Overlay pending writes (unconfirmed local changes)
+          for (const [id, localTask] of pending) {
+            firestoreMap.set(id, localTask);
+          }
+          const merged = [...firestoreMap.values(), ...localOnly];
           // Only update if something actually changed
           if (merged.length !== prev.length || merged.some((t, i) => t.id !== prev[i]?.id)) {
             storage.saveTasks(merged, currentUser!.uid);
@@ -2336,6 +2343,8 @@ export default function App() {
                   currentUser={currentUser}
                   tasks={tasks}
                   fitnessEntries={fitnessEntries}
+                  categories={categories}
+                  userProfile={userProfile}
                   canSync={!!canSyncToFirestore}
                   lastSyncTime={lastSyncTime}
                   isLight={isLight}
