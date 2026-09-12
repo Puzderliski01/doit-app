@@ -54,29 +54,35 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
     if (!newTaskTitle.trim()) return;
     haptic.mediumClick();
     const now = new Date().toISOString();
-    await addGroupTask(group.id, {
-      title: newTaskTitle.trim(),
-      description: '',
-      priority: newTaskPriority,
-      categoryId: '',
-      completed: false,
-      createdAt: now,
-      dueDate: newTaskDue || new Date(Date.now() + 86400000).toISOString(),
-      estimatedMinutes: 30,
-      recurring: { type: 'none' },
-      subtasks: [],
-      tags: [],
-      order: 0,
-      groupId: group.id,
-      createdBy: currentUser.uid,
-      createdByName: currentUser.displayName || 'User',
-      assignedTo: assignedTo,
-      assignedToName: group.members.find(m => m.uid === assignedTo)?.displayName,
-    }, currentUser);
-    setNewTaskTitle('');
-    setNewTaskDue('');
-    setAssignedTo(undefined);
-    setShowAddTask(false);
+    try {
+      const taskId = await addGroupTask(group.id, {
+        title: newTaskTitle.trim(),
+        description: '',
+        priority: newTaskPriority,
+        categoryId: '',
+        completed: false,
+        createdAt: now,
+        dueDate: newTaskDue || new Date(Date.now() + 86400000).toISOString(),
+        estimatedMinutes: 30,
+        recurring: { type: 'none' },
+        subtasks: [],
+        tags: [],
+        order: 0,
+        groupId: group.id,
+        createdBy: currentUser.uid,
+        createdByName: currentUser.displayName || 'User',
+        assignedTo: assignedTo,
+        assignedToName: group.members.find(m => m.uid === assignedTo)?.displayName,
+      }, currentUser);
+      console.log('[GroupTasks] Task created OK:', taskId);
+      setNewTaskTitle('');
+      setNewTaskDue('');
+      setAssignedTo(undefined);
+      setShowAddTask(false);
+    } catch (err) {
+      console.error('[GroupTasks] Failed to create task:', err);
+      alert('Failed to create task: ' + (err?.message || err));
+    }
   };
 
   const handleToggleComplete = async (task: GroupTask) => {

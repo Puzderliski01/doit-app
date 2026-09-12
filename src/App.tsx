@@ -90,6 +90,7 @@ import {
   clearLocalAuthSession,
   subscribeToUserGroups,
   subscribeToGroupTasks,
+  migrateGroupsMemberUids,
 } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
@@ -317,6 +318,7 @@ export default function App() {
           setUserEmail(user.email);
         }
         syncUserProfile(authUser).catch(console.error);
+        migrateGroupsMemberUids(authUser.uid).catch(console.error);
       } else {
         const localSession = getLocalAuthSession();
         if (localSession) {

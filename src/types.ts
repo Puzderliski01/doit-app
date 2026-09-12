@@ -299,6 +299,7 @@ export interface Group {
   joinCode: string;
   createdBy: string;
   members: GroupMember[];
+  memberUids?: string[];
   createdAt: string;
   color?: string;
 }

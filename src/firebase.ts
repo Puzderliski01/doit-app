@@ -568,6 +568,7 @@ export async function createGroup(name: string, description: string, user: AuthU
       role: 'admin',
       joinedAt: new Date().toISOString(),
     }],
+    memberUids: [user.uid],
     createdAt: new Date().toISOString(),
     color: '#f97316',
   };
@@ -592,6 +593,7 @@ export async function joinGroup(joinCode: string, user: AuthUser): Promise<Group
   };
   await updateDoc(doc(db, 'groups', groupDoc.id), {
     members: [...groupData.members, newMember],
+    memberUids: [...(groupData.memberUids || []), user.uid],
   });
   return { ...groupData, members: [...groupData.members, newMember] };
 }
@@ -603,6 +605,7 @@ export async function leaveGroup(groupId: string, userId: string): Promise<void>
   const group = snap.data() as Group;
   await updateDoc(groupRef, {
     members: group.members.filter((m) => m.uid !== userId),
+    memberUids: (group.memberUids || []).filter((uid) => uid !== userId),
   });
 }
 
@@ -616,14 +619,12 @@ export async function deleteGroup(groupId: string): Promise<void> {
 
 export function subscribeToUserGroups(userId: string, onUpdate: (groups: Group[]) => void) {
   try {
-    const q = query(collection(db, 'groups'));
+    const q = query(collection(db, 'groups'), where('memberUids', 'array-contains', userId));
     return onSnapshot(q, (snapshot) => {
       const groups: Group[] = [];
       snapshot.forEach((d) => {
         const data = d.data() as Group;
-        if (data.members?.some((m) => m.uid === userId)) {
-          groups.push({ ...data, id: d.id });
-        }
+        groups.push({ ...data, id: d.id });
       });
       onUpdate(groups);
     }, (err) => {
@@ -636,18 +637,45 @@ export function subscribeToUserGroups(userId: string, onUpdate: (groups: Group[]
   }
 }
 
+// One-time migration: add memberUids to existing groups
+export async function migrateGroupsMemberUids(userId: string): Promise<void> {
+  try {
+    const q = query(collection(db, 'groups'));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) {
+      const data = d.data() as Group;
+      if (!data.memberUids || data.memberUids.length === 0) {
+        const uids = data.members?.map(m => m.uid) || [];
+        if (uids.length > 0) {
+          await updateDoc(doc(db, 'groups', d.id), { memberUids: uids }).catch(() => {});
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Groups] Migration error:', err);
+  }
+}
+
 export async function addGroupTask(groupId: string, task: Omit<GroupTask, 'id' | 'comments'>, user: AuthUser): Promise<string> {
-  const taskRef = doc(collection(db, 'groups', groupId, 'tasks'));
-  const fullTask: GroupTask = {
-    ...task,
-    id: taskRef.id,
-    groupId,
-    createdBy: user.uid,
-    createdByName: user.displayName || 'User',
-    comments: [],
-  } as GroupTask;
-  await setDoc(taskRef, stripUndefined(fullTask as unknown as Record<string, unknown>));
-  return taskRef.id;
+  try {
+    const taskRef = doc(collection(db, 'groups', groupId, 'tasks'));
+    const fullTask: GroupTask = {
+      ...task,
+      id: taskRef.id,
+      groupId,
+      createdBy: user.uid,
+      createdByName: user.displayName || 'User',
+      comments: [],
+    } as GroupTask;
+    const clean = stripUndefined(fullTask as unknown as Record<string, unknown>);
+    console.log('[Firestore] Adding group task:', taskRef.id, clean);
+    await setDoc(taskRef, clean);
+    console.log('[Firestore] Group task saved OK:', taskRef.id);
+    return taskRef.id;
+  } catch (err) {
+    console.error('[Firestore] FAILED to add group task:', err);
+    throw err;
+  }
 }
 
 export async function updateGroupTask(groupId: string, taskId: string, updates: Partial<GroupTask>): Promise<void> {

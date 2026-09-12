@@ -3,7 +3,7 @@
 // Polls Firestore for pending notifications and shows system notifications
 
 import { db } from '../firebase';
-import { collection, query, where, orderBy, getDocs, updateDoc, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, doc, onSnapshot, Timestamp, setDoc, updateDoc } from 'firebase/firestore';
 
 const PUSH_REQUESTS_COLLECTION = 'push_requests';
 const POLL_INTERVAL_MS = 30000; // 30 seconds
@@ -34,7 +34,7 @@ export async function requestPushToFirestore(uid: string, options: {
 }): Promise<void> {
   try {
     const pushRef = doc(collection(db, PUSH_REQUESTS_COLLECTION));
-    await updateDoc(pushRef, {
+    await setDoc(pushRef, {
       uid,
       title: options.title,
       body: options.body,
