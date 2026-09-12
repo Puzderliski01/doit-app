@@ -35,6 +35,11 @@ export interface Task {
   isImportant?: boolean; // For Eisenhower matrix
   isUrgent?: boolean; // For Eisenhower matrix
   order: number;
+  // Group task fields (optional)
+  groupId?: string;
+  groupName?: string;
+  groupColor?: string;
+  createdByName?: string;
 }
 
 export interface Category {
@@ -204,6 +209,8 @@ export interface UserProfile {
   onboardingCompleted: boolean;
   leaderboardPublic: boolean;
   displayName?: string;
+  showGroupTasksOnHome?: boolean;
+  showGroupTasksInList?: boolean;
 }
 
 // Personal Trainer Types

@@ -665,7 +665,7 @@ export async function addGroupTaskComment(groupId: string, taskId: string, comme
   const task = snap.data() as GroupTask;
   const newComment: GroupTaskComment = {
     ...comment,
-    id: Date.now().toString(),
+    id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     createdAt: new Date().toISOString(),
   };
   await updateDoc(taskRef, { comments: [...(task.comments || []), newComment] });

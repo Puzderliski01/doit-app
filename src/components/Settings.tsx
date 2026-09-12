@@ -7,7 +7,7 @@ import {
   Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
   Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
   Dumbbell, Cloud, CloudOff, Shield, Info, FileText, LogOut, Eye, EyeOff,
-  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send, Upload
+  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send, Upload, Users
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'motion/react';
@@ -401,6 +401,30 @@ export const Settings: React.FC<SettingsProps> = ({
           )}
         </div>
       </Section>
+
+      {/* Groups */}
+      {!currentUser?.isGuest && (
+        <Section id="groups" title={t('settings.groups')} icon={<Users className="w-4 h-4" />}>
+          <ToggleRow
+            label={t('settings.showGroupsOnHome')}
+            description={t('settings.showGroupsOnHomeDesc')}
+            enabled={userProfile.showGroupTasksOnHome !== false}
+            onToggle={() => {
+              haptic.lightTap();
+              onProfileUpdate({ showGroupTasksOnHome: userProfile.showGroupTasksOnHome === false ? true : false });
+            }}
+          />
+          <ToggleRow
+            label={t('settings.showGroupsInList')}
+            description={t('settings.showGroupsInListDesc')}
+            enabled={userProfile.showGroupTasksInList !== false}
+            onToggle={() => {
+              haptic.lightTap();
+              onProfileUpdate({ showGroupTasksInList: userProfile.showGroupTasksInList === false ? true : false });
+            }}
+          />
+        </Section>
+      )}
 
       {/* Fitness Profile */}
       <Section id="fitness" title={t('settings.fitnessProfile')} icon={<Dumbbell className="w-4 h-4" />}>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Group, GroupTask, AuthUser, Priority } from '../types';
 import { subscribeToGroupTasks, addGroupTask, updateGroupTask, deleteGroupTask, addGroupTaskComment } from '../firebase';
-import { ArrowLeft, Plus, Check, Clock, MessageCircle, Send, Trash2, Crown, ChevronDown, ChevronUp, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Check, Clock, MessageCircle, Send, Trash2, Crown, ChevronDown, ChevronUp, X, AlertCircle, Pencil } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { formatDeadlineRelative, isOverdue } from '../utils/dateHelpers';
+import { t } from '../i18n';
 
 interface GroupTasksViewProps {
   theme: 'dark' | 'light';
@@ -24,9 +25,14 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>('medium');
   const [newTaskDue, setNewTaskDue] = useState('');
+  const [assignedTo, setAssignedTo] = useState<string | undefined>(undefined);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [editingTask, setEditingTask] = useState<GroupTask | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editPriority, setEditPriority] = useState<Priority>('medium');
+  const [editDue, setEditDue] = useState('');
 
   useEffect(() => {
     const unsub = subscribeToGroupTasks(group.id, setTasks);
@@ -64,11 +70,12 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
       groupId: group.id,
       createdBy: currentUser.uid,
       createdByName: currentUser.displayName || 'User',
-      assignedTo: undefined,
-      assignedToName: undefined,
+      assignedTo: assignedTo,
+      assignedToName: group.members.find(m => m.uid === assignedTo)?.displayName,
     }, currentUser);
     setNewTaskTitle('');
     setNewTaskDue('');
+    setAssignedTo(undefined);
     setShowAddTask(false);
   };
 
@@ -83,6 +90,24 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
   const handleDelete = async (taskId: string) => {
     haptic.deleteAction();
     await deleteGroupTask(group.id, taskId);
+  };
+
+  const handleEditStart = (task: GroupTask) => {
+    setEditingTask(task);
+    setEditTitle(task.title);
+    setEditPriority(task.priority);
+    setEditDue(task.dueDate ? task.dueDate.substring(0, 16) : '');
+  };
+
+  const handleEditSave = async () => {
+    if (!editingTask || !editTitle.trim()) return;
+    haptic.mediumClick();
+    await updateGroupTask(group.id, editingTask.id, {
+      title: editTitle.trim(),
+      priority: editPriority,
+      dueDate: editDue || editingTask.dueDate,
+    });
+    setEditingTask(null);
   };
 
   const handleComment = async (taskId: string) => {
@@ -147,7 +172,7 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
                 : isLight ? 'text-slate-500' : 'text-white/40'
             }`}
           >
-            {f}
+            {f === 'all' ? t('groups.all') : f === 'pending' ? t('groups.pending') : t('groups.completed')}
           </button>
         ))}
       </div>
@@ -159,7 +184,7 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
             type="text"
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="Task title..."
+            placeholder={t('groups.taskTitle')}
             className={`w-full px-4 py-3 rounded-xl border text-sm mb-3 ${
               isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
             }`}
@@ -187,13 +212,84 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
               isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
             }`}
           />
+          <div className="mb-3">
+            <p className={`text-xs font-semibold mb-1 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{t('groups.assignTo')}</p>
+            <select
+              value={assignedTo || ''}
+              onChange={(e) => setAssignedTo(e.target.value || undefined)}
+              className={`w-full px-4 py-2.5 rounded-xl border text-xs ${
+                isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
+              }`}
+            >
+              <option value="">Unassigned</option>
+              {group.members.map(m => (
+                <option key={m.uid} value={m.uid}>{m.displayName}</option>
+              ))}
+            </select>
+          </div>
           <button
             onClick={handleAddTask}
             disabled={!newTaskTitle.trim()}
             className="w-full py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold disabled:opacity-40 cursor-pointer"
           >
-            Add Task
+            {t('groups.addTask')}
           </button>
+        </div>
+      )}
+
+      {/* Edit Task Form */}
+      {editingTask && (
+        <div className={`rounded-2xl p-4 border liquid-glass-card ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
+          <p className={`text-xs font-semibold mb-3 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>{t('groups.editTask')}</p>
+          <input
+            type="text"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            placeholder={t('groups.taskTitle')}
+            className={`w-full px-4 py-3 rounded-xl border text-sm mb-3 ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
+            }`}
+            autoFocus
+          />
+          <div className="flex gap-2 mb-3">
+            {(['urgent', 'high', 'medium', 'low'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setEditPriority(p)}
+                className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all cursor-pointer border ${
+                  editPriority === p ? 'text-white' : isLight ? 'text-slate-500 border-slate-200' : 'text-white/40 border-white/10'
+                }`}
+                style={editPriority === p ? { background: priorityStyles[p], borderColor: priorityStyles[p] } : {}}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <input
+            type="datetime-local"
+            value={editDue}
+            onChange={(e) => setEditDue(e.target.value)}
+            className={`w-full px-4 py-2.5 rounded-xl border text-xs mb-3 ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
+            }`}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditingTask(null)}
+              className={`flex-1 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer ${
+                isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
+              }`}
+            >
+              {t('groups.cancel')}
+            </button>
+            <button
+              onClick={handleEditSave}
+              disabled={!editTitle.trim()}
+              className="flex-1 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold disabled:opacity-40 cursor-pointer"
+            >
+              {t('groups.saveChanges')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -201,7 +297,7 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
       {filteredTasks.length === 0 ? (
         <div className={`text-center py-12 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
           <p className={`text-sm ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-            {filter === 'all' ? 'No tasks yet. Add one!' : `No ${filter} tasks`}
+            {filter === 'all' ? t('groups.noTasksYet') : filter === 'pending' ? t('groups.noPendingTasks') : t('groups.noCompletedTasks')}
           </p>
         </div>
       ) : (
@@ -244,6 +340,11 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
                           by {creator.displayName}
                         </span>
                       )}
+                      {task.assignedToName && (
+                        <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                          → {task.assignedToName}
+                        </span>
+                      )}
                       {overdue && !task.completed && <AlertCircle className="w-3 h-3 text-red-500" />}
                       <span className={`text-[10px] ${overdue && !task.completed ? 'text-red-500' : isLight ? 'text-slate-400' : 'text-white/40'}`}>
                         {deadline.text}
@@ -270,7 +371,7 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
                       ))}
                       {(!task.comments || task.comments.length === 0) && (
                         <p className={`text-[10px] text-center py-2 ${isLight ? 'text-slate-300' : 'text-white/20'}`}>
-                          No comments yet
+                          {t('groups.noCommentsYet')}
                         </p>
                       )}
                     </div>
@@ -280,7 +381,7 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
                         value={expandedTask === task.id ? commentText : ''}
                         onChange={(e) => setCommentText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleComment(task.id)}
-                        placeholder="Add a comment..."
+                        placeholder={t('groups.addComment')}
                         className={`flex-1 px-3 py-2 rounded-xl border text-xs ${
                           isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
                         }`}
@@ -294,12 +395,42 @@ export const GroupTasksView: React.FC<GroupTasksViewProps> = ({
                       </button>
                     </div>
                     {task.createdBy === currentUser.uid && (
-                      <button
-                        onClick={() => handleDelete(task.id)}
-                        className="mt-2 flex items-center gap-1 text-[10px] text-red-500 cursor-pointer"
-                      >
-                        <Trash2 className="w-3 h-3" /> Delete task
-                      </button>
+                      <>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleEditStart(task)}
+                            className="flex items-center gap-1 text-[10px] text-blue-500 cursor-pointer"
+                          >
+                            <Pencil className="w-3 h-3" /> {t('groups.editTask')}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(task.id)}
+                            className="flex items-center gap-1 text-[10px] text-red-500 cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" /> {t('groups.deleteTask')}
+                          </button>
+                        </div>
+                        <div className="mt-2">
+                          <select
+                            value={task.assignedTo || ''}
+                            onChange={async (e) => {
+                              const uid = e.target.value || undefined;
+                              await updateGroupTask(group.id, task.id, {
+                                assignedTo: uid,
+                                assignedToName: group.members.find(m => m.uid === uid)?.displayName,
+                              });
+                            }}
+                            className={`w-full px-3 py-1.5 rounded-xl border text-[10px] ${
+                              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
+                            }`}
+                          >
+                            <option value="">{t('groups.unassigned')}</option>
+                            {group.members.map(m => (
+                              <option key={m.uid} value={m.uid}>{m.displayName}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}

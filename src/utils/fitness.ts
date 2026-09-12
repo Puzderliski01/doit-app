@@ -244,6 +244,8 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   language: 'en',
   onboardingCompleted: false,
   leaderboardPublic: false,
+  showGroupTasksOnHome: true,
+  showGroupTasksInList: true,
 };
 
 export const MUSCLE_GROUP_LABELS: Record<MuscleGroup, string> = {

@@ -3,6 +3,7 @@ import { Group, AuthUser } from '../types';
 import { createGroup, joinGroup, leaveGroup, deleteGroup, refreshGroupJoinCode } from '../firebase';
 import { Users, Plus, LogOut, Copy, RefreshCw, Trash2, Crown, UserPlus, X, Check, ChevronRight } from 'lucide-react';
 import { haptic } from '../utils/haptics';
+import { t } from '../i18n';
 
 interface GroupsManagerProps {
   theme: 'dark' | 'light';
@@ -88,10 +89,10 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-            Groups
+            {t('groups.title')}
           </h1>
           <p className={`text-sm mt-1 ${isLight ? 'text-slate-500' : 'text-white/60'}`}>
-            Collaborate and share tasks with others
+            {t('groups.subtitle')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -104,7 +105,7 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
-            Join
+            {t('groups.join')}
           </button>
           <button
             onClick={() => { haptic.lightTap(); setShowCreate(!showCreate); setShowJoin(false); }}
@@ -115,7 +116,7 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            Create
+            {t('groups.create')}
           </button>
         </div>
       </div>
@@ -124,14 +125,14 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
       {showJoin && (
         <div className={`rounded-2xl p-4 border liquid-glass-card ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
           <p className={`text-xs font-semibold mb-3 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
-            Enter a 6-digit join code
+            {t('groups.joinCode')}
           </p>
           <div className="flex gap-2">
             <input
               type="text"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="ABC123"
+              placeholder={t('groups.joinCodePlaceholder')}
               maxLength={6}
               className={`flex-1 px-4 py-3 rounded-xl border text-center text-lg font-mono font-bold tracking-[0.3em] ${
                 isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
@@ -142,7 +143,7 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
               disabled={loading || joinCode.length < 6}
               className="px-5 py-3 rounded-xl bg-blue-500 text-white font-bold text-sm disabled:opacity-40 cursor-pointer"
             >
-              {loading ? '...' : 'Join'}
+              {loading ? '...' : t('groups.join')}
             </button>
           </div>
           {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
@@ -153,13 +154,13 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
       {showCreate && (
         <div className={`rounded-2xl p-4 border liquid-glass-card ${isLight ? 'border-slate-200' : 'border-white/10'}`}>
           <p className={`text-xs font-semibold mb-3 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
-            Create a new group
+            {t('groups.createGroup')}
           </p>
           <input
             type="text"
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
-            placeholder="Group name"
+            placeholder={t('groups.groupName')}
             className={`w-full px-4 py-3 rounded-xl border text-sm mb-2 ${
               isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
             }`}
@@ -168,7 +169,7 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
             type="text"
             value={newGroupDesc}
             onChange={(e) => setNewGroupDesc(e.target.value)}
-            placeholder="Description (optional)"
+            placeholder={t('groups.description')}
             className={`w-full px-4 py-3 rounded-xl border text-sm mb-3 ${
               isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-white/5 border-white/10 text-white'
             }`}
@@ -180,14 +181,14 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
                 isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'
               }`}
             >
-              Cancel
+              {t('groups.cancel')}
             </button>
             <button
               onClick={handleCreate}
               disabled={loading || !newGroupName.trim()}
               className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold disabled:opacity-40 cursor-pointer"
             >
-              {loading ? '...' : 'Create Group'}
+              {loading ? '...' : t('groups.createGroup')}
             </button>
           </div>
           {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
@@ -199,10 +200,10 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
         <div className={`text-center py-16 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
           <Users className={`w-12 h-12 mx-auto mb-3 ${isLight ? 'text-slate-300' : 'text-white/20'}`} />
           <p className={`text-sm font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
-            No groups yet
+            {t('groups.noGroupsYet')}
           </p>
           <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-            Create a group or join one with a code
+            {t('groups.noGroupsDesc')}
           </p>
         </div>
       ) : (
@@ -244,14 +245,14 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
                 <div className={`px-4 py-3 border-t ${isLight ? 'border-slate-100' : 'border-white/5'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-                      Join Code
+                      {t('groups.joinCodeLabel')}
                     </span>
                     {isAdmin && (
                       <button
                         onClick={() => handleRefreshCode(group.id)}
                         className={`text-[10px] flex items-center gap-1 cursor-pointer ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-white/40 hover:text-white/60'}`}
                       >
-                        <RefreshCw className="w-3 h-3" /> Refresh
+                        <RefreshCw className="w-3 h-3" /> {t('groups.refresh')}
                       </button>
                     )}
                   </div>
@@ -298,13 +299,13 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
                       onClick={() => onSelectGroup(group)}
                       className="flex-1 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold cursor-pointer"
                     >
-                      Open Tasks
+                      {t('groups.openTasks')}
                     </button>
                     {isAdmin ? (
                       <button
                         onClick={() => handleDelete(group.id)}
                         className="p-2 rounded-xl bg-red-500/10 text-red-500 cursor-pointer"
-                        title="Delete group"
+                        title={t('groups.deleteGroup')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -312,7 +313,7 @@ export const GroupsManager: React.FC<GroupsManagerProps> = ({
                       <button
                         onClick={() => handleLeave(group.id)}
                         className="p-2 rounded-xl bg-red-500/10 text-red-500 cursor-pointer"
-                        title="Leave group"
+                        title={t('groups.leaveGroup')}
                       >
                         <LogOut className="w-4 h-4" />
                       </button>

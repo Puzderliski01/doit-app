@@ -17,6 +17,7 @@ import {
   FitnessEntry,
   UserProfile,
   Group,
+  GroupTask,
   MealEntry,
   DailyNutritionTarget,
 } from './types';
@@ -88,6 +89,7 @@ import {
   saveLocalAuthSession,
   clearLocalAuthSession,
   subscribeToUserGroups,
+  subscribeToGroupTasks,
 } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
@@ -246,6 +248,7 @@ export default function App() {
   // Groups State
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [allGroupTasks, setAllGroupTasks] = useState<GroupTask[]>([]);
 
   // Nutrition State
   const [mealEntries, setMealEntries] = useState<MealEntry[]>(() => {
@@ -471,6 +474,25 @@ export default function App() {
       unsubscribeGroups();
     };
   }, [currentUser?.uid]);
+
+  // Subscribe to group tasks for all user's groups
+  useEffect(() => {
+    if (!userGroups.length) {
+      setAllGroupTasks([]);
+      return;
+    }
+    const unsubscribers: (() => void)[] = [];
+    for (const group of userGroups) {
+      const unsub = subscribeToGroupTasks(group.id, (groupTasks) => {
+        setAllGroupTasks(prev => {
+          const others = prev.filter(t => t.groupId !== group.id);
+          return [...others, ...groupTasks];
+        });
+      });
+      if (typeof unsub === 'function') unsubscribers.push(unsub);
+    }
+    return () => { unsubscribers.forEach(u => u()); };
+  }, [userGroups.map(g => g.id).join(',')]);
 
   // One-time migration: push local fitness data to Firestore on first login
   useEffect(() => {
@@ -1095,9 +1117,73 @@ export default function App() {
     setIsExerciseLogModalOpen(true);
   };
 
+  // Merge group tasks into personal tasks when user has the setting enabled
+  const mergedTasks = useMemo(() => {
+    const showInList = userProfile.showGroupTasksInList !== false;
+    if (!showInList || allGroupTasks.length === 0) return tasks;
+    const groupAsTasks: Task[] = allGroupTasks.map(gt => ({
+      id: gt.id,
+      title: gt.title,
+      description: gt.description || '',
+      priority: gt.priority,
+      categoryId: gt.categoryId || '',
+      completed: gt.completed,
+      completedAt: gt.completedAt,
+      createdAt: gt.createdAt,
+      dueDate: gt.dueDate,
+      estimatedMinutes: gt.estimatedMinutes || 30,
+      recurring: gt.recurring || { type: 'none' },
+      subtasks: gt.subtasks || [],
+      tags: gt.tags || [],
+      reminderEmail: '',
+      reminderMinutesBefore: 30,
+      reminderSent: false,
+      isImportant: gt.isUrgent || gt.priority === 'urgent' || gt.priority === 'high',
+      isUrgent: gt.isUrgent || gt.priority === 'urgent',
+      order: gt.order || 0,
+      groupId: gt.groupId,
+      groupName: userGroups.find(g => g.id === gt.groupId)?.name || 'Group',
+      groupColor: userGroups.find(g => g.id === gt.groupId)?.color || '#f97316',
+      createdByName: gt.createdByName,
+    }));
+    return [...tasks, ...groupAsTasks];
+  }, [tasks, allGroupTasks, userProfile.showGroupTasksInList, userGroups]);
+
+  // Home tasks: merged for home screen when enabled
+  const homeTasks = useMemo(() => {
+    const showOnHome = userProfile.showGroupTasksOnHome !== false;
+    if (!showOnHome || allGroupTasks.length === 0) return tasks;
+    const groupAsTasks: Task[] = allGroupTasks.map(gt => ({
+      id: gt.id,
+      title: gt.title,
+      description: gt.description || '',
+      priority: gt.priority,
+      categoryId: gt.categoryId || '',
+      completed: gt.completed,
+      completedAt: gt.completedAt,
+      createdAt: gt.createdAt,
+      dueDate: gt.dueDate,
+      estimatedMinutes: gt.estimatedMinutes || 30,
+      recurring: gt.recurring || { type: 'none' },
+      subtasks: gt.subtasks || [],
+      tags: gt.tags || [],
+      reminderEmail: '',
+      reminderMinutesBefore: 30,
+      reminderSent: false,
+      isImportant: gt.isUrgent || gt.priority === 'urgent' || gt.priority === 'high',
+      isUrgent: gt.isUrgent || gt.priority === 'urgent',
+      order: gt.order || 0,
+      groupId: gt.groupId,
+      groupName: userGroups.find(g => g.id === gt.groupId)?.name || 'Group',
+      groupColor: userGroups.find(g => g.id === gt.groupId)?.color || '#f97316',
+      createdByName: gt.createdByName,
+    }));
+    return [...tasks, ...groupAsTasks];
+  }, [tasks, allGroupTasks, userProfile.showGroupTasksOnHome, userGroups]);
+
   // Filtered & Sorted Tasks
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return mergedTasks.filter((task) => {
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -1139,15 +1225,15 @@ export default function App() {
       }
       return sortOrder === 'asc' ? comparison : -comparison;
     });
-  }, [tasks, searchQuery, priorityFilter, categoryFilter, statusFilter, sortBy, sortOrder]);
+  }, [mergedTasks, searchQuery, priorityFilter, categoryFilter, statusFilter, sortBy, sortOrder]);
 
   const categoriesMap = useMemo(() => {
     return new Map(categories.map(c => [c.id, c]));
   }, [categories]);
 
-  const pendingCount = tasks.filter(t => !t.completed).length;
-  const overdueCount = tasks.filter(t => isOverdue(t.dueDate, t.completed)).length;
-  const todayCount = tasks.filter(t => isDueToday(t.dueDate) && !t.completed).length;
+  const pendingCount = homeTasks.filter(t => !t.completed).length;
+  const overdueCount = homeTasks.filter(t => isOverdue(t.dueDate, t.completed)).length;
+  const todayCount = homeTasks.filter(t => isDueToday(t.dueDate) && !t.completed).length;
 
   const handleLogout = async () => {
     clearLocalAuthSession();
@@ -1489,12 +1575,12 @@ export default function App() {
                         stroke="url(#home-progress-grad)"
                         className="rotate-[-90deg] origin-center transition-all duration-1000 ease-out"
                         strokeDasharray={`${2 * Math.PI * 46}`}
-                        strokeDashoffset={`${2 * Math.PI * 46 * (1 - (tasks.length > 0 ? tasks.filter(t => t.completed).length / tasks.length : 0))}`}
+                        strokeDashoffset={`${2 * Math.PI * 46 * (1 - (homeTasks.length > 0 ? homeTasks.filter(t => t.completed).length / homeTasks.length : 0))}`}
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <span className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                        {tasks.length > 0 ? Math.round((tasks.filter(t => t.completed).length / tasks.length) * 100) : 0}%
+                        {homeTasks.length > 0 ? Math.round((homeTasks.filter(t => t.completed).length / homeTasks.length) * 100) : 0}%
                       </span>
                       <span className={`text-[9px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
                         Done
@@ -1552,7 +1638,7 @@ export default function App() {
                   { label: t('home.pendingTasks'), value: pendingCount, icon: <Clock className="w-4 h-4" />, gradient: 'from-blue-500 to-cyan-400', bgLight: 'from-blue-50 to-cyan-50', bgDark: 'from-blue-500/10 to-cyan-500/10', borderColor: 'rgba(59,130,246,0.3)' },
                   { label: t('home.dueToday'), value: todayCount, icon: <Zap className="w-4 h-4" />, gradient: 'from-amber-500 to-orange-400', bgLight: 'from-amber-50 to-orange-50', bgDark: 'from-amber-500/10 to-orange-500/10', borderColor: 'rgba(245,158,11,0.3)' },
                   { label: t('home.overdue'), value: overdueCount, icon: <Flame className="w-4 h-4" />, gradient: 'from-red-500 to-rose-400', bgLight: 'from-red-50 to-rose-50', bgDark: 'from-red-500/10 to-rose-500/10', borderColor: 'rgba(239,68,68,0.3)' },
-                  { label: t('home.completed'), value: tasks.filter(t => t.completed).length, icon: <Target className="w-4 h-4" />, gradient: 'from-emerald-500 to-green-400', bgLight: 'from-emerald-50 to-green-50', bgDark: 'from-emerald-500/10 to-green-500/10', borderColor: 'rgba(16,185,129,0.3)' },
+                  { label: t('home.completed'), value: homeTasks.filter(t => t.completed).length, icon: <Target className="w-4 h-4" />, gradient: 'from-emerald-500 to-green-400', bgLight: 'from-emerald-50 to-green-50', bgDark: 'from-emerald-500/10 to-green-500/10', borderColor: 'rgba(16,185,129,0.3)' },
                 ].map((stat, i) => (
                   <motion.div
                     key={stat.label}
@@ -1597,7 +1683,7 @@ export default function App() {
                       <CheckSquare className="w-4 h-4 text-white" />
                     </div>
                     <p className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('home.viewTasks')}</p>
-                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{tasks.length} total</p>
+                    <p className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`}>{homeTasks.length} total</p>
                   </div>
                 </motion.button>
                 <motion.button
@@ -1644,8 +1730,8 @@ export default function App() {
               </div>
 
               {/* Today's Focus - most important task */}
-              {tasks.filter(t => !t.completed).length > 0 && (() => {
-                const focusTask = tasks
+              {homeTasks.filter(t => !t.completed).length > 0 && (() => {
+                const focusTask = homeTasks
                   .filter(t => !t.completed)
                   .sort((a, b) => {
                     const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
@@ -1729,7 +1815,7 @@ export default function App() {
                 <div className="flex items-center justify-between mb-3">
                   <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>This Week</h2>
                   <span className={`text-[10px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-                    {tasks.filter(t => t.completed && (() => {
+                    {homeTasks.filter(t => t.completed && (() => {
                       const d = new Date(t.completedAt || t.createdAt);
                       const now = new Date();
                       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -1743,7 +1829,7 @@ export default function App() {
                       const dayDate = new Date();
                       dayDate.setDate(dayDate.getDate() - (6 - i));
                       const dayStr = dayDate.toISOString().slice(0, 10);
-                      const completedCount = tasks.filter(t =>
+                      const completedCount = homeTasks.filter(t =>
                         t.completed && (t.completedAt || t.createdAt)?.startsWith(dayStr)
                       ).length;
                       const maxH = 64;
@@ -1769,8 +1855,8 @@ export default function App() {
               </motion.div>
 
               {/* Category Progress */}
-              {tasks.length > 0 && (() => {
-                const catCounts = tasks.reduce((acc, t) => {
+              {homeTasks.length > 0 && (() => {
+                const catCounts = homeTasks.reduce((acc, t) => {
                   const catId = t.categoryId || 'uncategorized';
                   if (!acc[catId]) acc[catId] = { total: 0, completed: 0 };
                   acc[catId].total++;
@@ -1820,7 +1906,7 @@ export default function App() {
               })()}
 
               {/* Upcoming Deadlines - next 3 days */}
-              {tasks.filter(t => !t.completed && (() => {
+              {homeTasks.filter(t => !t.completed && (() => {
                 const due = new Date(t.dueDate);
                 const now = new Date();
                 const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
@@ -1843,7 +1929,7 @@ export default function App() {
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {tasks
+                    {homeTasks
                       .filter(t => !t.completed && (() => {
                         const due = new Date(t.dueDate);
                         const now = new Date();
@@ -1929,7 +2015,7 @@ export default function App() {
               )}
 
               {/* 7. Recent Tasks - enhanced with category badges */}
-              {tasks.filter(t => !t.completed).length > 0 && (
+              {homeTasks.filter(t => !t.completed).length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1947,7 +2033,7 @@ export default function App() {
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {tasks.filter(t => !t.completed).slice(0, 3).map((task, i) => (
+                    {homeTasks.filter(t => !t.completed).slice(0, 3).map((task, i) => (
                       <motion.div
                         key={task.id}
                         initial={{ opacity: 0, x: -10 }}
@@ -1997,7 +2083,7 @@ export default function App() {
                 <Suspense fallback={null}>
                   <DailyBriefing
                     theme={theme}
-                    tasks={tasks}
+                    tasks={homeTasks}
                     userProfile={userProfile}
                     fitnessStats={userProfile.fitnessStats}
                   />
@@ -2005,7 +2091,7 @@ export default function App() {
                 <Suspense fallback={null}>
                   <DeadlinePredictor
                     theme={theme}
-                    tasks={tasks}
+                    tasks={homeTasks}
                   />
                 </Suspense>
               </div>
@@ -2015,7 +2101,7 @@ export default function App() {
                 <Suspense fallback={null}>
                   <AchievementTree
                     theme={theme}
-                    completedTasks={tasks.filter(t => t.completed).length}
+                    completedTasks={homeTasks.filter(t => t.completed).length}
                     totalWorkouts={userProfile.fitnessStats?.totalWorkouts || 0}
                     currentStreak={userProfile.fitnessStats?.currentStreak || 0}
                     xp={userProfile.fitnessStats?.xp || 0}
@@ -2024,7 +2110,7 @@ export default function App() {
                 <Suspense fallback={null}>
                   <WeeklyReport
                     theme={theme}
-                    tasks={tasks}
+                    tasks={homeTasks}
                     userProfile={userProfile}
                   />
                 </Suspense>
@@ -2066,7 +2152,7 @@ export default function App() {
                   {canSyncToFirestore ? 'Cloud Sync Active' : 'Local Only'}
                 </span>
                 <span className="font-mono opacity-60">
-                  {tasks.length} tasks · {currentUser?.uid?.substring(0, 8) || 'guest'}
+                  {homeTasks.length} tasks · {currentUser?.uid?.substring(0, 8) || 'guest'}
                 </span>
               </motion.div>
             </div>
