@@ -322,6 +322,23 @@ export function subscribeToUserCategories(userId: string, onUpdate: (cats: Categ
   }
 }
 
+// One-shot fetch (replaces onSnapshot to save quota)
+export async function fetchUserCategories(userId: string): Promise<Category[]> {
+  try {
+    const catsRef = collection(db, 'users', userId, 'categories');
+    const snapshot = await getDocs(catsRef);
+    if (snapshot.empty) return [];
+    const cats: Category[] = [];
+    snapshot.forEach((docSnap) => {
+      cats.push({ id: docSnap.id, ...docSnap.data() } as Category);
+    });
+    return cats;
+  } catch (err) {
+    console.warn('Firestore fetch categories note:', err);
+    return [];
+  }
+}
+
 export async function saveUserCategoryToFirestore(userId: string, cat: Category): Promise<void> {
   try {
     const catRef = doc(db, 'users', userId, 'categories', cat.id);
@@ -332,6 +349,22 @@ export async function saveUserCategoryToFirestore(userId: string, cat: Category)
 }
 
 // User App Notifications Firestore Sync
+export async function fetchUserNotifications(userId: string): Promise<AppNotification[]> {
+  try {
+    const notifsRef = collection(db, 'users', userId, 'notifications');
+    const q = query(notifsRef, orderBy('timestamp', 'desc'));
+    const snapshot = await getDocs(q);
+    const notifs: AppNotification[] = [];
+    snapshot.forEach((docSnap) => {
+      notifs.push({ id: docSnap.id, ...docSnap.data() } as AppNotification);
+    });
+    return notifs;
+  } catch (err) {
+    console.warn('Firestore fetch notifications note:', err);
+    return [];
+  }
+}
+
 export function subscribeToUserNotifications(userId: string, onUpdate: (notifs: AppNotification[]) => void) {
   try {
     const notifsRef = collection(db, 'users', userId, 'notifications');
@@ -395,6 +428,22 @@ export async function deleteSingleNotificationFromFirestore(userId: string, noti
 }
 
 // ==================== FITNESS SYNC ====================
+
+export async function fetchUserFitness(userId: string): Promise<FitnessEntry[]> {
+  try {
+    const fitnessRef = collection(db, 'users', userId, 'fitness');
+    const q = query(fitnessRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const entries: FitnessEntry[] = [];
+    snapshot.forEach((docSnap) => {
+      entries.push({ id: docSnap.id, ...docSnap.data() } as FitnessEntry);
+    });
+    return entries;
+  } catch (err) {
+    console.warn('Firestore fetch fitness note:', err);
+    return [];
+  }
+}
 
 export function subscribeToUserFitness(userId: string, onUpdate: (entries: FitnessEntry[]) => void) {
   try {
@@ -525,6 +574,20 @@ export async function saveUserProfileToFirestore(userId: string, profile: UserPr
   }
 }
 
+export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists() && docSnap.data().fitnessProfile) {
+      return docSnap.data().fitnessProfile as UserProfile;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Firestore fetch profile note:', err);
+    return null;
+  }
+}
+
 export function subscribeToUserProfile(userId: string, onUpdate: (profile: UserProfile | null) => void) {
   try {
     const userRef = doc(db, 'users', userId);
@@ -618,14 +681,32 @@ export async function deleteGroup(groupId: string): Promise<void> {
 }
 
 export function subscribeToUserGroups(userId: string, onUpdate: (groups: Group[]) => void) {
+  let migratedIds = new Set<string>();
   try {
     const q = query(collection(db, 'groups'), where('memberUids', 'array-contains', userId));
-    return onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, async (snapshot) => {
       const groups: Group[] = [];
       snapshot.forEach((d) => {
         const data = d.data() as Group;
         groups.push({ ...data, id: d.id });
       });
+
+      if (groups.length === 0 && migratedIds.size === 0) {
+        const allSnap = await getDocs(collection(db, 'groups'));
+        for (const d of allSnap.docs) {
+          const data = d.data() as Group;
+          if (data.members?.some(m => m.uid === userId)) {
+            groups.push({ ...data, id: d.id });
+            if (!migratedIds.has(d.id)) {
+              migratedIds.add(d.id);
+              updateDoc(doc(db, 'groups', d.id), {
+                memberUids: data.members.map(m => m.uid)
+              }).catch(() => {});
+            }
+          }
+        }
+      }
+
       onUpdate(groups);
     }, (err) => {
       console.warn('[Groups] Subscription error:', err);
@@ -634,25 +715,6 @@ export function subscribeToUserGroups(userId: string, onUpdate: (groups: Group[]
     console.warn('[Groups] Subscribe error:', err);
     onUpdate([]);
     return () => {};
-  }
-}
-
-// One-time migration: add memberUids to existing groups
-export async function migrateGroupsMemberUids(userId: string): Promise<void> {
-  try {
-    const q = query(collection(db, 'groups'));
-    const snap = await getDocs(q);
-    for (const d of snap.docs) {
-      const data = d.data() as Group;
-      if (!data.memberUids || data.memberUids.length === 0) {
-        const uids = data.members?.map(m => m.uid) || [];
-        if (uids.length > 0) {
-          await updateDoc(doc(db, 'groups', d.id), { memberUids: uids }).catch(() => {});
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[Groups] Migration error:', err);
   }
 }
 

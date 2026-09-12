@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { UserProfile } from '../types';
 import { getRankInfo, RANKS, getProgressToNextRank } from '../utils/fitness';
-import { subscribeToPublicLeaderboard, LeaderboardUser } from '../firebase';
+import { fetchPublicLeaderboard, LeaderboardUser } from '../firebase';
 import { Trophy, Zap, Target, TrendingUp, Users, Eye, EyeOff, Crown } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -33,11 +33,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   const isPublic = userProfile.leaderboardPublic ?? true;
 
   useEffect(() => {
-    setLoadingLeaderboard(false);
-    const unsub = subscribeToPublicLeaderboard((users) => {
+    setLoadingLeaderboard(true);
+    fetchPublicLeaderboard().then((users) => {
       setPublicUsers(users);
-    });
-    return () => { if (typeof unsub === 'function') unsub(); };
+      setLoadingLeaderboard(false);
+    }).catch(() => setLoadingLeaderboard(false));
   }, []);
 
   // Merge current user (always shown) with public users

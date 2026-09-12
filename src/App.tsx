@@ -72,9 +72,9 @@ import {
   deleteUserAccount,
   batchUpdateTasksOrderInFirestore,
   fetchUserTasks,
-  subscribeToUserCategories,
+  fetchUserCategories,
   saveUserCategoryToFirestore,
-  subscribeToUserNotifications,
+  fetchUserNotifications,
   saveUserNotificationToFirestore,
   markAllNotificationsReadInFirestore,
   clearAllNotificationsInFirestore,
@@ -82,15 +82,14 @@ import {
   syncUserProfile,
   getLocalAuthSession,
   resolveGoogleRedirectResult,
-  subscribeToUserFitness,
+  fetchUserFitness,
   saveFitnessEntryToFirestore,
   saveUserProfileToFirestore,
-  subscribeToUserProfile,
+  fetchUserProfile,
   saveLocalAuthSession,
   clearLocalAuthSession,
   subscribeToUserGroups,
   subscribeToGroupTasks,
-  migrateGroupsMemberUids,
 } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
@@ -318,7 +317,6 @@ export default function App() {
           setUserEmail(user.email);
         }
         syncUserProfile(authUser).catch(console.error);
-        migrateGroupsMemberUids(authUser.uid).catch(console.error);
       } else {
         const localSession = getLocalAuthSession();
         if (localSession) {
@@ -398,82 +396,54 @@ export default function App() {
       }
     );
 
-    const unsubscribeCats = subscribeToUserCategories(
-      currentUser.uid,
-      (userCats) => {
-        if (userCats) {
-          setCategories(userCats);
-        }
-      }
-    );
-
-    const unsubscribeNotifs = subscribeToUserNotifications(
-      currentUser.uid,
-      (userNotifs) => {
-        if (userNotifs) {
-          setAppNotifications(userNotifs);
-        }
-      }
-    );
-
-    // Subscribe to fitness entries
-    const unsubscribeFitness = subscribeToUserFitness(
-      currentUser.uid,
-      (userFitness) => {
+    // One-shot fetch for non-critical data (saves Firestore quota)
+    const loadNonCritical = async () => {
+      const [cats, notifs, fitness, profile] = await Promise.all([
+        fetchUserCategories(currentUser!.uid),
+        fetchUserNotifications(currentUser!.uid),
+        fetchUserFitness(currentUser!.uid),
+        fetchUserProfile(currentUser!.uid),
+      ]);
+      if (cats.length > 0) setCategories(cats);
+      if (notifs.length > 0) setAppNotifications(notifs);
+      if (fitness.length > 0) {
         setFitnessEntries(prev => {
           const pending = pendingFitnessWritesRef.current;
           const deletes = pendingFitnessDeletesRef.current;
-          if (pending.size === 0 && deletes.size === 0) {
-            // No pending writes — use Firestore data directly
-            // But also include any local-only entries (created while offline)
-            const firestoreIds = new Set(userFitness.map(e => e.id));
-            const localOnly = prev.filter(e => !firestoreIds.has(e.id));
-            const merged = [...userFitness, ...localOnly];
-            storage.saveFitnessEntries(merged, currentUser.uid);
-            setLastSyncTime(new Date().toISOString());
-            return merged;
-          }
-          // Start with Firestore data, excluding any pending deletes
-          const firestoreMap = new Map(userFitness.filter(e => !deletes.has(e.id)).map(e => [e.id, e]));
-          // Overlay pending writes (new + edited entries)
+          const firestoreIds = new Set(fitness.map(e => e.id));
+          const localOnly = prev.filter(e => !firestoreIds.has(e.id) && !deletes.has(e.id));
+          const firestoreMap = new Map(fitness.filter(e => !deletes.has(e.id)).map(e => [e.id, e]));
           for (const [id, localEntry] of pending) {
             firestoreMap.set(id, localEntry);
           }
-          const merged = Array.from(firestoreMap.values());
-          storage.saveFitnessEntries(merged, currentUser.uid);
-          setLastSyncTime(new Date().toISOString());
+          const merged = [...firestoreMap.values(), ...localOnly];
+          storage.saveFitnessEntries(merged, currentUser!.uid);
           return merged;
         });
       }
-    );
-
-    // Subscribe to user profile
-    const unsubscribeProfile = subscribeToUserProfile(
-      currentUser.uid,
-      (remoteProfile) => {
-        if (remoteProfile) {
-          setUserProfile(prev => {
-            // Deep merge: keep local muscleRanks if remote doesn't have them
-            const merged = { ...prev, ...remoteProfile };
-            if (remoteProfile.fitnessStats?.muscleRanks && Object.keys(remoteProfile.fitnessStats.muscleRanks).length > 0) {
-              merged.fitnessStats = { ...prev.fitnessStats, ...remoteProfile.fitnessStats };
-            }
-            return merged;
-          });
-        }
+      if (profile) {
+        setUserProfile(prev => {
+          const merged = { ...prev, ...profile };
+          if (profile.fitnessStats?.muscleRanks && Object.keys(profile.fitnessStats.muscleRanks).length > 0) {
+            merged.fitnessStats = { ...prev.fitnessStats, ...profile.fitnessStats };
+          }
+          return merged;
+        });
       }
-    );
+    };
+
+    loadNonCritical().catch(console.error);
+
+    // Refresh non-critical data every 5 minutes
+    const nonCriticalInterval = setInterval(loadNonCritical, 300000);
 
     // Subscribe to user groups
     const unsubscribeGroups = subscribeToUserGroups(currentUser.uid, setUserGroups);
 
     return () => {
       unsubscribeTasks();
-      unsubscribeCats();
-      unsubscribeNotifs();
-      unsubscribeFitness();
-      unsubscribeProfile();
       unsubscribeGroups();
+      clearInterval(nonCriticalInterval);
     };
   }, [currentUser?.uid]);
 
@@ -550,7 +520,7 @@ export default function App() {
           const deletes = pendingDeletesRef.current;
           const firestoreIds = new Set(firestoreTasks.map(t => t.id));
           const localOnly = prev.filter(t => !firestoreIds.has(t.id) && !deletes.has(t.id));
-          const firestoreMap = new Map(firestoreTasks.map(t => [t.id, t]));
+          const firestoreMap = new Map(firestoreTasks.filter(t => !deletes.has(t.id)).map(t => [t.id, t]));
           // Overlay pending writes (unconfirmed local changes)
           for (const [id, localTask] of pending) {
             firestoreMap.set(id, localTask);
@@ -570,8 +540,8 @@ export default function App() {
 
     // Initial poll after 5 seconds
     const initialTimeout = setTimeout(poll, 5000);
-    // Then every 15 seconds
-    const interval = setInterval(poll, 15000);
+    // Then every 5 minutes (reduced from 60s to save Firestore quota)
+    const interval = setInterval(poll, 300000);
     return () => {
       clearTimeout(initialTimeout);
       clearInterval(interval);

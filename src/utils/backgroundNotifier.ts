@@ -132,18 +132,8 @@ export function startBackgroundPoller(uid: string): void {
     console.error('[BackgroundNotifier] Snapshot error:', err);
   });
 
-  // Also poll periodically as backup (in case real-time misses events)
-  pollInterval = setInterval(async () => {
-    try {
-      const snapshot = await getDocs(q);
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data() as Omit<PushRequest, 'id'>;
-        processPushRequest({ id: docSnap.id, ...data });
-      });
-    } catch (err) {
-      console.error('[BackgroundNotifier] Poll error:', err);
-    }
-  }, POLL_INTERVAL_MS);
+  // Polling disabled to save Firestore quota on free tier
+  // onSnapshot listener above handles real-time updates
 }
 
 // Stop the background poller
