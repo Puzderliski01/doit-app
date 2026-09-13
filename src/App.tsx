@@ -30,6 +30,8 @@ import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from 
 import { setLanguage, t } from './i18n';
 import { initPushNotifications, requestPermission as requestPushPermission, showLocalNotification, isPushSupported } from './utils/pushNotifications';
 import { startBackgroundPoller, stopBackgroundPoller, requestPushToFirestore } from './utils/backgroundNotifier';
+import { exportTasksPDF, exportFitnessPDF } from './utils/pdfExport';
+import { syncAllTasks } from './utils/calendarSync';
 
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -1236,6 +1238,32 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const [calendarSyncing, setCalendarSyncing] = useState(false);
+
+  const handleExportTasksPDF = () => {
+    haptic.mediumClick();
+    exportTasksPDF(mergedTasks, categories);
+  };
+
+  const handleExportFitnessPDF = () => {
+    haptic.mediumClick();
+    exportFitnessPDF(fitnessEntries, userProfile);
+  };
+
+  const handleSyncToCalendar = async () => {
+    if (!currentUser) return;
+    setCalendarSyncing(true);
+    try {
+      const pendingTasks = mergedTasks.filter(t => !t.completed && t.dueDate);
+      const result = await syncAllTasks(pendingTasks, categories, new Map());
+      alert(`Calendar sync complete!\nSynced: ${result.synced}\nErrors: ${result.errors}`);
+    } catch (err: any) {
+      alert(`Calendar sync failed: ${err.message}`);
+    } finally {
+      setCalendarSyncing(false);
+    }
+  };
+
   const handleImportData = async (backupData: any) => {
     if (!currentUser?.uid) { alert('Please sign in first.'); return; }
     const uid = currentUser.uid;
@@ -2415,6 +2443,10 @@ export default function App() {
                 lastSyncTime={lastSyncTime}
                 onOpenDocs={() => setIsDocsModalOpen(true)}
                 onExportData={handleExportData}
+                onExportTasksPDF={handleExportTasksPDF}
+                onExportFitnessPDF={handleExportFitnessPDF}
+                onSyncToCalendar={handleSyncToCalendar}
+                calendarSyncing={calendarSyncing}
                 onImportData={handleImportData}
                 onClearData={handleClearData}
                 onDeleteAccount={handleDeleteAccount}

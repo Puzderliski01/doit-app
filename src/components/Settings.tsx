@@ -7,7 +7,7 @@ import {
   Settings as SettingsIcon, Moon, Sun, Volume2, VolumeX, Vibrate, VibrateOff,
   Bell, BellOff, Mail, Download, Trash2, ChevronRight, User, Palette,
   Dumbbell, Cloud, CloudOff, Shield, Info, FileText, LogOut, Eye, EyeOff,
-  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send, Upload, Users
+  Smartphone, Globe, Database, RefreshCw, AlertTriangle, Check, Send, Upload, Users, Calendar
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,6 +28,10 @@ interface SettingsProps {
   lastSyncTime: string | null;
   onOpenDocs: () => void;
   onExportData: () => void;
+  onExportTasksPDF: () => void;
+  onExportFitnessPDF: () => void;
+  onSyncToCalendar: () => void;
+  calendarSyncing: boolean;
   onImportData: (data: unknown) => void;
   onClearData: () => void;
   onDeleteAccount: () => void;
@@ -49,6 +53,10 @@ export const Settings: React.FC<SettingsProps> = ({
   lastSyncTime,
   onOpenDocs,
   onExportData,
+  onExportTasksPDF,
+  onExportFitnessPDF,
+  onSyncToCalendar,
+  calendarSyncing,
   onImportData,
   onClearData,
   onDeleteAccount,
@@ -573,6 +581,24 @@ export const Settings: React.FC<SettingsProps> = ({
           <Download className="w-4 h-4" />
           {t('settings.exportData')}
         </button>
+        <button
+          onClick={() => { haptic.mediumClick(); onExportTasksPDF(); }}
+          className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
+            isLight ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'border-orange-500/20 text-orange-400 hover:bg-orange-500/10'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          {t('settings.exportTasksPDF')}
+        </button>
+        <button
+          onClick={() => { haptic.mediumClick(); onExportFitnessPDF(); }}
+          className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
+            isLight ? 'border-rose-200 text-rose-600 hover:bg-rose-50' : 'border-rose-500/20 text-rose-400 hover:bg-rose-500/10'
+          }`}
+        >
+          <Dumbbell className="w-4 h-4" />
+          {t('settings.exportFitnessPDF')}
+        </button>
         <label className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer ${
           isLight ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50' : 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
         }`}>
@@ -636,6 +662,23 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           </div>
         )}
+      </Section>
+
+      {/* Integrations */}
+      <Section id="integrations" title={t('settings.integrations')} icon={<Cloud className="w-4 h-4" />}>
+        <button
+          onClick={() => { haptic.mediumClick(); onSyncToCalendar(); }}
+          disabled={calendarSyncing}
+          className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+            isLight ? 'border-blue-200 text-blue-600 hover:bg-blue-50' : 'border-blue-500/20 text-blue-400 hover:bg-blue-500/10'
+          }`}
+        >
+          {calendarSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+          {calendarSyncing ? t('settings.calendarSyncing') : t('settings.syncToCalendar')}
+        </button>
+        <p className={`text-[10px] px-1 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+          {t('settings.calendarSyncDesc')}
+        </p>
       </Section>
 
       {/* Docs */}

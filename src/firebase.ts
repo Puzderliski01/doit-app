@@ -45,6 +45,7 @@ try {
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 
 // Initialize Firestore with specific database ID if present
 export const db = getFirestore(app);
