@@ -5,20 +5,20 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#050508",
-  "theme_color": "#f59e0b",
+  "theme_color": "#3da578",
   "orientation": "portrait-primary",
   "categories": ["productivity", "business"],
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/logo1.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/logo1.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]
