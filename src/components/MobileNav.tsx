@@ -25,11 +25,18 @@ const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
 export const MobileNav: React.FC<MobileNavProps> = ({
   currentView,
   onViewChange,
+  theme,
 }) => {
+  const isLight = theme === 'light';
+
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-bottom">
       <div className="mx-3 mb-3">
-        <div className="flex items-center justify-around bg-white rounded-[20px] px-2 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.04)] border border-black/[0.04]">
+        <div className={`flex items-center justify-around rounded-[20px] px-2 py-2 transition-all ${
+          isLight
+            ? 'bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.04)] border border-black/[0.04]'
+            : 'bg-[#111113]/90 backdrop-blur-3xl border-t border-white/[0.1] shadow-[0_-2px_16px_rgba(0,0,0,0.4)]'
+        }`}>
           {navItems.map((item) => {
             const isActive = currentView === item.id;
             return (
@@ -41,8 +48,12 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 }}
                 className={`flex flex-col items-center justify-center gap-1 min-w-[60px] h-12 rounded-[14px] transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-mint-50 text-mint-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'
-                    : 'text-[#8a96a8] hover:text-[#5a6678] hover:bg-cream-100'
+                    ? isLight
+                      ? 'bg-mint-50 text-mint-600'
+                      : 'text-mint-400 bg-mint-500/15 shadow-[0_0_12px_rgba(61,165,120,0.2)]'
+                    : isLight
+                      ? 'text-[#8a96a8] hover:text-[#5a6678] hover:bg-cream-100'
+                      : 'text-white/60 hover:text-white/90 hover:bg-white/[0.06]'
                 }`}
               >
                 <div className="relative">

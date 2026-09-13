@@ -36,16 +36,25 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
+  }
+
+  :root.light, html.light, body.light {
     color-scheme: light;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #faf8f5;
-    color: #1a2332;
+    background-color: #050508;
+    color: #f4f4f5;
     transition: background-color 0.2s ease, color 0.2s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  body.light {
+    background-color: #faf8f5;
+    color: #1a2332;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
@@ -68,49 +77,20 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
-}
-
-/* New Design System - Mint/Cream/Soft */
-.app-soft-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.app-soft-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.app-soft-card-interactive:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-}
-
-.app-mint-gradient {
-  background: linear-gradient(135deg, #8dd5be 0%, #a8e6c8 50%, #d1f2e1 100%);
-}
-
-.app-peach-gradient {
-  background: linear-gradient(135deg, #f59060 0%, #ffb088 100%);
-}
-
-.app-warm-gradient {
-  background: linear-gradient(135deg, #faf8f5 0%, #fdf8ef 50%, #fff5ef 100%);
-}
-
-.app-section-title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #6b7a8d;
 }
 
 /* Progress Ring */
@@ -118,9 +98,8 @@
   stroke: #eef2f6;
 }
 
-.progress-ring-fill {
-  stroke: url(#mint-progress-grad);
-  transition: stroke-dashoffset 1s ease-out;
+.dark .progress-ring-bg {
+  stroke: rgba(255, 255, 255, 0.06);
 }
 
 /* Custom checkbox ripple */
