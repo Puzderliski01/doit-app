@@ -2,10 +2,11 @@ import React from 'react';
 import { ViewMode } from '../types';
 import { t } from '../i18n';
 import { 
-  CheckSquare, 
-  Dumbbell,
-  Settings,
   Home,
+  UtensilsCrossed,
+  Plus,
+  BarChart3,
+  Trophy,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -16,10 +17,10 @@ interface MobileNavProps {
 }
 
 const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: t('nav.home'), icon: <Home className="w-5 h-5" /> },
-  { id: 'tasks', label: t('nav.tasks'), icon: <CheckSquare className="w-5 h-5" /> },
-  { id: 'fitness', label: t('nav.fitness'), icon: <Dumbbell className="w-5 h-5" /> },
-  { id: 'settings', label: t('nav.settings'), icon: <Settings className="w-5 h-5" /> },
+  { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" /> },
+  { id: 'meal', label: 'Meal', icon: <UtensilsCrossed className="w-5 h-5" /> },
+  { id: 'fitness', label: 'Statistics', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: 'rewards', label: 'Rewards', icon: <Trophy className="w-5 h-5" /> },
 ];
 
 export const MobileNav: React.FC<MobileNavProps> = ({
@@ -31,13 +32,13 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-bottom">
-      <div className="mx-3 mb-3">
-        <div className={`flex items-center justify-around rounded-[20px] px-2 py-2 transition-all ${
+      <div className="px-4 pb-3">
+        <div className={`flex items-center justify-between rounded-[24px] px-3 py-2 transition-all ${
           isLight
-            ? 'bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.04)] border border-black/[0.04]'
-            : 'bg-[#111113]/90 backdrop-blur-3xl border-t border-white/[0.1] shadow-[0_-2px_16px_rgba(0,0,0,0.4)]'
+            ? 'bg-white shadow-[0_4px_24px_rgba(0,0,0,0.1),0_1px_4px_rgba(0,0,0,0.06)] border border-black/[0.04]'
+            : 'bg-[#1a1a1a]/95 backdrop-blur-3xl border border-white/[0.06] shadow-[0_-2px_20px_rgba(0,0,0,0.5)]'
         }`}>
-          {navItems.map((item) => {
+          {navItems.slice(0, 2).map((item) => {
             const isActive = currentView === item.id;
             return (
               <button
@@ -46,20 +47,60 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                   haptic.lightTap();
                   onViewChange(item.id);
                 }}
-                className={`flex flex-col items-center justify-center gap-1 min-w-[60px] h-12 rounded-[14px] transition-all duration-200 cursor-pointer ${
+                className={`flex flex-col items-center justify-center gap-1 min-w-[56px] h-12 rounded-[14px] transition-all duration-200 cursor-pointer ${
                   isActive
                     ? isLight
-                      ? 'bg-mint-50 text-mint-600'
-                      : 'text-mint-400 bg-mint-500/15 shadow-[0_0_12px_rgba(61,165,120,0.2)]'
+                      ? 'bg-neon-400/15 text-neon-600'
+                      : 'text-neon-400 bg-neon-400/10'
                     : isLight
-                      ? 'text-[#8a96a8] hover:text-[#5a6678] hover:bg-cream-100'
-                      : 'text-white/60 hover:text-white/90 hover:bg-white/[0.06]'
+                      ? 'text-[#8a8a8a] hover:text-[#5a5a5a]'
+                      : 'text-white/40 hover:text-white/70'
                 }`}
               >
-                <div className="relative">
-                  {item.icon}
-                </div>
-                <span className={`text-[10px] leading-tight ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {item.icon}
+                <span className={`text-[9px] leading-tight ${isActive ? 'font-bold' : 'font-medium'}`}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* Center + Button */}
+          <button
+            onClick={() => {
+              haptic.mediumClick();
+              onViewChange('browse');
+            }}
+            className={`flex items-center justify-center w-14 h-14 rounded-full -mt-5 transition-all duration-200 cursor-pointer ${
+              isLight
+                ? 'bg-neon-400 text-[#0a0a0a] shadow-[0_4px_20px_rgba(200,255,0,0.3)]'
+                : 'bg-neon-400 text-[#0a0a0a] shadow-[0_4px_20px_rgba(200,255,0,0.3)]'
+            }`}
+          >
+            <Plus className="w-7 h-7" strokeWidth={2.5} />
+          </button>
+
+          {navItems.slice(2).map((item) => {
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  haptic.lightTap();
+                  onViewChange(item.id);
+                }}
+                className={`flex flex-col items-center justify-center gap-1 min-w-[56px] h-12 rounded-[14px] transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? isLight
+                      ? 'bg-neon-400/15 text-neon-600'
+                      : 'text-neon-400 bg-neon-400/10'
+                    : isLight
+                      ? 'text-[#8a8a8a] hover:text-[#5a5a5a]'
+                      : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                {item.icon}
+                <span className={`text-[9px] leading-tight ${isActive ? 'font-bold' : 'font-medium'}`}>
                   {item.label}
                 </span>
               </button>

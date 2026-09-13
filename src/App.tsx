@@ -40,6 +40,13 @@ import { QuickAddBar } from './components/QuickAddBar';
 import { NotificationToastContainer } from './components/NotificationToastContainer';
 import { LoginPage } from './components/LoginPage';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { BrowseScreen } from './components/BrowseScreen';
+import { HomeScreen } from './components/HomeScreen';
+import { GetReadyScreen } from './components/GetReadyScreen';
+import { CongratulationScreen } from './components/CongratulationScreen';
+import { WorkoutDetail } from './components/WorkoutDetail';
+import { ExerciseInProgress } from './components/ExerciseInProgress';
+import { TrainerProfile } from './components/TrainerProfile';
 
 // Lazy load heavy components that aren't immediately visible
 const TaskFormModal = lazy(() => import('./components/TaskFormModal').then(m => ({ default: m.TaskFormModal })));
@@ -175,6 +182,16 @@ export default function App() {
   // Sub-views within grouped views
   const [taskSubView, setTaskSubView] = useState<'list' | 'matrix' | 'groups'>('list');
   const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer' | 'nutrition'>('dashboard');
+  
+  // Sub-screen navigation for fitness app screens
+  const [showGetReady, setShowGetReady] = useState(false);
+  const [showCongratulation, setShowCongratulation] = useState(false);
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
+  const [showWorkoutDetail, setShowWorkoutDetail] = useState(false);
+  const [showExerciseInProgress, setShowExerciseInProgress] = useState(false);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
+  const [showTrainerProfile, setShowTrainerProfile] = useState(false);
 
   // Persist current view
   useEffect(() => {
@@ -1331,12 +1348,12 @@ export default function App() {
   // If restoring existing device session, show sleek obsidian loader
   if (authLoading && !currentUser) {
     return (
-      <div className="min-h-screen bg-[#050508] text-white flex flex-col items-center justify-center p-6 selection:bg-orange-500/30">
-        <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-orange-400 mb-5 shadow-[0_0_35px_rgba(245,158,11,0.15)] animate-pulse">
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 selection:bg-neon-400/30">
+        <div className="w-16 h-16 rounded-3xl bg-neon-400/10 border border-neon-400/20 flex items-center justify-center text-neon-400 mb-5 shadow-[0_0_35px_rgba(200,255,0,0.15)] animate-pulse">
           <Sparkles className="w-8 h-8" />
         </div>
-        <div className="text-sm font-semibold tracking-tight text-white/90">Restoring Obsidian Workspace...</div>
-        <div className="text-xs text-white/40 mt-1">Reconnecting secure device session</div>
+        <div className="text-sm font-semibold tracking-tight text-white/90">Loading...</div>
+        <div className="text-xs text-white/40 mt-1">Preparing your workspace</div>
       </div>
     );
   }
@@ -1367,8 +1384,8 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen text-white selection:bg-orange-500/30 selection:text-white transition-colors duration-200 relative overflow-x-hidden ${
-      theme === 'light' ? 'bg-[#f8fafc]' : 'bg-[#050508]'
+    <div className={`min-h-screen text-white selection:bg-neon-400/30 selection:text-white transition-colors duration-200 relative overflow-x-hidden ${
+      theme === 'light' ? 'bg-white' : 'bg-[#0a0a0a]'
     }`}>
 
       {/* Offline Indicator */}
@@ -1377,8 +1394,8 @@ export default function App() {
       {/* Background ambient lighting */}
       {theme === 'dark' && (
         <>
-          <div className="fixed top-0 left-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
-          <div className="fixed bottom-10 right-1/4 w-[30rem] h-[30rem] bg-amber-500/5 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="fixed top-0 left-1/4 w-96 h-96 bg-neon-400/5 rounded-full blur-3xl pointer-events-none -z-10" />
+          <div className="fixed bottom-10 right-1/4 w-[30rem] h-[30rem] bg-neon-400/3 rounded-full blur-3xl pointer-events-none -z-10" />
         </>
       )}
 
@@ -1457,701 +1474,72 @@ export default function App() {
         {/* Main Content Workspace */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 mobile-nav-spacer">
           
-          {/* Sync Issue Alert - visible on ALL views when not syncing */}
-          {currentUser && !canSyncToFirestore && tasks.length > 0 && (
-            <div className={`mb-4 p-3 rounded-2xl border flex items-center gap-3 ${
-              isLight ? 'bg-amber-50 border-amber-200/60' : 'bg-amber-500/10 border-amber-500/20'
-            }`}>
-              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className={`text-xs font-bold ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
-                  Tasks are stored locally only ({tasks.length} tasks)
-                </p>
-                <p className={`text-[10px] ${isLight ? 'text-amber-500' : 'text-amber-300/60'}`}>
-                  Sign in to enable cloud sync across devices
-                </p>
-              </div>
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer ${
-                  isLight ? 'bg-amber-500 text-white' : 'bg-amber-500 text-white'
-                }`}
-              >
-                Sign In
-              </button>
-            </div>
+              {/* HOME VIEW - New Fitness App Design */}
+          {currentView === 'home' && !showWorkoutDetail && !showTrainerProfile && (
+            <HomeScreen
+              theme={theme}
+              userName={currentUser?.displayName || 'Lester'}
+              onSelectWorkout={(id) => {
+                setSelectedWorkoutId(id);
+                setShowWorkoutDetail(true);
+              }}
+            />
           )}
 
-              {/* HOME VIEW - Redesigned Dashboard */}
-          {currentView === 'home' && (
-            <div className="space-y-5">
-              {/* 1. Hero Greeting - Clean warm gradient */}
-              <div className={`relative overflow-hidden rounded-[24px] p-6 sm:p-7 border ${
-                isLight
-                  ? 'bg-white border-black/[0.04] shadow-[0_2px_16px_rgba(0,0,0,0.04)]'
-                  : 'bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-mint-500/[0.06] border-white/[0.08] shadow-[0_8px_40px_rgba(0,0,0,0.3)]'
-              }`}>
-                {/* Soft gradient orbs */}
-                <div className={`absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
-                  isLight ? 'bg-gradient-to-br from-mint-200/40 to-mint-100/20' : 'bg-gradient-to-br from-mint-500/15 to-mint-500/10'
-                }`} />
-                <div className={`absolute -bottom-12 -left-12 w-32 h-32 rounded-full blur-3xl pointer-events-none ${
-                  isLight ? 'bg-gradient-to-tr from-peach-200/30 to-transparent' : 'bg-gradient-to-tr from-peach-500/10 to-transparent'
-                }`} />
-                
-                <div className="relative flex items-center justify-between gap-6">
-                  <div className="flex-1 min-w-0">
-                    <motion.div 
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={`text-[11px] font-bold uppercase tracking-[0.2em] mb-1.5 ${
-                        isLight ? 'text-mint-500' : 'text-mint-400'
-                      }`}
-                    >
-                      {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}
-                    </motion.div>
-                    <motion.h1 
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 }}
-                      className={`text-[22px] sm:text-[28px] font-bold tracking-tight ${isLight ? 'text-[#1a2332]' : 'text-white'}`}
-                    >
-                      {currentUser?.displayName || 'Commander'} <span className="inline-block" role="img" aria-label="wave">👋</span>
-                    </motion.h1>
-                    <motion.p 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className={`text-[13px] mt-1 ${isLight ? 'text-[#8a96a8]' : 'text-white/50'}`}
-                    >
-                      Ready to crush your goals?
-                    </motion.p>
-                    {/* Streak + pending info */}
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.15 }}
-                      className="flex items-center gap-2.5 mt-3"
-                    >
-                      {(userProfile.fitnessStats?.currentStreak || 0) > 0 && (
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                          isLight ? 'bg-peach-50 text-peach-600 border border-peach-200' : 'bg-peach-500/10 text-peach-400 border border-peach-500/20'
-                        }`}>
-                          🔥 {userProfile.fitnessStats.currentStreak} day streak
-                        </span>
-                      )}
-                      {pendingCount > 0 ? (
-                        <span className={`text-[11px] font-medium ${isLight ? 'text-[#8a96a8]' : 'text-white/40'}`}>
-                          {pendingCount} pending · {overdueCount > 0 && <span className="text-red-500 font-semibold">{overdueCount} overdue</span>}
-                        </span>
-                      ) : (
-                        <span className={`text-[11px] font-medium ${isLight ? 'text-mint-600' : 'text-mint-400'}`}>
-                          ✨ All caught up!
-                        </span>
-                      )}
-                    </motion.div>
-                  </div>
-                  
-                  {/* Progress Ring - mint gradient */}
-                  <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                    className="relative shrink-0"
-                  >
-                    <svg width="100" height="100" viewBox="0 0 100 100" className="relative">
-                      <defs>
-                        <linearGradient id="home-progress-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#8dd5be" />
-                          <stop offset="50%" stopColor="#5eb991" />
-                          <stop offset="100%" stopColor="#3da578" />
-                        </linearGradient>
-                      </defs>
-                      <circle cx="50" cy="50" r="40" fill="none" strokeWidth="7" className="progress-ring-bg" />
-                      <circle
-                        cx="50" cy="50" r="40" fill="none" strokeWidth="7" strokeLinecap="round"
-                        stroke="url(#home-progress-grad)"
-                        className="rotate-[-90deg] origin-center transition-all duration-1000 ease-out"
-                        strokeDasharray={`${2 * Math.PI * 40}`}
-                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - (homeTasks.length > 0 ? homeTasks.filter(t => t.completed).length / homeTasks.length : 0))}`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={`text-[22px] font-bold ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>
-                        {homeTasks.length > 0 ? Math.round((homeTasks.filter(t => t.completed).length / homeTasks.length) * 100) : 0}%
-                      </span>
-                      <span className={`text-[9px] font-semibold uppercase tracking-wider ${isLight ? 'text-[#b0bcc8]' : 'text-white/40'}`}>
-                        Done
-                      </span>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
+          {/* BROWSE VIEW - Workout/Trainer Cards */}
+          {currentView === 'browse' && !showWorkoutDetail && !showTrainerProfile && (
+            <BrowseScreen
+              theme={theme}
+              onSelectWorkout={(id) => {
+                setSelectedWorkoutId(id);
+                setShowWorkoutDetail(true);
+              }}
+              onSelectTrainer={(id) => {
+                setSelectedTrainerId(id);
+                setShowTrainerProfile(true);
+              }}
+            />
+          )}
 
-              {/* 3. Quick Capture Bar - instantly add task from home */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-              >
-                <QuickCaptureBar
-                  theme={theme}
-                  categories={categories}
-                  isLight={isLight}
-                  onAddTask={(title, categoryId, priority) => {
-                    const newTask: Task = {
-                      id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-                      title,
-                      description: '',
-                      completed: false,
-                      priority: priority as Task['priority'],
-                      categoryId: categoryId || categories[0]?.id || 'cat-default',
-                      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-                      estimatedMinutes: 30,
-                      recurring: { type: 'none' },
-                      subtasks: [],
-                      tags: [],
-                      reminderEmail: userEmail,
-                      reminderMinutesBefore: 30,
-                      reminderSent: false,
-                      isImportant: priority === 'urgent' || priority === 'high',
-                      isUrgent: priority === 'urgent',
-                      createdAt: new Date().toISOString(),
-                      order: 0
-                    };
-                    setTasks(prev => [newTask, ...prev]);
-                    if (canSyncToFirestore && currentUser?.uid && !(currentUser as any).isGuest) {
-                      pendingWritesRef.current.set(newTask.id, newTask);
-                      saveUserTaskToFirestore(currentUser.uid, newTask)
-                        .then(() => { pendingWritesRef.current.delete(newTask.id); })
-                        .catch(err => { console.error('[QuickCapture] Firestore save failed:', err); });
-                    }
-                  }}
-                />
-              </motion.div>
+          {/* WORKOUT DETAIL VIEW */}
+          {showWorkoutDetail && selectedWorkoutId && (
+            <WorkoutDetail
+              theme={theme}
+              workoutId={selectedWorkoutId}
+              onBack={() => {
+                setShowWorkoutDetail(false);
+                setSelectedWorkoutId(null);
+              }}
+              onStartWorkout={() => {
+                setShowWorkoutDetail(false);
+                setShowGetReady(true);
+                setTimeout(() => {
+                  setShowGetReady(false);
+                  setShowExerciseInProgress(true);
+                  setCurrentExerciseIndex(0);
+                }, 2000);
+              }}
+              onSelectTrainer={(id) => {
+                setSelectedTrainerId(id);
+                setShowTrainerProfile(true);
+              }}
+            />
+          )}
 
-              {/* 4. Stats Grid - clean soft cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: t('home.pendingTasks'), value: pendingCount, icon: <Clock className="w-4 h-4" />, colorLight: 'text-[#5a8af2]', bgLight: 'bg-[#eef4ff]', borderLight: 'border-[#d8e6ff]', colorDark: 'text-blue-400', bgDark: 'bg-blue-500/10', borderDark: 'border-blue-500/20' },
-                  { label: t('home.dueToday'), value: todayCount, icon: <Zap className="w-4 h-4" />, colorLight: 'text-peach-500', bgLight: 'bg-peach-50', borderLight: 'border-peach-200', colorDark: 'text-peach-400', bgDark: 'bg-peach-500/10', borderDark: 'border-peach-500/20' },
-                  { label: t('home.overdue'), value: overdueCount, icon: <Flame className="w-4 h-4" />, colorLight: 'text-red-500', bgLight: 'bg-red-50', borderLight: 'border-red-200', colorDark: 'text-red-400', bgDark: 'bg-red-500/10', borderDark: 'border-red-500/20' },
-                  { label: t('home.completed'), value: homeTasks.filter(t => t.completed).length, icon: <Target className="w-4 h-4" />, colorLight: 'text-mint-600', bgLight: 'bg-mint-50', borderLight: 'border-mint-200', colorDark: 'text-mint-400', bgDark: 'bg-mint-500/10', borderDark: 'border-mint-500/20' },
-                ].map((stat, i) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.06, duration: 0.4 }}
-                    className={`relative overflow-hidden rounded-[16px] p-4 border transition-all duration-200 hover:shadow-md ${
-                      isLight
-                        ? `${stat.bgLight} ${stat.borderLight}`
-                        : `${stat.bgDark} ${stat.borderDark}`
-                    }`}
-                  >
-                    <div className={`flex items-center gap-1.5 mb-2 ${isLight ? stat.colorLight : stat.colorDark}`}>
-                      {stat.icon}
-                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">{stat.label}</span>
-                    </div>
-                    <p className={`text-[26px] font-bold tracking-tight ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>
-                      {stat.value}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* 5. Quick Actions - clean pill buttons */}
-              <div className="grid grid-cols-3 gap-3">
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                  onClick={() => { haptic.mediumClick(); setCurrentView('tasks'); }}
-                  className={`group relative overflow-hidden p-4 rounded-[18px] border text-left transition-all duration-200 cursor-pointer hover:shadow-md ${
-                    isLight ? 'bg-white border-black/[0.04]' : 'bg-white/[0.06] border-white/[0.08]'
-                  }`}
-                >
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-mint-500 shadow-[0_4px_12px_rgba(61,165,120,0.25)]">
-                      <CheckSquare className="w-5 h-5 text-white" />
-                    </div>
-                    <p className={`text-[13px] font-bold ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>{t('home.viewTasks')}</p>
-                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-[#8a96a8]' : 'text-white/40'}`}>{homeTasks.length} total</p>
-                  </div>
-                </motion.button>
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.45 }}
-                  onClick={() => { haptic.mediumClick(); setCurrentView('fitness'); }}
-                  className={`group relative overflow-hidden p-4 rounded-[18px] border text-left transition-all duration-200 cursor-pointer hover:shadow-md ${
-                    isLight ? 'bg-white border-black/[0.04]' : 'bg-white/[0.06] border-white/[0.08]'
-                  }`}
-                >
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-peach-400 shadow-[0_4px_12px_rgba(245,144,96,0.25)]">
-                      <Dumbbell className="w-5 h-5 text-white" />
-                    </div>
-                    <p className={`text-[13px] font-bold ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>{t('home.fitness')}</p>
-                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-[#8a96a8]' : 'text-white/40'}`}>{fitnessEntries.length} logged</p>
-                  </div>
-                </motion.button>
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  onClick={() => { haptic.mediumClick(); setEditingTask(null); setIsTaskModalOpen(true); }}
-                  className={`group relative overflow-hidden p-4 rounded-[18px] border text-left transition-all duration-200 cursor-pointer hover:shadow-md ${
-                    isLight ? 'bg-white border-black/[0.04]' : 'bg-white/[0.06] border-white/[0.08]'
-                  }`}
-                >
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-gradient-to-br from-mint-400 to-peach-400 shadow-[0_4px_12px_rgba(94,185,145,0.25)]">
-                      <Plus className="w-5 h-5 text-white" />
-                    </div>
-                    <p className={`text-[13px] font-bold ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>New Task</p>
-                    <p className={`text-[11px] mt-0.5 ${isLight ? 'text-[#8a96a8]' : 'text-white/40'}`}>Add one</p>
-                  </div>
-                </motion.button>
-              </div>
-
-              {/* Today's Focus - most important task */}
-              {homeTasks.filter(t => !t.completed).length > 0 && (() => {
-                const focusTask = homeTasks
-                  .filter(t => !t.completed)
-                  .sort((a, b) => {
-                    const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-                    const aOverdue = isOverdue(a.dueDate, a.completed) ? -1 : 0;
-                    const bOverdue = isOverdue(b.dueDate, b.completed) ? -1 : 0;
-                    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
-                    return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
-                  })[0];
-                if (!focusTask) return null;
-                const category = categories.find(c => c.id === focusTask.categoryId);
-                return (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.38 }}
-                  >
-                    <div className={`flex items-center gap-2 mb-2.5`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${isOverdue(focusTask.dueDate, focusTask.completed) ? 'bg-red-500 animate-pulse' : isLight ? 'bg-peach-400' : 'bg-peach-400'}`} />
-                      <span className={`text-[11px] font-bold uppercase tracking-[0.15em] ${isLight ? 'text-peach-500' : 'text-peach-400'}`}>
-                        Today's Focus
-                      </span>
-                    </div>
-                    <motion.div
-                      onClick={() => { haptic.lightTap(); setEditingTask(focusTask); setIsTaskModalOpen(true); }}
-                      className={`relative overflow-hidden p-4 rounded-[18px] border cursor-pointer transition-all duration-200 hover:shadow-md ${
-                        isLight
-                          ? 'border-peach-200 bg-gradient-to-r from-peach-50/80 to-white'
-                          : 'border-peach-500/20 bg-gradient-to-r from-peach-500/10 to-white/[0.03]'
-                      }`}
-                    >
-                      <div className="relative flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                          isOverdue(focusTask.dueDate, focusTask.completed)
-                            ? 'bg-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.25)]'
-                            : 'bg-peach-400 shadow-[0_4px_12px_rgba(245,144,96,0.25)]'
-                        }`}>
-                          <Zap className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-[14px] font-bold truncate ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>
-                            {focusTask.title}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            {category && (
-                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${
-                                isLight ? 'bg-cream-100 text-[#6b7a8d] border border-cream-200' : 'bg-white/5 text-white/50 border border-white/10'
-                              }`}>
-                                {category.name}
-                              </span>
-                            )}
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                              isOverdue(focusTask.dueDate, focusTask.completed)
-                                ? isLight ? 'bg-red-50 text-red-500 border border-red-200' : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                : isLight ? 'bg-cream-100 text-[#6b7a8d] border border-cream-200' : 'bg-white/5 text-white/40 border border-white/10'
-                            }`}>
-                              {formatDeadlineRelative(focusTask.dueDate, focusTask.completed).text}
-                            </span>
-                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
-                              focusTask.priority === 'urgent' ? isLight ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                              focusTask.priority === 'high' ? isLight ? 'bg-peach-50 text-peach-600 border border-peach-200' : 'bg-peach-500/10 text-peach-400 border border-peach-500/20' :
-                              focusTask.priority === 'medium' ? isLight ? 'bg-mint-50 text-mint-600 border border-mint-200' : 'bg-mint-500/10 text-mint-400 border border-mint-500/20' :
-                              isLight ? 'bg-cream-100 text-[#6b7a8d] border border-cream-200' : 'bg-white/5 text-white/40 border border-white/10'
-                            }`}>
-                              {focusTask.priority}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                );
-              })()}
-
-              {/* Weekly Activity Chart - last 7 days */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.42 }}
-              >
-                <div className={`flex items-center justify-between mb-3`}>
-                  <h2 className={`text-[14px] font-bold ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>Weekly Activity</h2>
-                  <span className={`text-[11px] font-semibold ${isLight ? 'text-[#8a96a8]' : 'text-white/40'}`}>
-                    {homeTasks.filter(t => t.completed && (() => {
-                      const d = new Date(t.completedAt || t.createdAt);
-                      const now = new Date();
-                      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                      return d >= weekAgo;
-                    })()).length} completed
-                  </span>
-                </div>
-                <div className={`p-4 rounded-[18px] border ${
-                  isLight ? 'border-black/[0.04] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]' : 'border-white/[0.06] bg-white/[0.04]'
-                }`}>
-                  <div className="flex items-end justify-between gap-1.5 h-20">
-                    {Array.from({ length: 7 }, (_, i) => {
-                      const dayDate = new Date();
-                      dayDate.setDate(dayDate.getDate() - (6 - i));
-                      const dayStr = dayDate.toISOString().slice(0, 10);
-                      const completedCount = homeTasks.filter(t =>
-                        t.completed && (t.completedAt || t.createdAt)?.startsWith(dayStr)
-                      ).length;
-                      const maxCount = Math.max(1, ...Array.from({ length: 7 }, (_, j) => {
-                        const d = new Date();
-                        d.setDate(d.getDate() - (6 - j));
-                        const ds = d.toISOString().slice(0, 10);
-                        return homeTasks.filter(t => t.completed && (t.completedAt || t.createdAt)?.startsWith(ds)).length;
-                      }));
-                      const heightPct = completedCount > 0 ? Math.max(12, (completedCount / maxCount) * 100) : 8;
-                      const isToday = dayStr === new Date().toISOString().slice(0, 10);
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                          <div className={`w-full rounded-[6px] transition-all duration-500 ${
-                            isToday ? 'bg-mint-400' : completedCount > 0 ? (isLight ? 'bg-mint-200' : 'bg-mint-500/40') : (isLight ? 'bg-[#eef2f6]' : 'bg-white/5')
-                          }`} style={{ height: `${heightPct}%`, minHeight: '6px' }} />
-                          <span className={`text-[10px] font-semibold ${isToday ? (isLight ? 'text-mint-600' : 'text-mint-400') : (isLight ? 'text-[#b0bcc8]' : 'text-white/30')}`}>
-                            {dayDate.toLocaleDateString('en', { weekday: 'narrow' })}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Category Progress */}
-              {homeTasks.length > 0 && (() => {
-                const catCounts = homeTasks.reduce((acc, t) => {
-                  const catId = t.categoryId || 'uncategorized';
-                  if (!acc[catId]) acc[catId] = { total: 0, completed: 0 };
-                  acc[catId].total++;
-                  if (t.completed) acc[catId].completed++;
-                  return acc;
-                }, {} as Record<string, { total: number; completed: number }>);
-                const topCats = Object.entries(catCounts)
-                  .filter(([id]) => id !== 'uncategorized')
-                  .sort((a, b) => b[1].total - a[1].total)
-                  .slice(0, 4);
-                if (topCats.length === 0) return null;
-                return (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.46 }}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h2 className={`text-[14px] font-bold ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>Categories</h2>
-                    </div>
-                    <div className={`p-4 rounded-[18px] border space-y-3 ${
-                      isLight ? 'border-black/[0.04] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]' : 'border-white/[0.06] bg-white/[0.04]'
-                    }`}>
-                      {topCats.map(([catId, data]) => {
-                        const cat = categories.find(c => c.id === catId);
-                        const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
-                        return (
-                          <div key={catId}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className={`text-[12px] font-semibold ${isLight ? 'text-[#3a4658]' : 'text-white/70'}`}>
-                                {cat?.name || catId}
-                              </span>
-                              <span className={`text-[10px] font-bold ${isLight ? 'text-[#b0bcc8]' : 'text-white/40'}`}>
-                                {data.completed}/{data.total}
-                              </span>
-                            </div>
-                            <div className={`h-2 rounded-full overflow-hidden ${isLight ? 'bg-[#eef2f6]' : 'bg-white/5'}`}>
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-mint-400 to-mint-500 transition-all duration-700"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                );
-              })()}
-
-              {/* Upcoming Deadlines - next 3 days */}
-              {homeTasks.filter(t => !t.completed && (() => {
-                const due = new Date(t.dueDate);
-                const now = new Date();
-                const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-                return due > now && due <= in3Days;
-              })()).length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Upcoming</h2>
-                    <button
-                      onClick={() => { haptic.lightTap(); setCurrentView('tasks'); }}
-                      className={`text-[11px] font-semibold flex items-center gap-0.5 cursor-pointer transition-colors ${
-                        isLight ? 'text-orange-600 hover:text-orange-700' : 'text-orange-400 hover:text-orange-300'
-                      }`}
-                    >
-                      View all <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {homeTasks
-                      .filter(t => !t.completed && (() => {
-                        const due = new Date(t.dueDate);
-                        const now = new Date();
-                        const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-                        return due > now && due <= in3Days;
-                      })())
-                      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-                      .slice(0, 3)
-                      .map((task, i) => {
-                        const due = new Date(task.dueDate);
-                        const now = new Date();
-                        const hoursLeft = Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60));
-                        const isTomorrow = hoursLeft <= 24;
-                        return (
-                          <motion.div
-                            key={task.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.52 + i * 0.05 }}
-                            onClick={() => { haptic.lightTap(); setEditingTask(task); setIsTaskModalOpen(true); }}
-                            className={`flex items-center gap-3 p-3 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                              isLight
-                                ? 'bg-white/70 border-white/50 hover:border-sky-200 hover:shadow-md backdrop-blur-xl'
-                                : 'bg-white/[0.04] border-white/[0.06] hover:border-sky-500/20 hover:bg-white/[0.06] backdrop-blur-xl'
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-bold ${
-                              isTomorrow
-                                ? 'bg-gradient-to-br from-amber-500 to-orange-400 text-white'
-                                : isLight ? 'bg-sky-50 text-sky-600' : 'bg-sky-500/10 text-sky-400'
-                            }`}>
-                              {hoursLeft <= 24 ? `${hoursLeft}h` : `${Math.ceil(hoursLeft / 24)}d`}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs font-medium truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                                {task.title}
-                              </p>
-                              <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-                                {due.toLocaleDateString('en', { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${
-                              task.priority === 'urgent' ? 'bg-red-500' :
-                              task.priority === 'high' ? 'bg-orange-500' :
-                              task.priority === 'medium' ? 'bg-sky-500' : 'bg-emerald-500'
-                            }`} />
-                          </motion.div>
-                        );
-                      })}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Overdue Alert */}
-              {overdueCount > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border ${
-                    isLight ? 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200/60' : 'bg-gradient-to-r from-red-500/10 to-rose-500/5 border-red-500/20'
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(239,68,68,0.3)]">
-                    <Flame className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-bold ${isLight ? 'text-red-700' : 'text-red-400'}`}>
-                      {overdueCount} {overdueCount === 1 ? 'task is' : 'tasks are'} overdue
-                    </p>
-                    <p className={`text-[11px] ${isLight ? 'text-red-500' : 'text-red-300/60'}`}>
-                      Focus on these first to stay on track
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => { haptic.lightTap(); setCurrentView('tasks'); setStatusFilter('overdue'); }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                      isLight ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                    }`}
-                  >
-                    View
-                  </button>
-                </motion.div>
-              )}
-
-              {/* 7. Recent Tasks - enhanced with category badges */}
-              {homeTasks.filter(t => !t.completed).length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.55 }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Recent Tasks</h2>
-                    <button
-                      onClick={() => { haptic.lightTap(); setCurrentView('tasks'); }}
-                      className={`text-[11px] font-semibold flex items-center gap-0.5 cursor-pointer transition-colors ${
-                        isLight ? 'text-orange-600 hover:text-orange-700' : 'text-orange-400 hover:text-orange-300'
-                      }`}
-                    >
-                      View all <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {homeTasks.filter(t => !t.completed).slice(0, 3).map((task, i) => (
-                      <motion.div
-                        key={task.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.6 + i * 0.05 }}
-                        onClick={() => { haptic.lightTap(); setEditingTask(task); setIsTaskModalOpen(true); }}
-                        className={`flex items-center gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 ${
-                          isLight
-                            ? 'bg-white/70 border-white/50 hover:border-orange-200 hover:shadow-md backdrop-blur-xl'
-                            : 'bg-white/[0.04] border-white/[0.06] hover:border-orange-500/20 hover:bg-white/[0.06] backdrop-blur-xl'
-                        }`}
-                      >
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${
-                          task.priority === 'urgent' ? 'bg-red-500' :
-                          task.priority === 'high' ? 'bg-orange-500' :
-                          task.priority === 'medium' ? 'bg-sky-500' : 'bg-emerald-500'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                            {task.title}
-                          </p>
-                          {task.categoryId && (
-                            <span className={`inline-block text-[9px] font-semibold px-1.5 py-0.5 rounded-full mt-1 ${
-                              isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/30'
-                            }`}>
-                              {categories.find(c => c.id === task.categoryId)?.name || ''}
-                            </span>
-                          )}
-                        </div>
-                        {task.dueDate && (
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                            isOverdue(task.dueDate, task.completed)
-                              ? 'bg-red-500/10 text-red-500'
-                              : isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/40'
-                          }`}>
-                            {formatDeadlineRelative(task.dueDate, task.completed).text}
-                          </span>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* 8. Daily Briefing + Deadline Predictor */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Suspense fallback={null}>
-                  <DailyBriefing
-                    theme={theme}
-                    tasks={homeTasks}
-                    userProfile={userProfile}
-                    fitnessStats={userProfile.fitnessStats}
-                  />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <DeadlinePredictor
-                    theme={theme}
-                    tasks={homeTasks}
-                  />
-                </Suspense>
-              </div>
-
-              {/* 9. Achievement Tree + Weekly Report */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Suspense fallback={null}>
-                  <AchievementTree
-                    theme={theme}
-                    completedTasks={homeTasks.filter(t => t.completed).length}
-                    totalWorkouts={userProfile.fitnessStats?.totalWorkouts || 0}
-                    currentStreak={userProfile.fitnessStats?.currentStreak || 0}
-                    xp={userProfile.fitnessStats?.xp || 0}
-                  />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <WeeklyReport
-                    theme={theme}
-                    tasks={homeTasks}
-                    userProfile={userProfile}
-                  />
-                </Suspense>
-              </div>
-
-              {/* 10. Motivational Footer - animated fade in */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className={`text-center py-4 rounded-2xl border ${
-                  isLight ? 'bg-gradient-to-r from-amber-50/50 to-orange-50/50 border-amber-200/30' : 'bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-amber-500/10'
-                }`}
-              >
-                <p className={`text-xs font-medium italic ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
-                  {[
-                    '"The secret of getting ahead is getting started." — Mark Twain',
-                    '"Small daily improvements are the key to staggering long-term results."',
-                    '"Discipline is choosing between what you want now and what you want most."',
-                    '"Done is better than perfect." — Sheryl Sandberg',
-                    '"Your future is created by what you do today, not tomorrow."',
-                  ][new Date().getDate() % 5]}
-                </p>
-              </motion.div>
-
-              {/* Sync Debug Bar - always visible on Home */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-[10px] ${
-                  canSyncToFirestore
-                    ? isLight ? 'bg-emerald-50/50 border-emerald-200/40 text-emerald-600' : 'bg-emerald-500/5 border-emerald-500/15 text-emerald-400'
-                    : isLight ? 'bg-amber-50/50 border-amber-200/40 text-amber-600' : 'bg-amber-500/5 border-amber-500/15 text-amber-400'
-                }`}
-              >
-                <span className="flex items-center gap-1.5 font-medium">
-                  {canSyncToFirestore ? '☁️' : '💾'}
-                  {canSyncToFirestore ? 'Cloud Sync Active' : 'Local Only'}
-                </span>
-                <span className="font-mono opacity-60">
-                  {homeTasks.length} tasks · {currentUser?.uid?.substring(0, 8) || 'guest'}
-                </span>
-              </motion.div>
-            </div>
+          {/* TRAINER PROFILE VIEW */}
+          {showTrainerProfile && selectedTrainerId && (
+            <TrainerProfile
+              theme={theme}
+              trainerId={selectedTrainerId}
+              onBack={() => {
+                setShowTrainerProfile(false);
+                setSelectedTrainerId(null);
+              }}
+            />
           )}
 
           {/* TASKS VIEW - List + Matrix */}
-          {currentView === 'tasks' && (
+          {currentView === 'tasks' && !showWorkoutDetail && !showTrainerProfile && (
             <div className="space-y-5">
               {/* Sub-view Toggle */}
               <div className={`flex gap-1 p-1 rounded-2xl border liquid-glass-pill`}>
@@ -2411,6 +1799,44 @@ export default function App() {
             </div>
           )}
 
+          {/* MEAL VIEW */}
+          {currentView === 'meal' && !showWorkoutDetail && !showTrainerProfile && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <h1 className={`text-2xl font-bold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
+                  Meal Plan
+                </h1>
+              </div>
+              <Suspense fallback={null}>
+                <MealPlanView
+                  theme={theme}
+                  entries={mealEntries}
+                  dailyTarget={nutritionTarget}
+                  onAddEntry={() => {}}
+                  onDeleteEntry={() => {}}
+                  onUpdateTarget={setNutritionTarget}
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {/* REWARDS VIEW */}
+          {currentView === 'rewards' && !showWorkoutDetail && !showTrainerProfile && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <h1 className={`text-2xl font-bold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
+                  Rewards
+                </h1>
+              </div>
+              <Suspense fallback={null}>
+                <Leaderboard
+                  theme={theme}
+                  userProfile={userProfile}
+                />
+              </Suspense>
+            </div>
+          )}
+
           {/* SETTINGS VIEW */}
           {currentView === 'settings' && (
             <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
@@ -2453,6 +1879,47 @@ export default function App() {
               />
               </div>
             </Suspense>
+          )}
+
+          {/* GET READY OVERLAY */}
+          {showGetReady && (
+            <GetReadyScreen theme={theme} />
+          )}
+
+          {/* EXERCISE IN PROGRESS OVERLAY */}
+          {showExerciseInProgress && (
+            <ExerciseInProgress
+              theme={theme}
+              exerciseName="Explosive neg. Push Ups"
+              exerciseNumber={currentExerciseIndex + 1}
+              totalExercises={3}
+              onPrevious={() => {
+                if (currentExerciseIndex > 0) {
+                  setCurrentExerciseIndex(prev => prev - 1);
+                }
+              }}
+              onNext={() => {
+                if (currentExerciseIndex < 2) {
+                  setCurrentExerciseIndex(prev => prev + 1);
+                } else {
+                  setShowExerciseInProgress(false);
+                  setShowCongratulation(true);
+                }
+              }}
+              onBack={() => {
+                setShowExerciseInProgress(false);
+              }}
+            />
+          )}
+
+          {/* CONGRATULATION OVERLAY */}
+          {showCongratulation && (
+            <CongratulationScreen
+              theme={theme}
+              onClose={() => {
+                setShowCongratulation(false);
+              }}
+            />
           )}
 
         </main>

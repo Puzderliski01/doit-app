@@ -67,8 +67,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className={`sticky top-0 z-40 relative transition-all duration-300 safe-area-top ${
       isLight
-        ? 'bg-white/80 backdrop-blur-3xl border-b border-white/50 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_10px_rgba(0,0,0,0.06)]'
-        : 'bg-[#111113]/90 backdrop-blur-3xl border-b border-white/[0.15] text-[#e0e0e0] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_2px_10px_rgba(0,0,0,0.4)]'
+        ? 'bg-white/80 backdrop-blur-3xl border-b border-black/[0.04] text-[#1a1a1a] shadow-[0_2px_10px_rgba(0,0,0,0.04)]'
+        : 'bg-[#0a0a0a]/90 backdrop-blur-3xl border-b border-white/[0.06] text-white shadow-[0_2px_10px_rgba(0,0,0,0.4)]'
     }`}>
       {/* Liquid glass gradient overlay */}
       <div className={`absolute inset-0 pointer-events-none ${
@@ -84,16 +84,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => { haptic.lightTap(); onViewChange('home'); }}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-orange-500 to-amber-300 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-transform group-hover:scale-105">
-              <div className="w-3.5 h-3.5 border-2 border-black rounded-sm"></div>
+            <div className="w-8 h-8 rounded-lg bg-neon-400 flex items-center justify-center shadow-[0_0_15px_rgba(200,255,0,0.3)] transition-transform group-hover:scale-105">
+              <div className="w-3.5 h-3.5 border-2 border-[#0a0a0a] rounded-sm"></div>
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className={`font-semibold tracking-tight text-lg ${isLight ? 'text-slate-900' : 'text-white'}`}>DoIT</span>
                 <span className={`text-[10px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded border ${
                   isLight 
-                    ? 'text-orange-600 bg-orange-50 border-orange-200' 
-                    : 'text-white/60 bg-white/5 border-white/10'
+                    ? 'text-neon-700 bg-neon-50 border-neon-200' 
+                    : 'text-neon-400 bg-neon-400/10 border-neon-400/20'
                 }`}>
                   PRO
                 </span>

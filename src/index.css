@@ -1,6 +1,17 @@
 @import "tailwindcss";
 
 @theme {
+  --color-neon-50: #f7ffe0;
+  --color-neon-100: #edffb3;
+  --color-neon-200: #e0ff80;
+  --color-neon-300: #d4ff4d;
+  --color-neon-400: #ccff00;
+  --color-neon-500: #b8e600;
+  --color-neon-600: #8fb800;
+  --color-neon-700: #6b8a00;
+  --color-neon-800: #475c00;
+  --color-neon-900: #232e00;
+
   --color-mint-50: #f0faf5;
   --color-mint-100: #d1f2e1;
   --color-mint-200: #a8e6c8;
@@ -45,7 +56,7 @@
 
   body {
     font-family: var(--font-sans);
-    background-color: #050508;
+    background-color: #0a0a0a;
     color: #f4f4f5;
     transition: background-color 0.2s ease, color 0.2s ease;
     -webkit-font-smoothing: antialiased;
@@ -53,8 +64,8 @@
   }
 
   body.light {
-    background-color: #faf8f5;
-    color: #1a2332;
+    background-color: #ffffff;
+    color: #1a1a1a;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
@@ -68,8 +79,8 @@
 
 /* Smooth custom scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -77,12 +88,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(200, 255, 0, 0.2);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(200, 255, 0, 0.4);
 }
 
 .light ::-webkit-scrollbar-thumb {
@@ -91,6 +102,34 @@
 
 .light ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
+}
+
+/* Neon glow utility */
+.neon-glow {
+  box-shadow: 0 0 20px rgba(200, 255, 0, 0.15), 0 0 40px rgba(200, 255, 0, 0.05);
+}
+
+.neon-glow-strong {
+  box-shadow: 0 0 30px rgba(200, 255, 0, 0.25), 0 0 60px rgba(200, 255, 0, 0.1);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(200, 255, 0, 0.3);
+}
+
+/* Dark card style */
+.dark-card {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+/* Light card style */
+.light-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* Progress Ring */
