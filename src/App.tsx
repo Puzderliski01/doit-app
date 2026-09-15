@@ -74,6 +74,11 @@ const MealPlanView = lazy(() => import('./components/MealPlanView').then(m => ({
 const QuickCaptureBar = lazy(() => import('./components/QuickCaptureBar').then(m => ({ default: m.QuickCaptureBar })));
 const SyncStatus = lazy(() => import('./components/SyncStatus').then(m => ({ default: m.SyncStatus })));
 const TaskBreakdownModal = lazy(() => import('./components/TaskBreakdownModal').then(m => ({ default: m.TaskBreakdownModal })));
+const KanbanBoard = lazy(() => import('./components/KanbanBoard').then(m => ({ default: m.KanbanBoard })));
+const FullCalendar = lazy(() => import('./components/FullCalendar').then(m => ({ default: m.FullCalendar })));
+const TaskStats = lazy(() => import('./components/TaskStats').then(m => ({ default: m.TaskStats })));
+const TaskTemplates = lazy(() => import('./components/TaskTemplates').then(m => ({ default: m.TaskTemplates })));
+const TimeTracker = lazy(() => import('./components/TimeTracker').then(m => ({ default: m.TimeTracker })));
 
 import { 
   auth,
@@ -133,6 +138,9 @@ import {
   Users,
   Apple,
   AlertTriangle,
+  Calendar,
+  BarChart3,
+  Sparkles,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -182,7 +190,7 @@ export default function App() {
   });
 
   // Sub-views within grouped views
-  const [taskSubView, setTaskSubView] = useState<'list' | 'matrix' | 'groups'>('list');
+  const [taskSubView, setTaskSubView] = useState<'list' | 'matrix' | 'groups' | 'kanban' | 'calendar'>('list');
   const [fitnessSubView, setFitnessSubView] = useState<'dashboard' | 'trainer' | 'nutrition'>('dashboard');
   
   // Sub-screen navigation for fitness app screens
@@ -241,6 +249,8 @@ export default function App() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
 
   // Fitness State
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -1070,6 +1080,122 @@ export default function App() {
     });
   };
 
+  // Kanban: Move task to different column
+  const handleMoveTask = (taskId: string, column: string) => {
+    let updatedTask: Task | null = null;
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        updatedTask = { ...t, kanbanColumn: column as any, completed: column === 'done' };
+        return updatedTask;
+      }
+      return t;
+    }));
+    if (canSyncToFirestore && updatedTask) {
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
+    }
+  };
+
+  // Time Tracking: Start timer
+  const handleStartTimer = (taskId: string) => {
+    let updatedTask: Task | null = null;
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        updatedTask = { ...t, timerStartedAt: new Date().toISOString() };
+        return updatedTask;
+      }
+      return t;
+    }));
+    if (canSyncToFirestore && updatedTask) {
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
+    }
+  };
+
+  // Time Tracking: Stop timer
+  const handleStopTimer = (taskId: string) => {
+    let updatedTask: Task | null = null;
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId && t.timerStartedAt) {
+        const startMs = new Date(t.timerStartedAt).getTime();
+        const durationMs = Date.now() - startMs;
+        const entry = {
+          id: `te-${Date.now()}`,
+          start: t.timerStartedAt,
+          end: new Date().toISOString(),
+          durationMs,
+        };
+        updatedTask = {
+          ...t,
+          timerStartedAt: undefined,
+          timeEntries: [...(t.timeEntries || []), entry],
+          actualMinutes: ((t.actualMinutes || 0) * 60000 + durationMs) / 60000,
+        };
+        return updatedTask;
+      }
+      return t;
+    }));
+    if (canSyncToFirestore && updatedTask) {
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
+    }
+  };
+
+  // Time Tracking: Add manual entry
+  const handleAddTimeEntry = (taskId: string, entry: any) => {
+    let updatedTask: Task | null = null;
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        updatedTask = {
+          ...t,
+          timeEntries: [...(t.timeEntries || []), entry],
+          actualMinutes: ((t.actualMinutes || 0) * 60000 + entry.durationMs) / 60000,
+        };
+        return updatedTask;
+      }
+      return t;
+    }));
+    if (canSyncToFirestore && updatedTask) {
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
+    }
+  };
+
+  // Time Tracking: Delete entry
+  const handleDeleteTimeEntry = (taskId: string, entryId: string) => {
+    let updatedTask: Task | null = null;
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        const entries = (t.timeEntries || []).filter(e => e.id !== entryId);
+        updatedTask = { ...t, timeEntries: entries };
+        return updatedTask;
+      }
+      return t;
+    }));
+    if (canSyncToFirestore && updatedTask) {
+      pendingWritesRef.current.set(updatedTask.id, updatedTask);
+      saveUserTaskToFirestore(currentUser!.uid, updatedTask)
+        .then(() => { pendingWritesRef.current.delete(updatedTask.id); })
+        .catch(console.error);
+    }
+  };
+
+  // Templates: Use template to create task
+  const handleUseTemplate = (taskData: Partial<Task>) => {
+    setEditingTask(null);
+    setIsTaskModalOpen(true);
+    // Pre-fill the modal - we'll call handleSaveTask directly
+    handleSaveTask(taskData);
+  };
+
   // Fitness Handlers
   const handleSaveFitnessEntry = (entry: FitnessEntry) => {
     setFitnessEntries(prev => [entry, ...prev]);
@@ -1567,6 +1693,8 @@ export default function App() {
               <div className={`flex gap-1 p-1 rounded-2xl border liquid-glass-pill`}>
                 {[
                   { id: 'list' as const, label: t('tasks.taskList'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
+                  { id: 'kanban' as const, label: 'Board', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+                  { id: 'calendar' as const, label: 'Calendar', icon: <Calendar className="w-3.5 h-3.5" /> },
                   { id: 'matrix' as const, label: t('tasks.priorityMatrix'), icon: <LayoutGrid className="w-3.5 h-3.5" /> },
                   { id: 'groups' as const, label: t('nav.groups'), icon: <Users className="w-3.5 h-3.5" /> },
                 ].map(tab => (
@@ -1580,9 +1708,32 @@ export default function App() {
                     }`}
                   >
                     {tab.icon}
-                    {tab.label}
+                    <span className="hidden sm:inline">{tab.label}</span>
                   </button>
                 ))}
+                {/* Stats & Templates buttons */}
+                <button
+                  onClick={() => { haptic.lightTap(); setIsStatsOpen(!isStatsOpen); }}
+                  className={`p-2 rounded-lg transition-all ${
+                    isStatsOpen
+                      ? isLight ? 'bg-blue-50 text-blue-600' : 'bg-blue-500/10 text-blue-400'
+                      : isLight ? 'text-slate-400 hover:text-blue-500' : 'text-white/30 hover:text-blue-400'
+                  }`}
+                  title="Task Statistics"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => { haptic.lightTap(); setIsTemplatesOpen(!isTemplatesOpen); }}
+                  className={`p-2 rounded-lg transition-all ${
+                    isTemplatesOpen
+                      ? isLight ? 'bg-amber-50 text-amber-600' : 'bg-amber-500/10 text-amber-400'
+                      : isLight ? 'text-slate-400 hover:text-amber-500' : 'text-white/30 hover:text-amber-400'
+                  }`}
+                  title="Task Templates"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                </button>
               </div>
 
               {/* List View */}
@@ -1686,6 +1837,58 @@ export default function App() {
                     )}
                   </div>
                 </div>
+              )}
+
+              {/* Kanban View */}
+              {taskSubView === 'kanban' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
+                  <KanbanBoard
+                    tasks={tasks}
+                    categories={categories}
+                    theme={theme}
+                    onToggleComplete={(id) => {
+                      const task = tasks.find(t => t.id === id);
+                      if (task) handleToggleComplete(task);
+                    }}
+                    onEditTask={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                    onMoveTask={handleMoveTask}
+                  />
+                </Suspense>
+              )}
+
+              {/* Calendar View */}
+              {taskSubView === 'calendar' && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
+                  <FullCalendar
+                    tasks={tasks}
+                    categories={categories}
+                    theme={theme}
+                    onEditTask={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                    onToggleComplete={(id) => {
+                      const task = tasks.find(t => t.id === id);
+                      if (task) handleToggleComplete(task);
+                    }}
+                  />
+                </Suspense>
+              )}
+
+              {/* Stats Panel */}
+              {isStatsOpen && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
+                  <TaskStats tasks={tasks} theme={theme} />
+                </Suspense>
+              )}
+
+              {/* Templates Panel */}
+              {isTemplatesOpen && (
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
+                  <TaskTemplates
+                    theme={theme}
+                    categories={categories}
+                    onUseTemplate={handleUseTemplate}
+                    onClose={() => setIsTemplatesOpen(false)}
+                  />
+                </Suspense>
               )}
 
               {/* Matrix View */}

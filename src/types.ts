@@ -26,6 +26,7 @@ export interface Task {
   createdAt: string;
   dueDate: string; // ISO 8601 string: YYYY-MM-DDTHH:mm
   estimatedMinutes?: number;
+  actualMinutes?: number; // Time actually spent
   recurring: RecurringConfig;
   subtasks: SubTask[];
   tags: string[];
@@ -35,12 +36,45 @@ export interface Task {
   isImportant?: boolean; // For Eisenhower matrix
   isUrgent?: boolean; // For Eisenhower matrix
   order: number;
+  // Time tracking
+  timeEntries?: TimeEntry[];
+  timerStartedAt?: string; // ISO timestamp when timer started
+  // Kanban
+  kanbanColumn?: KanbanColumn;
   // Group task fields (optional)
   groupId?: string;
   groupName?: string;
   groupColor?: string;
   createdByName?: string;
 }
+
+export interface TimeEntry {
+  id: string;
+  start: string; // ISO timestamp
+  end?: string; // ISO timestamp
+  durationMs: number;
+  note?: string;
+}
+
+export type KanbanColumn = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
+
+export interface TaskTemplate {
+  id: string;
+  name: string;
+  icon: string;
+  title: string;
+  description?: string;
+  priority: Priority;
+  categoryId: string;
+  estimatedMinutes?: number;
+  recurring: RecurringConfig;
+  subtasks: { title: string }[];
+  tags: string[];
+  isImportant?: boolean;
+  isUrgent?: boolean;
+}
+
+export type TaskViewMode = 'list' | 'kanban' | 'calendar';
 
 export interface Category {
   id: string;
