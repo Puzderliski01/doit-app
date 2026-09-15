@@ -209,36 +209,6 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
         />
       </div>
 
-      {Object.keys(stats.personalRecords).length > 0 && (
-        <div className={`rounded-2xl p-4 border liquid-glass-card`}>
-            <div className="flex items-center gap-2 mb-3">
-              <Trophy className="w-4 h-4 text-amber-400" />
-            <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              Personal Records
-            </h3>
-          </div>
-          <div className="space-y-2">
-            {(Object.entries(stats.personalRecords) as [string, { weight: number; reps: number; date: string }][])
-              .slice(0, 5)
-              .map(([exerciseId, pr]) => {
-                const exercise = ALL_EXERCISES.find((e) => e.id === exerciseId);
-                return (
-                  <div key={exerciseId}
-                    className={`flex items-center justify-between p-2.5 rounded-xl ${
-                      isLight ? 'bg-slate-50' : 'bg-white/5'
-                    }`}>
-                    <span className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
-                      {exercise?.name || exerciseId}
-                    </span>
-                    <span className="text-xs font-bold text-amber-400">
-                      {convertWeight(pr.weight, userProfile.weightUnit)} {userProfile.weightUnit} × {pr.reps}
-                    </span>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
 
       {muscleStats.length > 0 && (
         <div className={`rounded-2xl p-4 border liquid-glass-card`}>
@@ -269,9 +239,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
       )}
 
       {/* Per-Muscle Ranks */}
-      <div className={`rounded-2xl p-4 border ${
-        isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'
-      }`}>
+      <div className={`rounded-2xl p-4 border liquid-glass-card`}>
         <div className="flex items-center gap-2 mb-3">
           <Medal className="w-4 h-4 text-amber-400" />
           <h3 className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>

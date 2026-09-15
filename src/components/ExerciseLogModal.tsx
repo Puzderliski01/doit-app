@@ -4,6 +4,7 @@ import {
   ExerciseSet,
   FitnessEntry,
   MuscleGroup,
+  WorkoutMood,
 } from '../types';
 import {
   searchExercises,
@@ -84,6 +85,8 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(preSelectedExercise || null);
   const [sets, setSets] = useState<ExerciseSet[]>(getDefaultSets(defaultWeightUnit));
   const [notes, setNotes] = useState('');
+  const [mood, setMood] = useState<WorkoutMood | undefined>(undefined);
+  const [durationMinutes, setDurationMinutes] = useState<string>('');
 
   const [exerciseSlots, setExerciseSlots] = useState<ExerciseSlot[]>([]);
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
@@ -106,6 +109,8 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
     setSelectedExercise(null);
     setSets(getDefaultSets(defaultWeightUnit));
     setNotes('');
+    setMood(undefined);
+    setDurationMinutes('');
     setDate(new Date().toISOString().split('T')[0]);
     setShowExerciseList(true);
     setExerciseSlots([]);
@@ -133,6 +138,8 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
       estimatedOneRepMax: calculateOneRepMax(maxW, maxR),
       weightUnit: defaultWeightUnit,
       notes: exNotes.trim() || undefined,
+      mood,
+      durationMinutes: durationMinutes ? parseInt(durationMinutes) || undefined : undefined,
       createdAt: new Date().toISOString(),
     };
   };
@@ -521,6 +528,54 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 />
               </div>
 
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+                    Duration (min)
+                  </label>
+                  <input
+                    type="number"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="e.g. 45"
+                    min="1"
+                    max="300"
+                    className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none ${
+                      isLight
+                        ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                        : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                    }`}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+                    Mood
+                  </label>
+                  <div className="flex gap-1">
+                    {([
+                      { value: 'energized' as WorkoutMood, emoji: '⚡', label: 'Energized' },
+                      { value: 'great' as WorkoutMood, emoji: '🔥', label: 'Great' },
+                      { value: 'good' as WorkoutMood, emoji: '👍', label: 'Good' },
+                      { value: 'tired' as WorkoutMood, emoji: '😅', label: 'Tired' },
+                      { value: 'exhausted' as WorkoutMood, emoji: '💀', label: 'Exhausted' },
+                    ]).map((m) => (
+                      <button
+                        key={m.value}
+                        onClick={() => setMood(mood === m.value ? undefined : m.value)}
+                        title={m.label}
+                        className={`flex-1 py-2 rounded-lg text-base transition-all ${
+                          mood === m.value
+                            ? 'bg-amber-500/20 ring-1 ring-amber-500 scale-110'
+                            : isLight ? 'bg-slate-50 hover:bg-slate-100' : 'bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        {m.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className={`p-3 rounded-xl space-y-2 ${
                 isLight ? 'bg-amber-50 border border-amber-200' : 'bg-amber-500/10 border border-amber-500/20'
               }`}>
@@ -572,6 +627,54 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                       : 'bg-white/5 border border-white/10 text-white focus:border-amber-500'
                   }`}
                 />
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+                    Duration (min)
+                  </label>
+                  <input
+                    type="number"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    placeholder="e.g. 60"
+                    min="1"
+                    max="300"
+                    className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none ${
+                      isLight
+                        ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                        : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                    }`}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${isLight ? 'text-slate-600' : 'text-white/60'}`}>
+                    Mood
+                  </label>
+                  <div className="flex gap-1">
+                    {([
+                      { value: 'energized' as WorkoutMood, emoji: '⚡', label: 'Energized' },
+                      { value: 'great' as WorkoutMood, emoji: '🔥', label: 'Great' },
+                      { value: 'good' as WorkoutMood, emoji: '👍', label: 'Good' },
+                      { value: 'tired' as WorkoutMood, emoji: '😅', label: 'Tired' },
+                      { value: 'exhausted' as WorkoutMood, emoji: '💀', label: 'Exhausted' },
+                    ]).map((m) => (
+                      <button
+                        key={m.value}
+                        onClick={() => setMood(mood === m.value ? undefined : m.value)}
+                        title={m.label}
+                        className={`flex-1 py-2 rounded-lg text-base transition-all ${
+                          mood === m.value
+                            ? 'bg-amber-500/20 ring-1 ring-amber-500 scale-110'
+                            : isLight ? 'bg-slate-50 hover:bg-slate-100' : 'bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        {m.emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-3">

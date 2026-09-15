@@ -859,12 +859,12 @@ export function getMonthlySummary(entries: FitnessEntry[]): { month: string; wor
 
 // Exercise substitution map
 export const EXERCISE_SUBSTITUTIONS: Record<string, { name: string; reason: string }[]> = {
-  'barbell-bench-press': [
+  'bench_press': [
     { name: 'Dumbbell Bench Press', reason: 'Better range of motion' },
     { name: 'Incline Barbell Press', reason: 'Upper chest focus' },
     { name: 'Push-ups', reason: 'Bodyweight alternative' },
   ],
-  'barbell-squat': [
+  'squat': [
     { name: 'Goblet Squat', reason: 'Easier form' },
     { name: 'Leg Press', reason: 'Lower back friendly' },
     { name: 'Bulgarian Split Squat', reason: 'Unilateral strength' },
@@ -874,22 +874,22 @@ export const EXERCISE_SUBSTITUTIONS: Record<string, { name: string; reason: stri
     { name: 'Hip Thrust', reason: 'Glute emphasis' },
     { name: 'Good Morning', reason: 'Posterior chain' },
   ],
-  'barbell-row': [
+  'barbell_row': [
     { name: 'Dumbbell Row', reason: 'Better isolation' },
     { name: 'Cable Row', reason: 'Constant tension' },
     { name: 'Pull-ups', reason: 'Bodyweight alternative' },
   ],
-  'overhead-press': [
+  'overhead_press': [
     { name: 'Dumbbell Shoulder Press', reason: 'Balanced development' },
     { name: 'Lateral Raise', reason: 'Medial delt focus' },
     { name: 'Arnold Press', reason: 'Full shoulder activation' },
   ],
-  'barbell-curl': [
+  'barbell_curl': [
     { name: 'Dumbbell Curl', reason: 'Better grip options' },
     { name: 'Hammer Curl', reason: 'Brachialis focus' },
     { name: 'Preacher Curl', reason: 'Strict form' },
   ],
-  'tricep-pushdown': [
+  'tricep_pushdown': [
     { name: 'Close-grip Bench Press', reason: 'Compound movement' },
     { name: 'Skull Crushers', reason: 'Long head focus' },
     { name: 'Dips', reason: 'Bodyweight alternative' },

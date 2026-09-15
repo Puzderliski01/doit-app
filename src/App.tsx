@@ -27,7 +27,7 @@ import { haptic } from './utils/haptics';
 import { isOverdue, isDueToday, isDueThisWeek, formatDeadlineRelative } from './utils/dateHelpers';
 import { calculateNextDueDate, getRecurringLabel } from './utils/recurring';
 import { notificationEngine } from './utils/notificationEngine';
-import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats } from './utils/fitness';
+import { DEFAULT_USER_PROFILE, DEFAULT_FITNESS_STATS, updateFitnessStats, ALL_EXERCISES } from './utils/fitness';
 import { setLanguage, t } from './i18n';
 import { initPushNotifications, requestPermission as requestPushPermission, showLocalNotification, isPushSupported } from './utils/pushNotifications';
 import { startBackgroundPoller, stopBackgroundPoller, requestPushToFirestore } from './utils/backgroundNotifier';
@@ -1110,7 +1110,11 @@ export default function App() {
     }
   };
 
-  const handleSelectExercise = (_exerciseId: string) => {
+  const handleSelectExercise = (exerciseId: string) => {
+    const exercise = ALL_EXERCISES.find(e => e.id === exerciseId);
+    if (exercise) {
+      setPreSelectedExercise(exercise);
+    }
     setIsExerciseLogModalOpen(true);
   };
 
@@ -1686,7 +1690,7 @@ export default function App() {
 
               {/* Matrix View */}
               {taskSubView === 'matrix' && (
-                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
                   <EisenhowerMatrix
                     tasks={tasks}
                     categories={categories}
@@ -1701,7 +1705,7 @@ export default function App() {
 
               {/* Groups View */}
               {taskSubView === 'groups' && (
-                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
                   {!currentUser || (currentUser as AuthUser).isGuest ? (
                     <div className={`text-center py-16 rounded-2xl border ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
                       <Users className={`w-16 h-16 mx-auto mb-4 ${theme === 'light' ? 'text-slate-300' : 'text-white/20'}`} />
@@ -1763,7 +1767,7 @@ export default function App() {
 
               {/* Fitness Dashboard */}
               {fitnessSubView === 'dashboard' && (
-                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
                   {!userProfile.onboardingCompleted ? (
                     <div className="text-center py-16">
                       <p className={`text-sm mb-4 ${isLight ? 'text-slate-500' : 'text-white/40'}`}>Set up your fitness profile to get started</p>
@@ -1789,19 +1793,27 @@ export default function App() {
 
               {/* Trainer */}
               {fitnessSubView === 'trainer' && (
-                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
                   <TrainerDashboard
                     theme={theme}
                     userProfile={userProfile}
                     fitnessEntries={fitnessEntries}
-                    onLogExercise={() => setIsExerciseLogModalOpen(true)}
+                    onLogExercise={(exerciseId, exerciseName, muscleGroup) => {
+                      const exercise = ALL_EXERCISES.find(e => e.id === exerciseId);
+                      if (exercise) {
+                        setPreSelectedExercise(exercise);
+                      } else if (exerciseName) {
+                        setPreSelectedExercise({ id: exerciseId, name: exerciseName, muscleGroup: muscleGroup as any, type: 'strength', isCustom: false });
+                      }
+                      setIsExerciseLogModalOpen(true);
+                    }}
                   />
                 </Suspense>
               )}
 
               {/* Nutrition View */}
               {fitnessSubView === 'nutrition' && (
-                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+                <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
                   <MealPlanView
                     theme={theme}
                     entries={mealEntries}
@@ -1857,7 +1869,7 @@ export default function App() {
 
           {/* SETTINGS VIEW */}
           {currentView === 'settings' && (
-            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-white/40">Loading...</div></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
               <div className="space-y-4">
                 {/* Sync Status Panel */}
                 <SyncStatus
