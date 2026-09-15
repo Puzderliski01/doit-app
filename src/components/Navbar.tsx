@@ -1,30 +1,36 @@
 import React, { useState } from 'react';
-import { Home, ListTodo, Dumbbell, Settings, Plus, Moon, Sun, User, LogOut, ChevronRight, Flame, X, Sparkles } from 'lucide-react';
+import { Home, ListTodo, Dumbbell, Settings, Plus, Moon, Sun, Bell, FileText, ChevronDown, X, Flame, Sparkles, LogOut, User } from 'lucide-react';
 
 interface NavbarProps {
   currentView: string;
-  onNavigate: (view: string) => void;
+  onViewChange: (view: string) => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onNewTask: () => void;
+  onOpenNewTask: () => void;
   onLogWorkout: () => void;
+  onOpenNotifications: () => void;
+  onOpenDocs: () => void;
+  unreadNotifsCount: number;
+  lastSyncTime: string | null;
+  isOnline: boolean;
+  currentUser: any;
   onOpenAuth: () => void;
-  onOpenSettings: () => void;
-  isAuthenticated: boolean;
-  userName?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView,
-  onNavigate,
+  onViewChange,
   theme,
   onToggleTheme,
-  onNewTask,
+  onOpenNewTask,
   onLogWorkout,
+  onOpenNotifications,
+  onOpenDocs,
+  unreadNotifsCount,
+  lastSyncTime,
+  isOnline,
+  currentUser,
   onOpenAuth,
-  onOpenSettings,
-  isAuthenticated,
-  userName,
 }) => {
   const isLight = theme === 'light';
   const [showActions, setShowActions] = useState(false);
@@ -35,6 +41,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-4 h-4" /> },
     { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-4 h-4" /> },
   ];
+
+  const isGuest = currentUser?.isGuest || currentUser?.isLocal;
 
   return (
     <header
@@ -64,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => onNavigate(tab.id)}
+                onClick={() => onViewChange(tab.id)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
                   currentView === tab.id
                     ? isLight
@@ -83,6 +91,35 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
+            {/* Notifications */}
+            <button
+              onClick={onOpenNotifications}
+              className={`relative w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                isLight
+                  ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  : 'bg-white/5 text-white/40 hover:bg-white/10'
+              }`}
+            >
+              <Bell className="w-4 h-4" />
+              {unreadNotifsCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#c8ff00] text-[#0a0a0a] text-[9px] font-bold flex items-center justify-center">
+                  {unreadNotifsCount > 9 ? '9+' : unreadNotifsCount}
+                </span>
+              )}
+            </button>
+
+            {/* Docs */}
+            <button
+              onClick={onOpenDocs}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                isLight
+                  ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  : 'bg-white/5 text-white/40 hover:bg-white/10'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+            </button>
+
             {/* FAB */}
             <div className="relative">
               <button
@@ -97,11 +134,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               {showActions && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowActions(false)} />
-                  <div className={`absolute right-0 top-12 z-50 w-48 py-2 rounded-xl ${
-                    isLight ? 'bg-white shadow-lg shadow-black/8' : 'bg-[#18181b]'
+                  <div className={`absolute right-0 top-12 z-50 w-48 py-2 rounded-xl border ${
+                    isLight ? 'bg-white shadow-lg shadow-black/8 border-gray-100' : 'bg-[#18181b] border-white/5'
                   }`}>
                     <button
-                      onClick={() => { onNewTask(); setShowActions(false); }}
+                      onClick={() => { onOpenNewTask(); setShowActions(false); }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
                         isLight ? 'text-gray-700 hover:bg-gray-50' : 'text-white/80 hover:bg-white/5'
                       }`}
@@ -136,7 +173,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* User */}
-            {isAuthenticated ? (
+            {currentUser && !isGuest ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
@@ -144,27 +181,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                     isLight ? 'bg-gray-100 text-gray-700' : 'bg-white/10 text-white/70'
                   }`}
                 >
-                  {userName?.[0]?.toUpperCase() || 'U'}
+                  {currentUser.displayName?.[0]?.toUpperCase() || 'U'}
                 </button>
 
                 {showUserMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                    <div className={`absolute right-0 top-12 z-50 w-48 py-2 rounded-xl ${
-                      isLight ? 'bg-white shadow-lg shadow-black/8' : 'bg-[#18181b]'
+                    <div className={`absolute right-0 top-12 z-50 w-56 py-2 rounded-xl border ${
+                      isLight ? 'bg-white shadow-lg shadow-black/8 border-gray-100' : 'bg-[#18181b] border-white/5'
                     }`}>
                       <div className={`px-4 py-2 border-b ${isLight ? 'border-gray-100' : 'border-white/5'}`}>
-                        <p className={`text-xs font-semibold ${isLight ? 'text-gray-900' : 'text-white'}`}>{userName || 'User'}</p>
+                        <p className={`text-xs font-semibold ${isLight ? 'text-gray-900' : 'text-white'}`}>{currentUser.displayName || 'User'}</p>
+                        <p className={`text-[10px] mt-0.5 ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{currentUser.email}</p>
                       </div>
-                      <button
-                        onClick={() => { onOpenSettings(); setShowUserMenu(false); }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
-                          isLight ? 'text-gray-700 hover:bg-gray-50' : 'text-white/80 hover:bg-white/5'
-                        }`}
-                      >
-                        <Settings className="w-4 h-4" />
-                        Settings
-                      </button>
+                      {isGuest && (
+                        <button
+                          onClick={() => { onOpenAuth(); setShowUserMenu(false); }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
+                            isLight ? 'text-gray-700 hover:bg-gray-50' : 'text-white/80 hover:bg-white/5'
+                          }`}
+                        >
+                          <User className="w-4 h-4 text-[#c8ff00]" />
+                          Sign In / Sign Up
+                        </button>
+                      )}
+                      <div className={`px-4 py-1.5 flex items-center gap-2 ${isLight ? 'text-gray-400' : 'text-white/20'}`}>
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                        <span className="text-[10px]">{isOnline ? 'Online' : 'Offline'}</span>
+                        {lastSyncTime && <span className="text-[10px] ml-auto">Synced {lastSyncTime}</span>}
+                      </div>
                     </div>
                   </>
                 )}
