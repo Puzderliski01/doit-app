@@ -170,9 +170,9 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Mobile bottom nav spacer */
+/* Mobile bottom nav spacer - removed, using top navbar on all devices */
 @media (max-width: 1023px) {
   .mobile-nav-spacer {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
   }
 }

@@ -4,22 +4,12 @@ import { storage } from '../utils/storage';
 import { t } from '../i18n';
 import { 
   CheckSquare, 
-  LayoutGrid, 
-  Calendar, 
-  BarChart3, 
-  BookOpen, 
   Sun, 
   Moon, 
   Bell, 
   Plus, 
-  CloudCheck, 
-  Sparkles, 
-  Zap, 
-  User as UserIcon, 
   LogIn, 
-  ShieldCheck,
   Dumbbell,
-  Trophy,
   Settings as SettingsIcon,
   Home,
 } from 'lucide-react';
@@ -76,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           ? 'bg-gradient-to-b from-white/60 via-white/10 to-white/30'
           : 'bg-gradient-to-b from-black/20 via-white/[0.03] to-white/[0.06]'
       }`} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
         
         {/* Brand Logo */}
         <div className="flex items-center gap-3 shrink-0">
@@ -102,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Sync Status Badge */}
-          <div className={`hidden lg:flex items-center gap-2 px-3 py-1 rounded-full text-xs border ${
+          <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-xs border ${
             isLight ? 'bg-slate-100/80 border-slate-200' : 'bg-white/5 border-white/10'
           }`}>
             {currentUser && (currentUser as AuthUser).isGuest ? (
@@ -124,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Center View Navigation */}
-        <nav className={`hidden lg:flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-2xl ${
+        <nav className={`flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-2xl ${
           isLight ? 'bg-white/60 border-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-[#111113]/80 border-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_8px_rgba(0,0,0,0.3)]'
         }`}>
           {navItems.map((item) => {
@@ -148,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 {item.icon}
-                <span>{item.label}</span>
+                <span className="hidden sm:inline">{item.label}</span>
               </button>
             );
           })}

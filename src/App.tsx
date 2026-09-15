@@ -1478,10 +1478,17 @@ export default function App() {
           {currentView === 'home' && !showWorkoutDetail && !showTrainerProfile && (
             <HomeScreen
               theme={theme}
-              userName={currentUser?.displayName || 'Lester'}
+              userName={currentUser?.displayName || 'there'}
+              tasks={tasks}
+              totalWorkoutsLogged={fitnessEntries.length}
               onSelectWorkout={(id) => {
                 setSelectedWorkoutId(id);
                 setShowWorkoutDetail(true);
+              }}
+              onNavigateToView={(view) => setCurrentView(view)}
+              onNewTask={() => {
+                setEditingTask(null);
+                setIsTaskModalOpen(true);
               }}
             />
           )}
@@ -2050,12 +2057,14 @@ export default function App() {
           theme={theme}
         />
 
-        {/* Bottom Mobile Navigation */}
+        {/* Bottom Mobile Navigation - Hidden, using unified top Navbar */}
+        {false && (
         <MobileNav
           currentView={currentView}
           onViewChange={setCurrentView}
           theme={theme}
         />
+        )}
 
       </div>
   );
