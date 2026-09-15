@@ -1,208 +1,185 @@
 import React, { useState } from 'react';
-import { ViewMode, AuthUser } from '../types';
-import { storage } from '../utils/storage';
-import { t } from '../i18n';
-import { 
-  CheckSquare, 
-  Sun, 
-  Moon, 
-  Plus, 
-  Dumbbell,
-  Settings as SettingsIcon,
-  Home,
-  LogIn,
-  Flame,
-  ListTodo,
-  X,
-} from 'lucide-react';
-import { haptic } from '../utils/haptics';
-import { User } from 'firebase/auth';
+import { Home, ListTodo, Dumbbell, Settings, Plus, Moon, Sun, User, LogOut, ChevronRight, Flame, X, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
-  currentView: ViewMode;
-  onViewChange: (view: ViewMode) => void;
+  currentView: string;
+  onNavigate: (view: string) => void;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  onOpenNewTask: () => void;
+  onNewTask: () => void;
   onLogWorkout: () => void;
-  onOpenNotifications: () => void;
-  onOpenDocs: () => void;
-  unreadNotifsCount: number;
-  lastSyncTime: string;
-  isOnline: boolean;
-  currentUser: AuthUser | User | null;
   onOpenAuth: () => void;
+  onOpenSettings: () => void;
+  isAuthenticated: boolean;
+  userName?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView,
-  onViewChange,
+  onNavigate,
   theme,
   onToggleTheme,
-  onOpenNewTask,
+  onNewTask,
   onLogWorkout,
-  onOpenNotifications,
-  onOpenDocs,
-  unreadNotifsCount,
-  lastSyncTime,
-  isOnline,
-  currentUser,
-  onOpenAuth
+  onOpenAuth,
+  onOpenSettings,
+  isAuthenticated,
+  userName,
 }) => {
-  const navItems: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
-    { id: 'home', label: t('nav.home'), icon: <Home className="w-4 h-4" /> },
-    { id: 'tasks', label: t('nav.tasks'), icon: <CheckSquare className="w-4 h-4" /> },
-    { id: 'fitness', label: t('nav.fitness'), icon: <Dumbbell className="w-4 h-4" /> },
-    { id: 'settings', label: t('nav.settings'), icon: <SettingsIcon className="w-4 h-4" /> },
-  ];
-
   const isLight = theme === 'light';
   const [showActions, setShowActions] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const tabs = [
+    { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
+    { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-4 h-4" /> },
+    { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-4 h-4" /> },
+  ];
 
   return (
-    <header className={`hidden lg:block sticky top-0 z-40 relative transition-all duration-300 safe-area-top ${
-      isLight
-        ? 'bg-white/80 backdrop-blur-3xl border-b border-black/[0.04] text-[#1a1a1a]'
-        : 'bg-[#0a0a0a]/90 backdrop-blur-3xl border-b border-white/[0.06] text-white'
-    }`}>
-      <div className="w-full px-6 h-14 flex items-center justify-between gap-4">
-        
-        {/* Brand Logo - Clickable */}
-        <div 
-          onClick={() => { haptic.lightTap(); onViewChange('home'); }}
-          className="flex items-center gap-2.5 cursor-pointer group shrink-0"
-        >
-          <div className="w-8 h-8 rounded-lg bg-neon-400 flex items-center justify-center shadow-[0_0_15px_rgba(200,255,0,0.3)] transition-transform group-hover:scale-105">
-            <div className="w-3.5 h-3.5 border-2 border-[#0a0a0a] rounded-sm"></div>
+    <header
+      className={`sticky top-0 z-40 hidden sm:block ${
+        isLight ? 'bg-white/80' : 'bg-[#0a0a0a]/80'
+      } backdrop-blur-2xl`}
+      style={{
+        boxShadow: isLight
+          ? '0 1px 0 rgba(0,0,0,0.04)'
+          : '0 1px 0 rgba(255,255,255,0.04)',
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-14">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c8ff00] to-[#b8f000] flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#0a0a0a]" />
+            </div>
+            <span className={`text-sm font-bold tracking-tight ${isLight ? 'text-gray-900' : 'text-white'}`}>
+              DoIT
+            </span>
           </div>
-          <span className={`font-semibold tracking-tight text-lg ${isLight ? 'text-slate-900' : 'text-white'}`}>DoIT</span>
-        </div>
 
-        {/* Center View Navigation */}
-        <nav className={`flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-2xl ${
-          isLight ? 'bg-white/60 border-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(0,0,0,0.06)]' : 'bg-[#111113]/80 border-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_8px_rgba(0,0,0,0.3)]'
-        }`}>
-          {navItems.map((item) => {
-            const isActive = currentView === item.id;
-            return (
+          {/* Center Nav */}
+          <nav className={`flex gap-1 p-1 rounded-xl ${isLight ? 'bg-gray-100' : 'bg-white/[0.04]'}`}>
+            {tabs.map((tab) => (
               <button
-                key={item.id}
-                id={`nav-tab-${item.id}`}
-                onClick={() => { haptic.lightTap(); onViewChange(item.id); }}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
-                  isActive
+                key={tab.id}
+                onClick={() => onNavigate(tab.id)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  currentView === tab.id
                     ? isLight
-                      ? 'bg-white text-slate-900 border border-slate-300/80 shadow-sm font-semibold'
-                      : 'bg-white/10 text-white border border-white/15 shadow-sm font-semibold'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'bg-white/10 text-white'
                     : isLight
-                      ? 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
+                      ? 'text-gray-500 hover:text-gray-700'
+                      : 'text-white/40 hover:text-white/60'
                 }`}
               >
-                {item.icon}
-                <span>{item.label}</span>
+                {tab.icon}
+                {tab.label}
               </button>
-            );
-          })}
-        </nav>
+            ))}
+          </nav>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Theme Toggle */}
-          <button
-            id="btn-theme-toggle"
-            onClick={() => { haptic.lightTap(); onToggleTheme(); storage.saveTheme(isLight ? 'dark' : 'light'); }}
-            className={`w-9 h-9 flex items-center justify-center border rounded-full transition-all cursor-pointer ${
-              isLight 
-                ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' 
-                : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10'
-            }`}
-          >
-            {isLight ? <Moon className="w-4 h-4 text-indigo-600" /> : <Sun className="w-4 h-4 text-amber-400" />}
-          </button>
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            {/* FAB */}
+            <div className="relative">
+              <button
+                onClick={() => setShowActions(!showActions)}
+                className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c8ff00] to-[#b8f000] flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-95"
+                style={{ boxShadow: '0 2px 12px rgba(200, 255, 0, 0.25)' }}
+              >
+                <Plus className={`w-4 h-4 text-[#0a0a0a] transition-transform ${showActions ? 'rotate-45' : ''}`} />
+              </button>
 
-          {/* User Account */}
-          {currentUser ? (
-            <button
-              id="btn-user-account"
-              onClick={() => { haptic.mediumClick(); onOpenAuth(); }}
-              className={`flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                isLight 
-                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800' 
-                  : 'bg-white/10 hover:bg-white/15 border-white/20 text-white'
-              }`}
-            >
-              {currentUser.photoURL ? (
-                <img src={currentUser.photoURL} alt={currentUser.displayName || 'User'} referrerPolicy="no-referrer" className="w-6 h-6 rounded-full border border-amber-400/80 object-cover" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-black font-bold text-xs">
-                  {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
-                </div>
+              {/* Dropdown */}
+              {showActions && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowActions(false)} />
+                  <div className={`absolute right-0 top-12 z-50 w-48 py-2 rounded-xl ${
+                    isLight ? 'bg-white shadow-lg shadow-black/8' : 'bg-[#18181b]'
+                  }`}>
+                    <button
+                      onClick={() => { onNewTask(); setShowActions(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
+                        isLight ? 'text-gray-700 hover:bg-gray-50' : 'text-white/80 hover:bg-white/5'
+                      }`}
+                    >
+                      <ListTodo className="w-4 h-4 text-[#c8ff00]" />
+                      New Task
+                    </button>
+                    <button
+                      onClick={() => { onLogWorkout(); setShowActions(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
+                        isLight ? 'text-gray-700 hover:bg-gray-50' : 'text-white/80 hover:bg-white/5'
+                      }`}
+                    >
+                      <Flame className="w-4 h-4 text-orange-400" />
+                      Log Workout
+                    </button>
+                  </div>
+                </>
               )}
-              <span className="text-xs font-semibold max-w-[80px] truncate">
-                {currentUser.displayName || currentUser.email?.split('@')[0]}
-              </span>
-            </button>
-          ) : (
+            </div>
+
+            {/* Theme Toggle */}
             <button
-              id="btn-login-trigger"
-              onClick={() => { haptic.mediumClick(); onOpenAuth(); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-semibold text-xs transition-all cursor-pointer ${
-                isLight 
-                  ? 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700' 
-                  : 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border-amber-500/40 text-amber-300'
+              onClick={onToggleTheme}
+              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                isLight
+                  ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                  : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70'
               }`}
             >
-              <LogIn className="w-3.5 h-3.5 text-amber-500" />
-              <span>Log In</span>
-            </button>
-          )}
-
-          {/* Central FAB Button */}
-          <div className="relative">
-            <button
-              id="btn-fab-actions"
-              onClick={() => { haptic.mediumClick(); setShowActions(!showActions); }}
-              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 cursor-pointer ${
-                showActions
-                  ? 'bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.4)] rotate-45'
-                  : 'bg-orange-500 text-white hover:bg-orange-600 shadow-[0_4px_14px_rgba(249,115,22,0.35)]'
-              }`}
-            >
-              {showActions ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5 stroke-[2.5]" />}
+              {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
 
-            {/* Dropdown Actions */}
-            {showActions && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowActions(false)} />
-                <div className={`absolute right-0 top-12 z-50 min-w-[180px] rounded-2xl border p-2 shadow-xl ${
-                  isLight ? 'bg-white border-slate-200' : 'bg-[#1a1a1a] border-white/10'
-                }`}>
-                  <button
-                    onClick={() => { haptic.mediumClick(); setShowActions(false); onLogWorkout(); }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                      isLight ? 'hover:bg-slate-50 text-slate-900' : 'hover:bg-white/5 text-white'
-                    }`}
-                  >
-                    <Flame className="w-4 h-4 text-neon-400" />
-                    Log Workout
-                  </button>
-                  <button
-                    onClick={() => { haptic.mediumClick(); setShowActions(false); onOpenNewTask(); }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                      isLight ? 'hover:bg-slate-50 text-slate-900' : 'hover:bg-white/5 text-white'
-                    }`}
-                  >
-                    <ListTodo className="w-4 h-4 text-orange-500" />
-                    New Task
-                  </button>
-                </div>
-              </>
+            {/* User */}
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
+                    isLight ? 'bg-gray-100 text-gray-700' : 'bg-white/10 text-white/70'
+                  }`}
+                >
+                  {userName?.[0]?.toUpperCase() || 'U'}
+                </button>
+
+                {showUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                    <div className={`absolute right-0 top-12 z-50 w-48 py-2 rounded-xl ${
+                      isLight ? 'bg-white shadow-lg shadow-black/8' : 'bg-[#18181b]'
+                    }`}>
+                      <div className={`px-4 py-2 border-b ${isLight ? 'border-gray-100' : 'border-white/5'}`}>
+                        <p className={`text-xs font-semibold ${isLight ? 'text-gray-900' : 'text-white'}`}>{userName || 'User'}</p>
+                      </div>
+                      <button
+                        onClick={() => { onOpenSettings(); setShowUserMenu(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
+                          isLight ? 'text-gray-700 hover:bg-gray-50' : 'text-white/80 hover:bg-white/5'
+                        }`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#c8ff00]/15 to-[#b8f000]/15 text-[#c8ff00] text-xs font-semibold hover:from-[#c8ff00]/25 hover:to-[#b8f000]/25 transition-all"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign In
+              </button>
             )}
           </div>
         </div>
-
       </div>
     </header>
   );

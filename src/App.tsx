@@ -1690,7 +1690,7 @@ export default function App() {
           {currentView === 'tasks' && !showWorkoutDetail && !showTrainerProfile && (
             <div className="space-y-5">
               {/* Sub-view Toggle */}
-              <div className={`flex gap-1 p-1 rounded-2xl border liquid-glass-pill`}>
+              <div className="tab-group">
                 {[
                   { id: 'list' as const, label: t('tasks.taskList'), icon: <CheckSquare className="w-3.5 h-3.5" /> },
                   { id: 'kanban' as const, label: 'Board', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
@@ -1701,11 +1701,7 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => { haptic.lightTap(); setTaskSubView(tab.id); }}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-1 cursor-pointer ${
-                      taskSubView === tab.id
-                        ? isLight ? 'bg-white text-slate-900 border border-slate-300 shadow-sm' : 'bg-white/10 text-white border border-white/15 shadow-sm'
-                        : isLight ? 'text-slate-500 hover:text-slate-700' : 'text-white/50 hover:text-white/70'
-                    }`}
+                    className={`tab-item ${taskSubView === tab.id ? 'active' : ''}`}
                   >
                     {tab.icon}
                     <span className="hidden sm:inline">{tab.label}</span>
@@ -1717,7 +1713,7 @@ export default function App() {
                   className={`p-2 rounded-lg transition-all ${
                     isStatsOpen
                       ? isLight ? 'bg-blue-50 text-blue-600' : 'bg-blue-500/10 text-blue-400'
-                      : isLight ? 'text-slate-400 hover:text-blue-500' : 'text-white/30 hover:text-blue-400'
+                      : isLight ? 'text-gray-400 hover:text-blue-500' : 'text-white/30 hover:text-blue-400'
                   }`}
                   title="Task Statistics"
                 >
@@ -1728,7 +1724,7 @@ export default function App() {
                   className={`p-2 rounded-lg transition-all ${
                     isTemplatesOpen
                       ? isLight ? 'bg-amber-50 text-amber-600' : 'bg-amber-500/10 text-amber-400'
-                      : isLight ? 'text-slate-400 hover:text-amber-500' : 'text-white/30 hover:text-amber-400'
+                      : isLight ? 'text-gray-400 hover:text-amber-500' : 'text-white/30 hover:text-amber-400'
                   }`}
                   title="Task Templates"
                 >
@@ -1742,21 +1738,21 @@ export default function App() {
                   <div className={`p-5 rounded-3xl border backdrop-blur-xl space-y-4 shadow-xl liquid-glass-card`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="relative flex-1 max-w-md">
-                        <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
+                        <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${isLight ? 'text-gray-400' : 'text-white/40'}`} />
                         <input
                           id="main-search-input"
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder={t('tasks.searchPlaceholder')}
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${isLight ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'}`}
+                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all ${isLight ? 'input-light' : 'input-dark'}`}
                         />
                       </div>
                       <div className="flex items-center gap-2">
                         <select
                           value={sortBy}
                           onChange={(e) => { haptic.lightTap(); setSortBy(e.target.value as 'dueDate' | 'priority' | 'createdAt' | 'title'); }}
-                          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'input-light' : 'input-dark'}`}
                         >
                           <option value="dueDate">{t('tasks.deadline')}</option>
                           <option value="priority">{t('tasks.priority')}</option>
@@ -1765,7 +1761,7 @@ export default function App() {
                         <select
                           value={priorityFilter}
                           onChange={(e) => { haptic.lightTap(); setPriorityFilter(e.target.value as Priority | 'all'); }}
-                          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-white/80'}`}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'input-light' : 'input-dark'}`}
                         >
                           <option value="all">All Priorities</option>
                           <option value="urgent">Urgent</option>
@@ -1775,7 +1771,7 @@ export default function App() {
                         </select>
                       </div>
                     </div>
-                    <div className={`flex flex-wrap items-center gap-1.5 pt-3 border-t ${isLight ? 'border-white/30' : 'border-white/10'}`}>
+                    <div className={`flex flex-wrap items-center gap-1.5 pt-3 ${isLight ? 'divider-light' : 'divider-dark'}`} style={{ borderTop: `1px solid ${isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)'}` }}>
                       {[
                         { id: 'all', label: t('tasks.allTasks'), count: tasks.length },
                         { id: 'pending', label: t('tasks.pending'), count: pendingCount },
@@ -1786,11 +1782,7 @@ export default function App() {
                         <button
                           key={item.id}
                           onClick={() => { haptic.lightTap(); setStatusFilter(item.id as FilterStatus); }}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                            statusFilter === item.id
-                              ? isLight ? 'bg-white/80 text-slate-900 border border-white/50 shadow-sm backdrop-blur-xl' : 'bg-white/15 text-white border border-white/15 shadow-sm backdrop-blur-xl'
-                              : isLight ? 'bg-white/40 text-slate-600 hover:text-slate-900 border border-white/30 backdrop-blur-xl' : 'bg-white/[0.04] text-white/50 hover:text-white border border-white/[0.06] backdrop-blur-xl'
-                          }`}
+                          className={`chip ${isLight ? 'chip-light' : 'chip-dark'} ${statusFilter === item.id ? 'active' : ''}`}
                         >
                           {item.label}
                           <span className={`text-[10px] ${statusFilter === item.id ? 'opacity-70' : 'opacity-50'}`}>{item.count}</span>
@@ -1799,9 +1791,7 @@ export default function App() {
                       {tasks.filter(t => t.completed).length > 0 && (
                         <button
                           onClick={handleClearCompleted}
-                          className={`ml-auto px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                            isLight ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
-                          }`}
+                          className={`ml-auto chip ${isLight ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'}`}
                         >
                           <Trash2 className="w-3 h-3" />
                           Clear Done ({tasks.filter(t => t.completed).length})
@@ -1811,9 +1801,9 @@ export default function App() {
                   </div>
                   <div className="space-y-3">
                     {filteredTasks.length === 0 ? (
-                      <div className="p-12 text-center rounded-3xl bg-white/[0.02] border border-dashed border-white/10">
-                        <Inbox className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                        <p className="text-sm font-medium text-white/60">{t('tasks.noTasks')}</p>
+                      <div className={`p-12 text-center rounded-2xl ${isLight ? 'bg-gray-50' : 'bg-white/[0.02]'}`}>
+                        <Inbox className={`w-12 h-12 mx-auto mb-3 ${isLight ? 'text-gray-300' : 'text-white/15'}`} />
+                        <p className={`text-sm font-medium ${isLight ? 'text-gray-500' : 'text-white/40'}`}>{t('tasks.noTasks')}</p>
                       </div>
                     ) : (
                       <AnimatePresence mode="popLayout">
@@ -1947,7 +1937,7 @@ export default function App() {
           {currentView === 'fitness' && (
             <div className="space-y-5">
               {/* Sub-view Tabs */}
-              <div className={`flex gap-1 p-1 rounded-2xl border liquid-glass-pill`}>
+              <div className="tab-group">
                 {[
                   { id: 'dashboard' as const, label: t('fitness.dashboard'), icon: <Dumbbell className="w-3.5 h-3.5" /> },
                   { id: 'trainer' as const, label: t('fitness.trainer'), icon: <Sparkles className="w-3.5 h-3.5" /> },
@@ -1956,11 +1946,7 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => { haptic.lightTap(); setFitnessSubView(tab.id); }}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex-1 cursor-pointer ${
-                      fitnessSubView === tab.id
-                        ? isLight ? 'bg-white text-slate-900 border border-slate-300 shadow-sm' : 'bg-white/10 text-white border border-white/15 shadow-sm'
-                        : isLight ? 'text-slate-500 hover:text-slate-700' : 'text-white/50 hover:text-white/70'
-                    }`}
+                    className={`tab-item ${fitnessSubView === tab.id ? 'active' : ''}`}
                   >
                     {tab.icon}
                     {tab.label}
