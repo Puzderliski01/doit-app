@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Exercise,
   ExerciseSet,
@@ -64,6 +64,7 @@ interface ExerciseLogModalProps {
   onSave: (entry: FitnessEntry) => void;
   theme: 'dark' | 'light';
   defaultWeightUnit: 'kg' | 'lbs';
+  preSelectedExercise?: Exercise | null;
 }
 
 export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
@@ -72,6 +73,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   onSave,
   theme,
   defaultWeightUnit,
+  preSelectedExercise,
 }) => {
   const isLight = theme === 'light';
   const [mode, setMode] = useState<'single' | 'multi'>('single');
@@ -79,7 +81,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showExerciseList, setShowExerciseList] = useState(true);
 
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(preSelectedExercise || null);
   const [sets, setSets] = useState<ExerciseSet[]>(getDefaultSets(defaultWeightUnit));
   const [notes, setNotes] = useState('');
 
@@ -87,6 +89,16 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
 
   const searchResults = searchExercises(searchQuery);
+
+  // Handle pre-selected exercise from picker
+  useEffect(() => {
+    if (isOpen && preSelectedExercise) {
+      setSelectedExercise(preSelectedExercise);
+      setShowExerciseList(false);
+      setSets(getDefaultSets(defaultWeightUnit));
+      setNotes('');
+    }
+  }, [isOpen, preSelectedExercise, defaultWeightUnit]);
 
   if (!isOpen) return null;
 

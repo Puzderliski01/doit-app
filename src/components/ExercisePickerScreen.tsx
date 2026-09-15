@@ -54,10 +54,7 @@ export const ExercisePickerScreen: React.FC<ExercisePickerScreenProps> = ({
 
     // Filter by equipment type
     if (selectedEquipment !== 'all') {
-      exercises = exercises.filter(e => e.type === selectedEquipment || 
-        (selectedEquipment === 'bodyweight' && e.type === 'bodyweight') ||
-        (selectedEquipment === 'cardio' && e.type === 'cardio')
-      );
+      exercises = exercises.filter(e => getEquipmentType(e) === selectedEquipment);
     }
 
     // Search filter
@@ -85,7 +82,7 @@ export const ExercisePickerScreen: React.FC<ExercisePickerScreenProps> = ({
   const getExerciseEmoji = (exercise: Exercise): string => {
     const emojiMap: Record<string, string> = {
       // Chest
-      pushup: '🏋️', bench_press: ' bench', incline_bench: '🏋️', decline_bench: '🏋️',
+      pushup: '🏋️', bench_press: '🏋️', incline_bench: '🏋️', decline_bench: '🏋️',
       db_bench: '🏋️', db_incline: '🏋️', db_fly: '🦅', cable_fly: '🦅', pec_deck: '🦅',
       // Back
       pullup: '💪', deadlift: '🏋️', barbell_row: '🚣', db_row: '🚣',

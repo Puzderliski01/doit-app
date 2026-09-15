@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   Trophy, 
   ChevronRight, 
@@ -11,10 +11,8 @@ import {
   TrendingUp,
   User,
   Flame,
-  Play,
-  Calendar,
 } from 'lucide-react';
-import { Task, FitnessEntry } from '../types';
+import { Task, FitnessEntry, FilterStatus } from '../types';
 import { haptic } from '../utils/haptics';
 import { MUSCLE_GROUP_LABELS, MUSCLE_GROUP_ICONS, MUSCLE_GROUP_COLORS } from '../utils/fitness';
 
@@ -25,7 +23,7 @@ interface HomeScreenProps {
   fitnessEntries: FitnessEntry[];
   totalWorkoutsLogged: number;
   onSelectWorkout: (workoutId: string) => void;
-  onNavigateToView: (view: 'tasks' | 'fitness') => void;
+  onNavigateToView: (view: 'tasks' | 'fitness', filter?: FilterStatus) => void;
   onNewTask: () => void;
   onLogWorkout: () => void;
 }
@@ -59,16 +57,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   });
 
   // Recent workouts (last 3)
-  const recentWorkouts = fitnessEntries.slice(-3).reverse();
+  const recentWorkouts = useMemo(() => fitnessEntries.slice(-3).reverse(), [fitnessEntries]);
 
   // Today's volume
-  const todayVolume = fitnessEntries
+  const todayVolume = useMemo(() => fitnessEntries
     .filter(e => {
       const d = new Date(e.date);
       const now = new Date();
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
     })
-    .reduce((sum, e) => sum + e.totalVolume, 0);
+    .reduce((sum, e) => sum + e.totalVolume, 0),
+  [fitnessEntries]);
+
+  // This week's sessions (Monday-Sunday)
+  const weekSessions = useMemo(() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    monday.setHours(0, 0, 0, 0);
+    return fitnessEntries.filter(e => new Date(e.date) >= monday).length;
+  }, [fitnessEntries]);
+
+  // Activity ring progress (0-1)
+  const ringProgress = useMemo(() => {
+    if (totalWorkoutsLogged === 0) return 0;
+    const target = 5;
+    return Math.min(totalWorkoutsLogged / target, 1);
+  }, [totalWorkoutsLogged]);
 
   const statCards = [
     {
@@ -77,6 +93,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       icon: <Clock className="w-4 h-4" />,
       color: 'text-blue-400',
       bg: 'bg-blue-400/10',
+      filter: 'pending' as FilterStatus,
     },
     {
       label: 'Due Today',
@@ -84,6 +101,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       icon: <Target className="w-4 h-4" />,
       color: 'text-neon-400',
       bg: 'bg-neon-400/10',
+      filter: 'today' as FilterStatus,
     },
     {
       label: 'Overdue',
@@ -91,6 +109,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       icon: <AlertTriangle className="w-4 h-4" />,
       color: 'text-red-400',
       bg: 'bg-red-400/10',
+      filter: 'overdue' as FilterStatus,
     },
     {
       label: 'Done Today',
@@ -98,8 +117,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       icon: <CheckSquare className="w-4 h-4" />,
       color: 'text-emerald-400',
       bg: 'bg-emerald-400/10',
+      filter: 'completed' as FilterStatus,
     },
   ];
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -168,7 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {statCards.map((card) => (
             <div 
               key={card.label}
-              onClick={() => { haptic.lightTap(); onNavigateToView('tasks'); }}
+              onClick={() => { haptic.lightTap(); onNavigateToView('tasks', card.filter); }}
               className={`p-4 rounded-[20px] border cursor-pointer transition-all active:scale-[0.98] ${
                 isLight 
                   ? 'bg-white border-black/[0.04] shadow-[0_2px_8px_rgba(0,0,0,0.04)]' 
@@ -203,15 +233,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </button>
         </div>
         <div className="flex items-center gap-4">
-          {/* Activity Ring */}
+          {/* Activity Ring - Dynamic */}
           <div className="relative w-20 h-20 shrink-0">
             <svg width="80" height="80" viewBox="0 0 80 80">
+              {/* Background rings */}
               <circle cx="40" cy="40" r="34" fill="none" strokeWidth="6" 
                 className={isLight ? 'stroke-[#f0f0f0]' : 'stroke-[#2a2a2a]'} />
               <circle cx="40" cy="40" r="26" fill="none" strokeWidth="6" 
                 className={isLight ? 'stroke-[#f0f0f0]' : 'stroke-[#2a2a2a]'} />
               <circle cx="40" cy="40" r="18" fill="none" strokeWidth="6" 
                 className={isLight ? 'stroke-[#f0f0f0]' : 'stroke-[#2a2a2a]'} />
+              {/* Progress rings */}
+              <circle cx="40" cy="40" r="34" fill="none" strokeWidth="6" strokeLinecap="round"
+                stroke="#c8ff00"
+                className="rotate-[-90deg] origin-center transition-all duration-700"
+                strokeDasharray={`${2 * Math.PI * 34}`}
+                strokeDashoffset={`${2 * Math.PI * 34 * (1 - ringProgress)}`} />
+              <circle cx="40" cy="40" r="26" fill="none" strokeWidth="6" strokeLinecap="round"
+                stroke="#22c55e"
+                className="rotate-[-90deg] origin-center transition-all duration-700"
+                strokeDasharray={`${2 * Math.PI * 26}`}
+                strokeDashoffset={`${2 * Math.PI * 26 * (1 - Math.min(weekSessions / 3, 1))}`} />
+              <circle cx="40" cy="40" r="18" fill="none" strokeWidth="6" strokeLinecap="round"
+                stroke="#3b82f6"
+                className="rotate-[-90deg] origin-center transition-all duration-700"
+                strokeDasharray={`${2 * Math.PI * 18}`}
+                strokeDashoffset={`${2 * Math.PI * 18 * (1 - Math.min(todayVolume / 5000, 1))}`} />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <Flame className={`w-5 h-5 ${totalWorkoutsLogged > 0 ? 'text-neon-400' : isLight ? 'text-slate-300' : 'text-white/20'}`} />
@@ -235,12 +282,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="flex items-center justify-between">
               <span className={`text-[11px] font-semibold ${isLight ? 'text-[#888]' : 'text-white/50'}`}>This Week</span>
               <span className={`text-xs font-bold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
-                {fitnessEntries.filter(e => {
-                  const d = new Date(e.date);
-                  const now = new Date();
-                  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                  return d >= weekAgo;
-                }).length} sessions
+                {weekSessions} sessions
               </span>
             </div>
           </div>
@@ -261,12 +303,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
           <div className="space-y-2">
             {recentWorkouts.map((workout) => (
-              <div
+              <button
                 key={workout.id}
-                className={`flex items-center gap-3 p-3 rounded-2xl ${
+                onClick={() => { haptic.lightTap(); onSelectWorkout(workout.id); }}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all active:scale-[0.98] cursor-pointer ${
                   isLight
-                    ? 'bg-white border border-black/[0.04] shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
-                    : 'bg-[#1a1a1a] border border-white/[0.06]'
+                    ? 'bg-white border border-black/[0.04] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]'
+                    : 'bg-[#1a1a1a] border border-white/[0.06] hover:border-white/[0.12]'
                 }`}
               >
                 <div 
@@ -284,15 +327,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   </p>
                 </div>
                 <div className={`text-xs shrink-0 ${isLight ? 'text-[#888]' : 'text-white/40'}`}>
-                  {new Date(workout.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {formatDate(workout.date)}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State - only when no tasks AND no workouts */}
       {tasks.length === 0 && fitnessEntries.length === 0 && (
         <div className={`p-6 rounded-[20px] border text-center ${
           isLight ? 'bg-white border-black/[0.04]' : 'bg-[#1a1a1a] border-white/[0.06]'
@@ -305,23 +348,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <h3 className={`text-sm font-bold mb-1 ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
             Ready to get started?
           </h3>
-          <p className={`text-xs mb-4 ${isLight ? 'text-[#888]' : 'text-white/50'}`}>
-            Create your first task or log a workout
+          <p className={`text-xs ${isLight ? 'text-[#888]' : 'text-white/50'}`}>
+            Use the buttons above to create your first task or log a workout
           </p>
-          <div className="flex gap-2 justify-center">
-            <button
-              onClick={() => { haptic.mediumClick(); onNewTask(); }}
-              className="px-4 py-2 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
-            >
-              Create Task
-            </button>
-            <button
-              onClick={() => { haptic.mediumClick(); onLogWorkout(); }}
-              className="px-4 py-2 rounded-xl bg-neon-400 text-[#0a0a0a] font-bold text-xs shadow-lg shadow-neon-400/25 hover:bg-neon-500 active:scale-95 transition-all cursor-pointer"
-            >
-              Log Workout
-            </button>
-          </div>
         </div>
       )}
     </div>

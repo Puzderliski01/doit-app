@@ -17,6 +17,7 @@ import {
   FitnessEntry,
   UserProfile,
   Group,
+  Exercise,
   GroupTask,
   MealEntry,
   DailyNutritionTarget,
@@ -194,6 +195,7 @@ export default function App() {
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [preSelectedExercise, setPreSelectedExercise] = useState<Exercise | null>(null);
 
   // Persist current view
   useEffect(() => {
@@ -1488,7 +1490,10 @@ export default function App() {
                 setSelectedWorkoutId(id);
                 setShowWorkoutDetail(true);
               }}
-              onNavigateToView={(view) => setCurrentView(view)}
+              onNavigateToView={(view, filter) => {
+                setCurrentView(view);
+                if (filter) setStatusFilter(filter);
+              }}
               onNewTask={() => {
                 setEditingTask(null);
                 setIsTaskModalOpen(true);
@@ -1938,10 +1943,8 @@ export default function App() {
             <ExercisePickerScreen
               theme={theme}
               onSelectExercise={(exercise) => {
+                setPreSelectedExercise(exercise);
                 setShowExercisePicker(false);
-                setEditingTask(null);
-                setIsTaskModalOpen(false);
-                // Open exercise log modal with pre-selected exercise
                 setIsExerciseLogModalOpen(true);
               }}
               onBack={() => setShowExercisePicker(false)}
@@ -2026,10 +2029,14 @@ export default function App() {
         <Suspense fallback={null}>
           <ExerciseLogModal
             isOpen={isExerciseLogModalOpen}
-            onClose={() => setIsExerciseLogModalOpen(false)}
+            onClose={() => {
+              setIsExerciseLogModalOpen(false);
+              setPreSelectedExercise(null);
+            }}
             onSave={handleSaveFitnessEntry}
             theme={theme}
             defaultWeightUnit={userProfile.weightUnit}
+            preSelectedExercise={preSelectedExercise}
           />
         </Suspense>
 
