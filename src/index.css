@@ -173,7 +173,7 @@
 /* Mobile bottom nav spacer */
 @media (max-width: 1023px) {
   .mobile-nav-spacer {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 

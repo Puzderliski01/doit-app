@@ -1413,6 +1413,7 @@ export default function App() {
             setEditingTask(null);
             setIsTaskModalOpen(true);
           }}
+          onLogWorkout={() => setShowExercisePicker(true)}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
           onOpenDocs={() => setIsDocsModalOpen(true)}
           unreadNotifsCount={appNotifications.filter(n => !n.read).length}
@@ -1486,6 +1487,7 @@ export default function App() {
               tasks={tasks}
               fitnessEntries={fitnessEntries}
               totalWorkoutsLogged={fitnessEntries.length}
+              userProfile={userProfile}
               onSelectWorkout={(id) => {
                 setSelectedWorkoutId(id);
                 setShowWorkoutDetail(true);
@@ -2087,6 +2089,11 @@ export default function App() {
         <MobileNav
           currentView={currentView}
           onViewChange={setCurrentView}
+          onNewTask={() => {
+            setEditingTask(null);
+            setIsTaskModalOpen(true);
+          }}
+          onLogWorkout={() => setShowExercisePicker(true)}
           theme={theme}
         />
 

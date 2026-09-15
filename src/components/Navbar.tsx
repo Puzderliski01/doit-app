@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ViewMode, AuthUser } from '../types';
 import { storage } from '../utils/storage';
 import { t } from '../i18n';
@@ -10,8 +10,10 @@ import {
   Dumbbell,
   Settings as SettingsIcon,
   Home,
-  User as UserIcon,
   LogIn,
+  Flame,
+  ListTodo,
+  X,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { User } from 'firebase/auth';
@@ -22,6 +24,7 @@ interface NavbarProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   onOpenNewTask: () => void;
+  onLogWorkout: () => void;
   onOpenNotifications: () => void;
   onOpenDocs: () => void;
   unreadNotifsCount: number;
@@ -37,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   theme,
   onToggleTheme,
   onOpenNewTask,
+  onLogWorkout,
   onOpenNotifications,
   onOpenDocs,
   unreadNotifsCount,
@@ -53,6 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   const isLight = theme === 'light';
+  const [showActions, setShowActions] = useState(false);
 
   return (
     <header className={`hidden lg:block sticky top-0 z-40 relative transition-all duration-300 safe-area-top ${
@@ -83,10 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 id={`nav-tab-${item.id}`}
-                onClick={() => {
-                  haptic.lightTap();
-                  onViewChange(item.id);
-                }}
+                onClick={() => { haptic.lightTap(); onViewChange(item.id); }}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
                   isActive
                     ? isLight
@@ -109,11 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Theme Toggle */}
           <button
             id="btn-theme-toggle"
-            onClick={() => {
-              haptic.lightTap();
-              onToggleTheme();
-              storage.saveTheme(isLight ? 'dark' : 'light');
-            }}
+            onClick={() => { haptic.lightTap(); onToggleTheme(); storage.saveTheme(isLight ? 'dark' : 'light'); }}
             className={`w-9 h-9 flex items-center justify-center border rounded-full transition-all cursor-pointer ${
               isLight 
                 ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' 
@@ -135,12 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               {currentUser.photoURL ? (
-                <img 
-                  src={currentUser.photoURL} 
-                  alt={currentUser.displayName || 'User'} 
-                  referrerPolicy="no-referrer"
-                  className="w-6 h-6 rounded-full border border-amber-400/80 object-cover" 
-                />
+                <img src={currentUser.photoURL} alt={currentUser.displayName || 'User'} referrerPolicy="no-referrer" className="w-6 h-6 rounded-full border border-amber-400/80 object-cover" />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-black font-bold text-xs">
                   {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
@@ -165,19 +158,49 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* New Task Button */}
-          <button
-            id="btn-header-new-task"
-            onClick={() => { haptic.mediumClick(); onOpenNewTask(); }}
-            className={`flex items-center gap-1.5 px-4 py-2 font-bold rounded-full text-xs active:scale-95 transition-all cursor-pointer ${
-              isLight 
-                ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-[0_4px_14px_rgba(249,115,22,0.35)]' 
-                : 'bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.2)]'
-            }`}
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>New Task</span>
-          </button>
+          {/* Central FAB Button */}
+          <div className="relative">
+            <button
+              id="btn-fab-actions"
+              onClick={() => { haptic.mediumClick(); setShowActions(!showActions); }}
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 cursor-pointer ${
+                showActions
+                  ? 'bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.4)] rotate-45'
+                  : 'bg-orange-500 text-white hover:bg-orange-600 shadow-[0_4px_14px_rgba(249,115,22,0.35)]'
+              }`}
+            >
+              {showActions ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5 stroke-[2.5]" />}
+            </button>
+
+            {/* Dropdown Actions */}
+            {showActions && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowActions(false)} />
+                <div className={`absolute right-0 top-12 z-50 min-w-[180px] rounded-2xl border p-2 shadow-xl ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#1a1a1a] border-white/10'
+                }`}>
+                  <button
+                    onClick={() => { haptic.mediumClick(); setShowActions(false); onLogWorkout(); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                      isLight ? 'hover:bg-slate-50 text-slate-900' : 'hover:bg-white/5 text-white'
+                    }`}
+                  >
+                    <Flame className="w-4 h-4 text-neon-400" />
+                    Log Workout
+                  </button>
+                  <button
+                    onClick={() => { haptic.mediumClick(); setShowActions(false); onOpenNewTask(); }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                      isLight ? 'hover:bg-slate-50 text-slate-900' : 'hover:bg-white/5 text-white'
+                    }`}
+                  >
+                    <ListTodo className="w-4 h-4 text-orange-500" />
+                    New Task
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
       </div>
