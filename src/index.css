@@ -170,9 +170,53 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Mobile bottom nav spacer - removed, using top navbar on all devices */
+/* Mobile bottom nav spacer */
 @media (max-width: 1023px) {
   .mobile-nav-spacer {
-    padding-bottom: 0;
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 1023px) {
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+  
+  /* Smooth scroll on mobile */
+  .scroll-smooth {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Remove tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Hide scrollbar for filter chips */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Full-screen overlay for exercise picker on mobile */
+@media (max-width: 1023px) {
+  .exercise-picker-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

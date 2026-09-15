@@ -11,28 +11,35 @@ import {
   TrendingUp,
   User,
   Flame,
+  Play,
+  Calendar,
 } from 'lucide-react';
-import { Task } from '../types';
+import { Task, FitnessEntry } from '../types';
 import { haptic } from '../utils/haptics';
+import { MUSCLE_GROUP_LABELS, MUSCLE_GROUP_ICONS, MUSCLE_GROUP_COLORS } from '../utils/fitness';
 
 interface HomeScreenProps {
   theme: 'dark' | 'light';
   userName?: string;
   tasks: Task[];
+  fitnessEntries: FitnessEntry[];
   totalWorkoutsLogged: number;
   onSelectWorkout: (workoutId: string) => void;
   onNavigateToView: (view: 'tasks' | 'fitness') => void;
   onNewTask: () => void;
+  onLogWorkout: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ 
   theme, 
   userName = 'there',
   tasks,
+  fitnessEntries,
   totalWorkoutsLogged,
   onSelectWorkout,
   onNavigateToView,
   onNewTask,
+  onLogWorkout,
 }) => {
   const isLight = theme === 'light';
 
@@ -50,6 +57,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     const now = new Date();
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
   });
+
+  // Recent workouts (last 3)
+  const recentWorkouts = fitnessEntries.slice(-3).reverse();
+
+  // Today's volume
+  const todayVolume = fitnessEntries
+    .filter(e => {
+      const d = new Date(e.date);
+      const now = new Date();
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    })
+    .reduce((sum, e) => sum + e.totalVolume, 0);
 
   const statCards = [
     {
@@ -112,7 +131,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="flex gap-3">
         <button
           onClick={() => { haptic.mediumClick(); onNewTask(); }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer ${
             isLight
               ? 'bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.35)] hover:bg-orange-600'
               : 'bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.15)]'
@@ -122,8 +141,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           New Task
         </button>
         <button
-          onClick={() => { haptic.mediumClick(); onNavigateToView('fitness'); }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer ${
+          onClick={() => { haptic.mediumClick(); onLogWorkout(); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer ${
             isLight
               ? 'bg-neon-400/15 text-neon-700 border border-neon-300 hover:bg-neon-400/25'
               : 'bg-neon-400/10 text-neon-400 border border-neon-400/20 hover:bg-neon-400/20'
@@ -150,7 +169,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div 
               key={card.label}
               onClick={() => { haptic.lightTap(); onNavigateToView('tasks'); }}
-              className={`p-4 rounded-[20px] border cursor-pointer transition-all hover:scale-[1.02] ${
+              className={`p-4 rounded-[20px] border cursor-pointer transition-all active:scale-[0.98] ${
                 isLight 
                   ? 'bg-white border-black/[0.04] shadow-[0_2px_8px_rgba(0,0,0,0.04)]' 
                   : 'bg-[#1a1a1a] border-white/[0.06]'
@@ -170,7 +189,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </div>
 
-      {/* Fitness Summary */}
+      {/* Fitness Overview */}
       <div className={`p-4 rounded-[20px] border ${
         isLight ? 'bg-white border-black/[0.04] shadow-[0_2px_8px_rgba(0,0,0,0.04)]' : 'bg-[#1a1a1a] border-white/[0.06]'
       }`}>
@@ -184,7 +203,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </button>
         </div>
         <div className="flex items-center gap-4">
-          {/* Activity Ring - empty state */}
+          {/* Activity Ring */}
           <div className="relative w-20 h-20 shrink-0">
             <svg width="80" height="80" viewBox="0 0 80 80">
               <circle cx="40" cy="40" r="34" fill="none" strokeWidth="6" 
@@ -195,7 +214,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 className={isLight ? 'stroke-[#f0f0f0]' : 'stroke-[#2a2a2a]'} />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Flame className={`w-5 h-5 ${isLight ? 'text-slate-300' : 'text-white/20'}`} />
+              <Flame className={`w-5 h-5 ${totalWorkoutsLogged > 0 ? 'text-neon-400' : isLight ? 'text-slate-300' : 'text-white/20'}`} />
             </div>
           </div>
 
@@ -208,23 +227,73 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className={`text-[11px] font-semibold ${isLight ? 'text-[#888]' : 'text-white/50'}`}>Steps</span>
+              <span className={`text-[11px] font-semibold ${isLight ? 'text-[#888]' : 'text-white/50'}`}>Today's Volume</span>
               <span className={`text-xs font-bold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
-                0
+                {todayVolume > 0 ? `${todayVolume.toLocaleString()} kg` : '0 kg'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className={`text-[11px] font-semibold ${isLight ? 'text-[#888]' : 'text-white/50'}`}>Calories</span>
+              <span className={`text-[11px] font-semibold ${isLight ? 'text-[#888]' : 'text-white/50'}`}>This Week</span>
               <span className={`text-xs font-bold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
-                0
+                {fitnessEntries.filter(e => {
+                  const d = new Date(e.date);
+                  const now = new Date();
+                  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                  return d >= weekAgo;
+                }).length} sessions
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Motivational / Getting Started */}
-      {tasks.length === 0 && (
+      {/* Recent Workouts */}
+      {recentWorkouts.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className={`text-sm font-bold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>Recent Workouts</h2>
+            <button 
+              onClick={() => { haptic.lightTap(); onNavigateToView('fitness'); }}
+              className={`text-xs font-semibold flex items-center gap-0.5 ${isLight ? 'text-neon-600' : 'text-neon-400'}`}
+            >
+              View all <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="space-y-2">
+            {recentWorkouts.map((workout) => (
+              <div
+                key={workout.id}
+                className={`flex items-center gap-3 p-3 rounded-2xl ${
+                  isLight
+                    ? 'bg-white border border-black/[0.04] shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
+                    : 'bg-[#1a1a1a] border border-white/[0.06]'
+                }`}
+              >
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
+                  style={{ backgroundColor: `${MUSCLE_GROUP_COLORS[workout.muscleGroup]}15` }}
+                >
+                  {MUSCLE_GROUP_ICONS[workout.muscleGroup]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`text-sm font-bold truncate ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
+                    {workout.exerciseName}
+                  </h4>
+                  <p className={`text-xs ${isLight ? 'text-[#888]' : 'text-white/50'}`}>
+                    {workout.sets.filter(s => s.completed).length} sets · {workout.totalVolume.toLocaleString()} kg
+                  </p>
+                </div>
+                <div className={`text-xs shrink-0 ${isLight ? 'text-[#888]' : 'text-white/40'}`}>
+                  {new Date(workout.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {tasks.length === 0 && fitnessEntries.length === 0 && (
         <div className={`p-6 rounded-[20px] border text-center ${
           isLight ? 'bg-white border-black/[0.04]' : 'bg-[#1a1a1a] border-white/[0.06]'
         }`}>
@@ -237,14 +306,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             Ready to get started?
           </h3>
           <p className={`text-xs mb-4 ${isLight ? 'text-[#888]' : 'text-white/50'}`}>
-            Create your first task and begin your productivity journey
+            Create your first task or log a workout
           </p>
-          <button
-            onClick={() => { haptic.mediumClick(); onNewTask(); }}
-            className="px-5 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
-          >
-            Create First Task
-          </button>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => { haptic.mediumClick(); onNewTask(); }}
+              className="px-4 py-2 rounded-xl bg-orange-500 text-white font-bold text-xs shadow-lg shadow-orange-500/25 hover:bg-orange-600 active:scale-95 transition-all cursor-pointer"
+            >
+              Create Task
+            </button>
+            <button
+              onClick={() => { haptic.mediumClick(); onLogWorkout(); }}
+              className="px-4 py-2 rounded-xl bg-neon-400 text-[#0a0a0a] font-bold text-xs shadow-lg shadow-neon-400/25 hover:bg-neon-500 active:scale-95 transition-all cursor-pointer"
+            >
+              Log Workout
+            </button>
+          </div>
         </div>
       )}
     </div>

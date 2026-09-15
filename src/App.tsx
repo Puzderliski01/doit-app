@@ -47,6 +47,7 @@ import { CongratulationScreen } from './components/CongratulationScreen';
 import { WorkoutDetail } from './components/WorkoutDetail';
 import { ExerciseInProgress } from './components/ExerciseInProgress';
 import { TrainerProfile } from './components/TrainerProfile';
+import { ExercisePickerScreen } from './components/ExercisePickerScreen';
 
 // Lazy load heavy components that aren't immediately visible
 const TaskFormModal = lazy(() => import('./components/TaskFormModal').then(m => ({ default: m.TaskFormModal })));
@@ -192,6 +193,7 @@ export default function App() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [selectedTrainerId, setSelectedTrainerId] = useState<string | null>(null);
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
 
   // Persist current view
   useEffect(() => {
@@ -1480,6 +1482,7 @@ export default function App() {
               theme={theme}
               userName={currentUser?.displayName || 'there'}
               tasks={tasks}
+              fitnessEntries={fitnessEntries}
               totalWorkoutsLogged={fitnessEntries.length}
               onSelectWorkout={(id) => {
                 setSelectedWorkoutId(id);
@@ -1490,6 +1493,7 @@ export default function App() {
                 setEditingTask(null);
                 setIsTaskModalOpen(true);
               }}
+              onLogWorkout={() => setShowExercisePicker(true)}
             />
           )}
 
@@ -1929,6 +1933,21 @@ export default function App() {
             />
           )}
 
+          {/* EXERCISE PICKER FULL SCREEN */}
+          {showExercisePicker && (
+            <ExercisePickerScreen
+              theme={theme}
+              onSelectExercise={(exercise) => {
+                setShowExercisePicker(false);
+                setEditingTask(null);
+                setIsTaskModalOpen(false);
+                // Open exercise log modal with pre-selected exercise
+                setIsExerciseLogModalOpen(true);
+              }}
+              onBack={() => setShowExercisePicker(false)}
+            />
+          )}
+
         </main>
 
         {/* Task Creation & Editing Modal */}
@@ -2057,14 +2076,12 @@ export default function App() {
           theme={theme}
         />
 
-        {/* Bottom Mobile Navigation - Hidden, using unified top Navbar */}
-        {false && (
+        {/* Bottom Mobile Navigation */}
         <MobileNav
           currentView={currentView}
           onViewChange={setCurrentView}
           theme={theme}
         />
-        )}
 
       </div>
   );
