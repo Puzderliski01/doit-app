@@ -899,3 +899,203 @@ export const EXERCISE_SUBSTITUTIONS: Record<string, { name: string; reason: stri
 export function getExerciseSubstitutions(exerciseId: string): { name: string; reason: string }[] {
   return EXERCISE_SUBSTITUTIONS[exerciseId] || [];
 }
+
+// === NEW UTILITY FUNCTIONS ===
+
+// Weekly goal progress (workouts per week)
+export function getWeeklyGoalProgress(entries: FitnessEntry[], goal: number = 4): { completed: number; goal: number; percent: number } {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const weekEntries = entries.filter(e => new Date(e.date) >= startOfWeek);
+  const uniqueDays = new Set(weekEntries.map(e => e.date.slice(0, 10))).size;
+  const percent = Math.min(100, Math.round((uniqueDays / goal) * 100));
+  
+  return { completed: uniqueDays, goal, percent };
+}
+
+// Today's focus muscle (based on recovery)
+export function getTodaysFocus(entries: FitnessEntry[]): { muscle: MuscleGroup; label: string; icon: string; reason: string } | null {
+  const now = new Date();
+  const muscleGroupCounts: Record<string, number> = {};
+  const muscleLastTrained: Record<string, number> = {};
+  
+  const allMuscles: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'core'];
+  
+  entries.forEach(e => {
+    const daysSince = Math.floor((now.getTime() - new Date(e.date).getTime()) / 86400000);
+    muscleGroupCounts[e.muscleGroup] = (muscleGroupCounts[e.muscleGroup] || 0) + 1;
+    if (!muscleLastTrained[e.muscleGroup] || daysSince < muscleLastTrained[e.muscleGroup]) {
+      muscleLastTrained[e.muscleGroup] = daysSince;
+    }
+  });
+  
+  // Find muscles not trained in 3+ days, prioritizing those trained least recently
+  const candidates = allMuscles
+    .filter(m => (muscleLastTrained[m] || 99) >= 3)
+    .sort((a, b) => (muscleLastTrained[a] || 99) - (muscleLastTrained[b] || 99));
+  
+  if (candidates.length === 0) {
+    // All muscles trained recently, suggest the one with lowest frequency
+    const sorted = allMuscles.sort((a, b) => (muscleGroupCounts[a] || 0) - (muscleGroupCounts[b] || 0));
+    const muscle = sorted[0];
+    return {
+      muscle,
+      label: MUSCLE_GROUP_LABELS[muscle],
+      icon: MUSCLE_GROUP_ICONS[muscle],
+      reason: 'Least trained muscle group',
+    };
+  }
+  
+  const muscle = candidates[0];
+  return {
+    muscle,
+    label: MUSCLE_GROUP_LABELS[muscle],
+    icon: MUSCLE_GROUP_ICONS[muscle],
+    reason: `Last trained ${muscleLastTrained[muscle] || '?'} days ago`,
+  };
+}
+
+// Training consistency score (0-100 based on last 30 days)
+export function getTrainingConsistency(entries: FitnessEntry[]): number {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+  
+  const recentEntries = entries.filter(e => new Date(e.date) >= thirtyDaysAgo);
+  const uniqueDays = new Set(recentEntries.map(e => e.date.slice(0, 10))).size;
+  
+  // Ideal: 4-5 workouts per 30 days
+  const score = Math.min(100, Math.round((uniqueDays / 5) * 100));
+  return score;
+}
+
+// Muscle imbalance detection
+export function getMuscleImbalances(stats: FitnessStats): { muscle: MuscleGroup; label: string; icon: string; rankIdx: number; avgRankIdx: number; gap: number }[] {
+  const allMuscles: MuscleGroup[] = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'glutes', 'core'];
+  const muscleRanks = stats.muscleRanks || {} as Record<MuscleGroup, { xp: number; rank: Rank }>;
+  
+  const muscleData = allMuscles.map(m => {
+    const rankData = muscleRanks[m];
+    const rankIdx = rankData ? RANKS.findIndex(r => r.rank === rankData.rank) : 0;
+    return { muscle: m, rankIdx, xp: rankData?.xp || 0 };
+  });
+  
+  const avgRankIdx = muscleData.reduce((sum, m) => sum + m.rankIdx, 0) / muscleData.length;
+  
+  return muscleData
+    .map(m => ({
+      muscle: m.muscle,
+      label: MUSCLE_GROUP_LABELS[m.muscle],
+      icon: MUSCLE_GROUP_ICONS[m.muscle],
+      rankIdx: m.rankIdx,
+      avgRankIdx: Math.round(avgRankIdx),
+      gap: Math.round(avgRankIdx - m.rankIdx),
+    }))
+    .filter(m => m.gap > 0)
+    .sort((a, b) => b.gap - a.gap)
+    .slice(0, 3);
+}
+
+// Volume milestones
+export function getVolumeMilestones(totalVolume: number): { threshold: number; label: string; achieved: boolean }[] {
+  const milestones = [
+    { threshold: 10000, label: '10K Volume' },
+    { threshold: 50000, label: '50K Volume' },
+    { threshold: 100000, label: '100K Volume' },
+    { threshold: 250000, label: '250K Volume' },
+    { threshold: 500000, label: '500K Volume' },
+    { threshold: 1000000, label: '1M Volume' },
+  ];
+  
+  return milestones.map(m => ({
+    ...m,
+    achieved: totalVolume >= m.threshold,
+  }));
+}
+
+// Average workout duration
+export function getAverageWorkoutDuration(entries: FitnessEntry[]): number {
+  const withDuration = entries.filter(e => e.durationMinutes && e.durationMinutes > 0);
+  if (withDuration.length === 0) return 0;
+  return Math.round(withDuration.reduce((sum, e) => sum + (e.durationMinutes || 0), 0) / withDuration.length);
+}
+
+// Weekly comparison
+export function getWeeklyComparison(entries: FitnessEntry[]): { thisWeek: { volume: number; workouts: number; sets: number }; lastWeek: { volume: number; workouts: number; sets: number }; changes: { volume: number; workouts: number; sets: number } } {
+  const now = new Date();
+  const startOfThisWeek = new Date(now);
+  startOfThisWeek.setDate(now.getDate() - now.getDay());
+  startOfThisWeek.setHours(0, 0, 0, 0);
+  
+  const startOfLastWeek = new Date(startOfThisWeek);
+  startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+  
+  const thisWeekEntries = entries.filter(e => new Date(e.date) >= startOfThisWeek);
+  const lastWeekEntries = entries.filter(e => {
+    const d = new Date(e.date);
+    return d >= startOfLastWeek && d < startOfThisWeek;
+  });
+  
+  const thisWeek = {
+    volume: thisWeekEntries.reduce((s, e) => s + e.totalVolume, 0),
+    workouts: new Set(thisWeekEntries.map(e => e.date.slice(0, 10))).size,
+    sets: thisWeekEntries.reduce((s, e) => s + e.sets.filter(set => set.completed).length, 0),
+  };
+  
+  const lastWeek = {
+    volume: lastWeekEntries.reduce((s, e) => s + e.totalVolume, 0),
+    workouts: new Set(lastWeekEntries.map(e => e.date.slice(0, 10))).size,
+    sets: lastWeekEntries.reduce((s, e) => s + e.sets.filter(set => set.completed).length, 0),
+  };
+  
+  const changes = {
+    volume: lastWeek.volume > 0 ? Math.round(((thisWeek.volume - lastWeek.volume) / lastWeek.volume) * 100) : 0,
+    workouts: lastWeek.workouts > 0 ? Math.round(((thisWeek.workouts - lastWeek.workouts) / lastWeek.workouts) * 100) : 0,
+    sets: lastWeek.sets > 0 ? Math.round(((thisWeek.sets - lastWeek.sets) / lastWeek.sets) * 100) : 0,
+  };
+  
+  return { thisWeek, lastWeek, changes };
+}
+
+// Mood trend
+export function getMoodTrend(entries: FitnessEntry[]): { mood: WorkoutMood; count: number; percent: number }[] {
+  const moodCounts: Record<string, number> = {};
+  const withMood = entries.filter(e => e.mood);
+  
+  withMood.forEach(e => {
+    if (e.mood) {
+      moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
+    }
+  });
+  
+  const total = withMood.length || 1;
+  const moods: WorkoutMood[] = ['energized', 'great', 'good', 'tired', 'exhausted'];
+  
+  return moods
+    .map(m => ({
+      mood: m,
+      count: moodCounts[m] || 0,
+      percent: Math.round(((moodCounts[m] || 0) / total) * 100),
+    }))
+    .filter(m => m.count > 0)
+    .sort((a, b) => b.count - a.count);
+}
+
+// Active days data for mini heatmap (last 30 days)
+export function getActiveDaysData(entries: FitnessEntry[]): { date: string; count: number }[] {
+  const now = new Date();
+  const days: { date: string; count: number }[] = [];
+  
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const count = entries.filter(e => e.date.slice(0, 10) === dateStr).length;
+    days.push({ date: dateStr, count });
+  }
+  
+  return days;
+}
