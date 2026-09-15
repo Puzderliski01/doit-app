@@ -3,7 +3,7 @@ import { Home, ListTodo, Dumbbell, Settings, Plus, X, Sparkles, Flame } from 'lu
 
 interface MobileNavProps {
   currentView: string;
-  onNavigate: (view: string) => void;
+  onViewChange: (view: string) => void;
   onNewTask: () => void;
   onLogWorkout: () => void;
   theme: 'dark' | 'light';
@@ -11,7 +11,7 @@ interface MobileNavProps {
 
 export const MobileNav: React.FC<MobileNavProps> = ({
   currentView,
-  onNavigate,
+  onViewChange,
   onNewTask,
   onLogWorkout,
   theme,
@@ -102,7 +102,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
             return (
               <button
                 key={tab.id}
-                onClick={() => onNavigate(tab.id)}
+                onClick={() => onViewChange(tab.id)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[52px] transition-all ${
                   isActive
                     ? isLight
