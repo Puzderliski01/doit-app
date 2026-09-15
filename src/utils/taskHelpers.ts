@@ -1,4 +1,5 @@
 import { Task, TaskTemplate, KanbanColumn, Priority, SubTask } from '../types';
+import { isOverdue, isDueToday } from './dateHelpers';
 
 // Default task templates
 export const DEFAULT_TASK_TEMPLATES: TaskTemplate[] = [
@@ -321,4 +322,65 @@ export function createTaskFromTemplate(template: TaskTemplate): Task {
     order: 0,
     kanbanColumn: 'todo',
   };
+}
+
+// Group tasks into sections for the list view
+export interface TaskGroup {
+  id: string;
+  label: string;
+  color: string; // tailwind color class for the dot/accent
+  tasks: Task[];
+}
+
+export function groupTasksBySection(tasks: Task[]): TaskGroup[] {
+  const overdue: Task[] = [];
+  const today: Task[] = [];
+  const upcoming: Task[] = [];
+  const noDeadline: Task[] = [];
+  const completed: Task[] = [];
+
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  for (const task of tasks) {
+    if (task.completed) {
+      completed.push(task);
+      continue;
+    }
+    if (!task.dueDate) {
+      noDeadline.push(task);
+      continue;
+    }
+    if (isOverdue(task.dueDate, false)) {
+      overdue.push(task);
+      continue;
+    }
+    if (isDueToday(task.dueDate)) {
+      today.push(task);
+      continue;
+    }
+    // Check if due within 7 days
+    const due = new Date(task.dueDate).getTime();
+    const diffDays = (due - now.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays <= 7) {
+      upcoming.push(task);
+    } else {
+      noDeadline.push(task); // far future goes here
+    }
+  }
+
+  // Sort overdue by most overdue first, today by priority, upcoming by date
+  const priorityOrder: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+  overdue.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  today.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  upcoming.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  const groups: TaskGroup[] = [];
+  if (overdue.length > 0) groups.push({ id: 'overdue', label: 'Overdue', color: 'red', tasks: overdue });
+  if (today.length > 0) groups.push({ id: 'today', label: 'Today', color: 'amber', tasks: today });
+  if (upcoming.length > 0) groups.push({ id: 'upcoming', label: 'Upcoming', color: 'blue', tasks: upcoming });
+  if (noDeadline.length > 0) groups.push({ id: 'no-deadline', label: 'No Deadline', color: 'gray', tasks: noDeadline });
+  if (completed.length > 0) groups.push({ id: 'completed', label: 'Completed', color: 'green', tasks: completed });
+
+  return groups;
 }

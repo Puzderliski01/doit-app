@@ -107,6 +107,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const currentPriorityStyle = priorityStyles[task.priority];
 
+  const priorityStripeColor: Record<Priority, string> = {
+    urgent: isLight ? '#ef4444' : 'rgba(239,68,68,0.7)',
+    high: isLight ? '#f97316' : 'rgba(249,115,22,0.7)',
+    medium: isLight ? '#0ea5e9' : 'rgba(14,165,233,0.5)',
+    low: isLight ? '#10b981' : 'rgba(16,185,129,0.5)',
+  };
+
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!task.completed) {
@@ -160,13 +167,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      className={`group relative p-5 sm:p-6 rounded-[20px] transition-all duration-200 border ${
+      className={`group relative rounded-2xl transition-all duration-200 sm:hover:-translate-y-0.5 sm:hover:shadow-lg ${
         isLight
-          ? `bg-white border-black/[0.04] ${task.completed ? 'opacity-55' : ''}`
-          : `bg-gradient-to-r from-white/[0.08] to-white/[0.03] border-white/[0.08] backdrop-blur-3xl ${task.completed ? 'opacity-55' : ''}`
+          ? `bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${task.completed ? 'opacity-55' : ''}`
+          : `bg-gradient-to-r from-white/[0.06] to-white/[0.02] backdrop-blur-3xl shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${task.completed ? 'opacity-55' : ''}`
       }`}
-      style={{ boxShadow: isLight ? (task.completed ? '0 1px 4px rgba(0,0,0,0.03)' : '0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)') : (task.completed ? 'none' : '0 4px 20px rgba(0,0,0,0.2)') }}
+      style={{ borderLeft: `4px solid ${task.completed ? (isLight ? '#d1d5db' : 'rgba(255,255,255,0.15)') : priorityStripeColor[task.priority]}` }}
     >
+      <div className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
           
           {/* Checkbox and Title Area */}
@@ -373,7 +381,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mt-3 space-y-1.5 overflow-hidden"
+                        className="mt-3 space-y-1.5"
                       >
                         {task.subtasks.map((sub) => (
                           <div 
@@ -450,7 +458,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden"
+              className=""
             >
               <div className={`flex flex-wrap gap-2 pt-3 mt-3 border-t ${
                 isLight ? 'border-[#eef2f6]' : 'border-white/10'
@@ -534,6 +542,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
     </motion.div>
   );
 };
