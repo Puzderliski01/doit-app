@@ -50,6 +50,7 @@ import { WorkoutDetail } from './components/WorkoutDetail';
 import { ExerciseInProgress } from './components/ExerciseInProgress';
 import { TrainerProfile } from './components/TrainerProfile';
 import { ExercisePickerScreen } from './components/ExercisePickerScreen';
+import { WorkoutMode } from './components/WorkoutMode';
 
 // Lazy load heavy components that aren't immediately visible
 const TaskFormModal = lazy(() => import('./components/TaskFormModal').then(m => ({ default: m.TaskFormModal })));
@@ -204,6 +205,7 @@ export default function App() {
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [preSelectedExercise, setPreSelectedExercise] = useState<Exercise | null>(null);
+  const [showWorkoutMode, setShowWorkoutMode] = useState(false);
 
   // Persist current view
   useEffect(() => {
@@ -1624,7 +1626,7 @@ export default function App() {
             setEditingTask(null);
             setIsTaskModalOpen(true);
           }}
-          onLogWorkout={() => setShowExercisePicker(true)}
+          onLogWorkout={() => setShowWorkoutMode(true)}
           onOpenNotifications={() => setIsNotifModalOpen(true)}
           onOpenDocs={() => setIsDocsModalOpen(true)}
           unreadNotifsCount={appNotifications.filter(n => !n.read).length}
@@ -1712,7 +1714,7 @@ export default function App() {
                   setEditingTask(null);
                   setIsTaskModalOpen(true);
                 }}
-                onLogWorkout={() => setShowExercisePicker(true)}
+                onLogWorkout={() => setShowWorkoutMode(true)}
               />
             </div>
           )}
@@ -1743,12 +1745,8 @@ export default function App() {
               }}
               onStartWorkout={() => {
                 setShowWorkoutDetail(false);
-                setShowGetReady(true);
-                setTimeout(() => {
-                  setShowGetReady(false);
-                  setShowExerciseInProgress(true);
-                  setCurrentExerciseIndex(0);
-                }, 2000);
+                setSelectedWorkoutId(null);
+                setShowWorkoutMode(true);
               }}
               onSelectTrainer={(id) => {
                 setSelectedTrainerId(id);
@@ -2548,16 +2546,13 @@ export default function App() {
             />
           )}
 
-          {/* EXERCISE PICKER FULL SCREEN */}
-          {showExercisePicker && (
-            <ExercisePickerScreen
+          {/* WORKOUT MODE - Immersive Full-Screen Experience */}
+          {showWorkoutMode && (
+            <WorkoutMode
               theme={theme}
-              onSelectExercise={(exercise) => {
-                setPreSelectedExercise(exercise);
-                setShowExercisePicker(false);
-                setIsExerciseLogModalOpen(true);
-              }}
-              onBack={() => setShowExercisePicker(false)}
+              defaultWeightUnit={userProfile.weightUnit}
+              onSaveEntry={handleSaveFitnessEntry}
+              onClose={() => setShowWorkoutMode(false)}
             />
           )}
 
@@ -2701,7 +2696,7 @@ export default function App() {
             setEditingTask(null);
             setIsTaskModalOpen(true);
           }}
-          onLogWorkout={() => setShowExercisePicker(true)}
+          onLogWorkout={() => setShowWorkoutMode(true)}
           theme={theme}
         />
 
