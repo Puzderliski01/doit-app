@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FitnessStats,
   FitnessEntry,
@@ -65,6 +65,9 @@ import {
   Heart,
   Hash,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import confetti from 'canvas-confetti';
+import { haptic } from '../utils/haptics';
 
 interface FitnessDashboardProps {
   theme: 'dark' | 'light';
@@ -214,19 +217,28 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
         {TABS.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+            onClick={() => { haptic.lightTap(); setActiveTab(tab.id); }}
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === tab.id
                 ? isLight
-                  ? 'bg-white text-amber-600 shadow-sm'
-                  : 'bg-white/10 text-amber-400'
+                  ? 'text-amber-600'
+                  : 'text-amber-400'
                 : isLight
                   ? 'text-slate-500 hover:text-slate-700'
                   : 'text-white/50 hover:text-white/70'
             }`}
           >
-            {tab.icon}
-            <span>{tab.label}</span>
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="activeFitnessTab"
+                className={`absolute inset-0 rounded-lg ${isLight ? 'bg-white shadow-sm' : 'bg-white/10'}`}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative flex items-center gap-1.5">
+              {tab.icon}
+              <span>{tab.label}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -510,6 +522,207 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
               </div>
             </div>
           )}
+
+          {/* Muscle Group Radar Chart */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-purple-400" />
+                <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Muscle Balance
+                </h3>
+              </div>
+              <span className={`text-[10px] font-bold ${muscleBalance >= 80 ? 'text-green-400' : muscleBalance >= 50 ? 'text-amber-400' : 'text-red-400'}`}>
+                {muscleBalance}%
+              </span>
+            </div>
+            {/* Spider/Radar Chart */}
+            <div className="flex items-center justify-center py-2">
+              <svg viewBox="0 0 200 200" className="w-40 h-40">
+                {[1, 0.75, 0.5, 0.25].map(scale => (
+                  <circle key={scale} cx="100" cy="100" r={80 * scale} fill="none"
+                    stroke={isLight ? '#e2e8f0' : 'rgba(255,255,255,0.06)'} strokeWidth="1" />
+                ))}
+                {muscleRadarData.map((_, i) => {
+                  const angle = (i * 2 * Math.PI / muscleRadarData.length) - Math.PI / 2;
+                  return (
+                    <line key={i} x1="100" y1="100"
+                      x2={100 + 80 * Math.cos(angle)} y2={100 + 80 * Math.sin(angle)}
+                      stroke={isLight ? '#e2e8f0' : 'rgba(255,255,255,0.06)'} strokeWidth="1" />
+                  );
+                })}
+                <polygon
+                  points={muscleRadarData.map((m, i) => {
+                    const angle = (i * 2 * Math.PI / muscleRadarData.length) - Math.PI / 2;
+                    const r = (m.rankIdx / maxRankIdx) * 80;
+                    return `${100 + r * Math.cos(angle)},${100 + r * Math.sin(angle)}`;
+                  }).join(' ')}
+                  fill="rgba(200,255,0,0.15)" stroke="#c8ff00" strokeWidth="2"
+                />
+                {muscleRadarData.map((m, i) => {
+                  const angle = (i * 2 * Math.PI / muscleRadarData.length) - Math.PI / 2;
+                  const r = (m.rankIdx / maxRankIdx) * 80;
+                  return (
+                    <circle key={i} cx={100 + r * Math.cos(angle)} cy={100 + r * Math.sin(angle)}
+                      r="4" fill="#c8ff00" stroke={isLight ? '#fff' : '#121215'} strokeWidth="2" />
+                  );
+                })}
+                {muscleRadarData.map((m, i) => {
+                  const angle = (i * 2 * Math.PI / muscleRadarData.length) - Math.PI / 2;
+                  return (
+                    <text key={i} x={100 + 95 * Math.cos(angle)} y={100 + 95 * Math.sin(angle)}
+                      textAnchor="middle" dominantBaseline="middle"
+                      className={`text-[8px] font-semibold ${isLight ? 'fill-slate-500' : 'fill-white/40'}`}>
+                      {m.icon}
+                    </text>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {muscleRadarData.slice(0, 6).map((m) => (
+                <span key={m.muscle} className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                  isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/10 text-white/60'
+                }`}>
+                  {m.icon} {m.label} Lv.{m.rankIdx}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Personal Record Celebrations */}
+          {Object.keys(stats.personalRecords).length > 0 && (
+            <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-yellow-400" />
+                  <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Personal Records
+                  </h3>
+                </div>
+                <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                  {Object.keys(stats.personalRecords).length} PRs
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(stats.personalRecords).slice(0, 4).map(([exerciseId, pr]) => {
+                  const exercise = ALL_EXERCISES.find(e => e.id === exerciseId);
+                  const isRecentPR = new Date(pr.date).getTime() > Date.now() - 7 * 86400000;
+                  return (
+                    <div key={exerciseId}
+                      className={`relative p-2.5 rounded-xl overflow-hidden ${
+                        isRecentPR
+                          ? isLight ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200' : 'bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border border-yellow-500/20'
+                          : isLight ? 'bg-slate-50' : 'bg-white/5'
+                      }`}
+                    >
+                      {isRecentPR && <span className="absolute top-1 right-1 text-[8px]">🏆</span>}
+                      <p className={`text-[10px] font-semibold truncate ${isLight ? 'text-slate-700' : 'text-white/70'}`}>
+                        {exercise?.name || exerciseId}
+                      </p>
+                      <p className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                        {pr.weight} {userProfile.weightUnit} × {pr.reps}
+                      </p>
+                      <p className={`text-[9px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                        {new Date(pr.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Workout Streak Calendar */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Streak Calendar
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {stats.currentStreak > 0 && (
+                  <span className="text-[10px] font-bold text-orange-400">🔥 {stats.currentStreak}d</span>
+                )}
+                {stats.bestStreak > 0 && (
+                  <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                    Best: {stats.bestStreak}d
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-[3px] flex-wrap">
+              {Array.from({ length: 84 }).map((_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (83 - i));
+                const dateStr = d.toISOString().slice(0, 10);
+                const count = entries.filter(e => e.date === dateStr).length;
+                const intensity = count === 0 ? 0 : count === 1 ? 1 : 2;
+                const colors = isLight
+                  ? ['bg-slate-100', 'bg-orange-200', 'bg-orange-500']
+                  : ['bg-white/5', 'bg-orange-500/30', 'bg-orange-500'];
+                return (
+                  <div key={i} className={`w-2.5 h-2.5 rounded-[3px] ${colors[intensity]}`}
+                    title={`${dateStr}: ${count} workout${count !== 1 ? 's' : ''}`} />
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className={`text-[9px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Less</span>
+              {(isLight ? ['bg-slate-100', 'bg-orange-200', 'bg-orange-500'] : ['bg-white/5', 'bg-orange-500/30', 'bg-orange-500']).map((c, i) => (
+                <div key={i} className={`w-2.5 h-2.5 rounded-[3px] ${c}`} />
+              ))}
+              <span className={`text-[9px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>More</span>
+            </div>
+          </div>
+
+          {/* Progressive Overload Tracker */}
+          {topExercises.length > 0 && (
+            <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+                  <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Progressive Overload
+                  </h3>
+                </div>
+              </div>
+              <div className="space-y-2.5">
+                {topExercises.slice(0, 3).map(({ exercise }) => {
+                  if (!exercise) return null;
+                  const history = stats.exerciseHistory[exercise.id] || [];
+                  if (history.length < 2) return null;
+                  const recent = history.slice(-3);
+                  const latestVol = recent[recent.length - 1]?.volume || 0;
+                  const prevVol = recent.length > 1 ? recent[recent.length - 2]?.volume : latestVol;
+                  const change = prevVol > 0 ? ((latestVol - prevVol) / prevVol * 100) : 0;
+                  const isUp = change > 0;
+                  return (
+                    <div key={exercise.id} className={`flex items-center gap-3 p-2.5 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                      <span className="text-lg">{MUSCLE_GROUP_ICONS[exercise.muscleGroup]}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-semibold truncate ${isLight ? 'text-slate-800' : 'text-white/80'}`}>
+                          {exercise.name}
+                        </p>
+                        <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                          {latestVol.toLocaleString()} vol
+                        </p>
+                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold ${
+                        change === 0
+                          ? isLight ? 'bg-gray-100 text-gray-500' : 'bg-white/5 text-white/30'
+                          : isUp ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                      }`}>
+                        {change === 0 ? '—' : isUp ? '↑' : '↓'} {Math.abs(change).toFixed(0)}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -720,6 +933,112 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                   </p>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Body Metrics Section */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-pink-400" />
+                <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Body Stats
+                </h3>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`p-3 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  Body Weight
+                </p>
+                <p className={`text-lg font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {userProfile.bodyWeight || '—'} <span className={`text-xs font-normal ${isLight ? 'text-slate-400' : 'text-white/30'}`}>{userProfile.weightUnit}</span>
+                </p>
+              </div>
+              <div className={`p-3 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  Height
+                </p>
+                <p className={`text-lg font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {userProfile.heightCm || '—'} <span className={`text-xs font-normal ${isLight ? 'text-slate-400' : 'text-white/30'}`}>cm</span>
+                </p>
+              </div>
+              <div className={`p-3 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  Total Volume
+                </p>
+                <p className={`text-lg font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {getFormattedVolume(convertWeight(stats.totalVolume, stats.totalVolumeUnit), userProfile.weightUnit)}
+                </p>
+              </div>
+              <div className={`p-3 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  Est. 1RM Best
+                </p>
+                <p className={`text-lg font-bold mt-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {Object.values(stats.personalRecords).length > 0
+                    ? Math.max(...Object.values(stats.personalRecords).map(pr => {
+                        const w = convertWeight(pr.weight, stats.totalVolumeUnit);
+                        return Math.round(w * (1 + pr.reps / 30));
+                      }))
+                    : '—'
+                  } <span className={`text-xs font-normal ${isLight ? 'text-slate-400' : 'text-white/30'}`}>{userProfile.weightUnit}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Workout Frequency by Day */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-4 h-4 text-emerald-400" />
+              <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Workout Days
+              </h3>
+            </div>
+            <div className="flex items-end justify-between gap-1 h-20">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => {
+                const dayEntries = entries.filter(e => {
+                  const d = new Date(e.date);
+                  return d.getDay() === (i + 1) % 7;
+                });
+                const maxDay = Math.max(...['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((_, j) =>
+                  entries.filter(e => new Date(e.date).getDay() === (j + 1) % 7).length
+                ), 1);
+                const height = (dayEntries.length / maxDay) * 100;
+                return (
+                  <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                    <span className={`text-[8px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                      {dayEntries.length}
+                    </span>
+                    <div className={`w-full rounded-t-md ${isLight ? 'bg-emerald-400' : 'bg-emerald-500/60'}`}
+                      style={{ height: `${Math.max(height, 8)}%` }} />
+                    <span className={`text-[8px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>{day}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Exercise Variety Score */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4 text-cyan-400" />
+                <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Exercise Variety
+                </h3>
+              </div>
+              <span className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                {Object.keys(stats.exerciseHistory).length}
+              </span>
+            </div>
+            <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-white/40'}`}>
+              Different exercises logged out of {59} available
+            </p>
+            <div className={`h-1.5 rounded-full mt-2 overflow-hidden ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>
+              <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-400"
+                style={{ width: `${(Object.keys(stats.exerciseHistory).length / 59) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -1044,6 +1363,113 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
               </div>
             </div>
           )}
+
+          {/* Workout Split Suggestion */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="w-4 h-4 text-indigo-400" />
+              <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Suggested Split
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {[
+                { day: 'Push', muscles: 'Chest, Shoulders, Triceps', icon: '💪', color: 'text-red-400' },
+                { day: 'Pull', muscles: 'Back, Biceps', icon: '🦾', color: 'text-blue-400' },
+                { day: 'Legs', muscles: 'Quads, Hamstrings, Glutes', icon: '🦵', color: 'text-green-400' },
+              ].map((split) => (
+                <div key={split.day} className={`flex items-center gap-3 p-2.5 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
+                  <span className="text-lg">{split.icon}</span>
+                  <div className="flex-1">
+                    <p className={`text-xs font-bold ${split.color}`}>{split.day}</p>
+                    <p className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>{split.muscles}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className={`text-[10px] mt-2 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+              Based on your training frequency and muscle balance
+            </p>
+          </div>
+
+          {/* Weekly Summary Card */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card bg-gradient-to-br ${isLight ? 'from-blue-50/50 to-indigo-50/50 border-blue-200/50' : 'from-blue-500/5 to-indigo-500/5 border-blue-500/10'}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="w-4 h-4 text-blue-400" />
+              <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                This Week's Summary
+              </h3>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center">
+                <p className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {weeklyComparison.thisWeek.workouts}
+                </p>
+                <p className={`text-[9px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Workouts</p>
+                {weeklyComparison.changes.workouts !== 0 && (
+                  <span className={`text-[9px] font-bold ${weeklyComparison.changes.workouts > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {weeklyComparison.changes.workouts > 0 ? '+' : ''}{weeklyComparison.changes.workouts}%
+                  </span>
+                )}
+              </div>
+              <div className="text-center">
+                <p className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {weeklyComparison.thisWeek.sets}
+                </p>
+                <p className={`text-[9px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Sets</p>
+                {weeklyComparison.changes.sets !== 0 && (
+                  <span className={`text-[9px] font-bold ${weeklyComparison.changes.sets > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {weeklyComparison.changes.sets > 0 ? '+' : ''}{weeklyComparison.changes.sets}%
+                  </span>
+                )}
+              </div>
+              <div className="text-center">
+                <p className={`text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {getFormattedVolume(weeklyComparison.thisWeek.volume, userProfile.weightUnit)}
+                </p>
+                <p className={`text-[9px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Volume</p>
+                {weeklyComparison.changes.volume !== 0 && (
+                  <span className={`text-[9px] font-bold ${weeklyComparison.changes.volume > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {weeklyComparison.changes.volume > 0 ? '+' : ''}{weeklyComparison.changes.volume}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Recovery Tips */}
+          <div className={`rounded-2xl p-4 border liquid-glass-card`}>
+            <div className="flex items-center gap-2 mb-3">
+              <Sun className="w-4 h-4 text-amber-400" />
+              <h3 className={`text-xs font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Recovery Tips
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {fatigueScore > 70 && (
+                <div className={`flex items-start gap-2 p-2.5 rounded-xl ${isLight ? 'bg-red-50' : 'bg-red-500/5'}`}>
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" />
+                  <p className={`text-[11px] ${isLight ? 'text-red-600' : 'text-red-300'}`}>
+                    High fatigue detected. Consider a deload day or lighter session.
+                  </p>
+                </div>
+              )}
+              {fatigueScore < 30 && (
+                <div className={`flex items-start gap-2 p-2.5 rounded-xl ${isLight ? 'bg-green-50' : 'bg-green-500/5'}`}>
+                  <Zap className="w-3.5 h-3.5 text-green-400 mt-0.5 shrink-0" />
+                  <p className={`text-[11px] ${isLight ? 'text-green-600' : 'text-green-300'}`}>
+                    You're well recovered! Great time for an intense session.
+                  </p>
+                </div>
+              )}
+              <div className={`flex items-start gap-2 p-2.5 rounded-xl ${isLight ? 'bg-blue-50' : 'bg-blue-500/5'}`}>
+                <Timer className="w-3.5 h-3.5 text-blue-400 mt-0.5 shrink-0" />
+                <p className={`text-[11px] ${isLight ? 'text-blue-600' : 'text-blue-300'}`}>
+                  Aim for 7-9 hours of sleep for optimal muscle recovery.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -5,7 +5,7 @@ import {
   Target, TrendingUp, Trophy, ArrowRight, Star, Play, Plus, Dumbbell,
   CheckCircle2, AlertCircle, Sparkles, Circle, BookOpen, Timer, Lightbulb,
   BarChart3, Coffee, Moon, Sun, Droplets, StickyNote, Rocket, Shield,
-  Music, Focus, Repeat, Hash, Smile, Frown, Meh, ThumbsUp, Heart
+  Music, Focus, Repeat, Hash, Smile, Frown, Meh, ThumbsUp, Heart, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MUSCLE_GROUP_LABELS, MUSCLE_GROUP_ICONS, MUSCLE_GROUP_COLORS, getRankInfo } from '../utils/fitness';

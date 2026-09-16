@@ -141,7 +141,6 @@ import {
   AlertTriangle,
   Calendar,
   BarChart3,
-  Sparkles,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
