@@ -35,7 +35,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
       onClick: () => { onNewTask(); setShowActions(false); },
     },
     {
-      label: 'Log Workout',
+      label: 'Workout Mode',
       icon: <Flame className="w-4 h-4" />,
       color: 'bg-orange-500 text-white',
       onClick: () => { onLogWorkout(); setShowActions(false); },
