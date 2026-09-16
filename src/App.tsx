@@ -319,6 +319,13 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [recurringBanner, setRecurringBanner] = useState<string | null>(null);
 
+  // Task page innovations
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [groupBy, setGroupBy] = useState<'date' | 'priority' | 'category' | 'none'>('date');
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
+
   // Lock body scroll when any modal is open
   useEffect(() => {
     const anyModalOpen = isTaskModalOpen || isNotifModalOpen || isDocsModalOpen || isAuthModalOpen || isExerciseLogModalOpen || isFitnessOnboardingOpen || isTaskBreakdownOpen;
@@ -740,7 +747,7 @@ export default function App() {
     };
   }, []);
 
-  // Keyboard Shortcuts Listener (N for new task, / for search)
+  // Keyboard Shortcuts Listener (N for new task, / for search, B for bulk, etc.)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
@@ -756,6 +763,30 @@ export default function App() {
         e.preventDefault();
         const searchInput = document.getElementById('main-search-input');
         if (searchInput) searchInput.focus();
+      }
+      if (e.key.toLowerCase() === 'b' && !e.metaKey && !e.ctrlKey && currentView === 'tasks') {
+        e.preventDefault();
+        haptic.lightTap();
+        setBulkMode(prev => !prev);
+        setSelectedTasks(new Set());
+      }
+      if (e.key.toLowerCase() === 'd' && !e.metaKey && !e.ctrlKey && currentView === 'tasks') {
+        e.preventDefault();
+        haptic.lightTap();
+        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+      }
+      if (e.key === 'Escape') {
+        if (bulkMode) { setBulkMode(false); setSelectedTasks(new Set()); }
+        if (showShortcuts) setShowShortcuts(false);
+      }
+      // View switching: 1=list, 2=kanban, 3=calendar, 4=matrix, 5=groups
+      if (currentView === 'tasks' && !e.metaKey && !e.ctrlKey) {
+        const viewMap: Record<string, typeof taskSubView> = { '1': 'list', '2': 'kanban', '3': 'calendar', '4': 'matrix', '5': 'groups' };
+        if (viewMap[e.key]) {
+          e.preventDefault();
+          haptic.lightTap();
+          setTaskSubView(viewMap[e.key]);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -926,6 +957,54 @@ export default function App() {
           .catch(console.error);
       });
     }
+  };
+
+  // Bulk operations
+  const handleToggleBulkMode = () => {
+    setBulkMode(!bulkMode);
+    setSelectedTasks(new Set());
+  };
+
+  const handleSelectTask = (taskId: string) => {
+    setSelectedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTasks.size === filteredTasks.length) {
+      setSelectedTasks(new Set());
+    } else {
+      setSelectedTasks(new Set(filteredTasks.map(t => t.id)));
+    }
+  };
+
+  const handleBulkComplete = () => {
+    selectedTasks.forEach(id => {
+      const task = tasks.find(t => t.id === id);
+      if (task && !task.completed) handleToggleComplete(task);
+    });
+    setSelectedTasks(new Set());
+    setBulkMode(false);
+  };
+
+  const handleBulkDelete = () => {
+    selectedTasks.forEach(id => handleDeleteTask(id));
+    setSelectedTasks(new Set());
+    setBulkMode(false);
+  };
+
+  const handleBulkChangePriority = (priority: Priority) => {
+    selectedTasks.forEach(id => handleChangePriority(id, priority));
+    setSelectedTasks(new Set());
+    setBulkMode(false);
+  };
+
+  const handleToggleImportant = (taskId: string) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, isImportant: !t.isImportant } : t));
   };
 
   const handleDuplicateTask = (task: Task) => {
@@ -1739,7 +1818,7 @@ export default function App() {
 
               {/* List View */}
               {taskSubView === 'list' && (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {/* Quick Add Bar */}
                   <QuickAddBar
                     categories={categories}
@@ -1751,7 +1830,7 @@ export default function App() {
                     }}
                   />
 
-                  {/* Hero Stats */}
+                  {/* Hero Stats with Progress Ring */}
                   <div className={`flex gap-2 overflow-x-auto pb-1 ${isLight ? 'bg-gray-50/80' : 'bg-white/[0.02]'} rounded-2xl px-2 py-1`}>
                     {[
                       { value: tasks.length, label: 'Total', color: isLight ? 'text-gray-900' : 'text-white' },
@@ -1782,6 +1861,14 @@ export default function App() {
                         />
                       </div>
                       <div className="flex items-center gap-2">
+                        {/* Sort Order Toggle */}
+                        <button
+                          onClick={() => { haptic.lightTap(); setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); }}
+                          className={`p-2 rounded-xl transition-all ${isLight ? 'input-light hover:bg-gray-100' : 'input-dark hover:bg-white/[0.06]'}`}
+                          title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                        >
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </button>
                         <select
                           value={sortBy}
                           onChange={(e) => { haptic.lightTap(); setSortBy(e.target.value as 'dueDate' | 'priority' | 'createdAt' | 'title'); }}
@@ -1790,22 +1877,34 @@ export default function App() {
                           <option value="dueDate">{t('tasks.deadline')}</option>
                           <option value="priority">{t('tasks.priority')}</option>
                           <option value="createdAt">{t('tasks.created')}</option>
+                          <option value="title">Title</option>
                         </select>
                         <select
                           value={priorityFilter}
                           onChange={(e) => { haptic.lightTap(); setPriorityFilter(e.target.value as Priority | 'all'); }}
                           className={`px-3 py-2 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'input-light' : 'input-dark'}`}
                         >
-                          <option value="all">All Priorities</option>
-                          <option value="urgent">Urgent</option>
-                          <option value="high">High</option>
-                          <option value="medium">Medium</option>
-                          <option value="low">Low</option>
+                          <option value="all">All</option>
+                          <option value="urgent">🔴 Urgent</option>
+                          <option value="high">🟠 High</option>
+                          <option value="medium">🔵 Medium</option>
+                          <option value="low">🟢 Low</option>
+                        </select>
+                        {/* Category Filter */}
+                        <select
+                          value={categoryFilter}
+                          onChange={(e) => { haptic.lightTap(); setCategoryFilter(e.target.value); }}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer ${isLight ? 'input-light' : 'input-dark'}`}
+                        >
+                          <option value="all">All Cats</option>
+                          {categories.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
 
-                    {/* Filter Chips */}
+                    {/* Filter Chips + Group By + Bulk Mode */}
                     <div className="flex flex-wrap items-center gap-1.5">
                       {[
                         { id: 'all', label: t('tasks.allTasks'), count: tasks.length },
@@ -1823,6 +1922,44 @@ export default function App() {
                           <span className={`text-[10px] ${statusFilter === item.id ? 'opacity-70' : 'opacity-50'}`}>{item.count}</span>
                         </button>
                       ))}
+
+                      <div className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1" />
+
+                      {/* Group By */}
+                      <select
+                        value={groupBy}
+                        onChange={(e) => { haptic.lightTap(); setGroupBy(e.target.value as any); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold focus:outline-none cursor-pointer ${isLight ? 'bg-gray-100 text-gray-500' : 'bg-white/5 text-white/40'}`}
+                      >
+                        <option value="date">Group: Date</option>
+                        <option value="priority">Group: Priority</option>
+                        <option value="category">Group: Category</option>
+                        <option value="none">No Groups</option>
+                      </select>
+
+                      {/* Bulk Mode Toggle */}
+                      <button
+                        onClick={() => { haptic.lightTap(); handleToggleBulkMode(); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+                          bulkMode
+                            ? 'bg-[#c8ff00]/15 text-[#c8ff00]'
+                            : isLight ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-white/5 text-white/40 hover:bg-white/10'
+                        }`}
+                      >
+                        {bulkMode ? `✓ ${selectedTasks.size} selected` : 'Select'}
+                      </button>
+
+                      {/* Keyboard Shortcuts */}
+                      <button
+                        onClick={() => { haptic.lightTap(); setShowShortcuts(!showShortcuts); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+                          isLight ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-white/5 text-white/40 hover:bg-white/10'
+                        }`}
+                        title="Keyboard shortcuts"
+                      >
+                        ⌨️
+                      </button>
+
                       {tasks.filter(t => t.completed).length > 0 && (
                         <button
                           onClick={handleClearCompleted}
@@ -1835,49 +1972,266 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Keyboard Shortcuts Panel */}
+                  <AnimatePresence>
+                    {showShortcuts && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className={`overflow-hidden rounded-2xl ${isLight ? 'bg-white shadow-sm' : 'bg-white/[0.04]'}`}
+                      >
+                        <div className="p-4">
+                          <h4 className={`text-xs font-bold mb-3 ${isLight ? 'text-gray-700' : 'text-white/70'}`}>Keyboard Shortcuts</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                              { key: 'N', action: 'New task' },
+                              { key: '/', action: 'Search' },
+                              { key: 'B', action: 'Bulk mode' },
+                              { key: 'Esc', action: 'Close' },
+                              { key: '1-5', action: 'Switch view' },
+                              { key: 'D', action: 'Toggle sort' },
+                            ].map(s => (
+                              <div key={s.key} className="flex items-center gap-2">
+                                <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${isLight ? 'bg-gray-100 text-gray-600' : 'bg-white/10 text-white/60'}`}>
+                                  {s.key}
+                                </kbd>
+                                <span className={`text-[10px] ${isLight ? 'text-gray-500' : 'text-white/40'}`}>{s.action}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Bulk Operations Toolbar */}
+                  <AnimatePresence>
+                    {bulkMode && selectedTasks.size > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl ${
+                          isLight ? 'bg-white border border-gray-200' : 'bg-[#1a1a1a] border border-white/10'
+                        }`}
+                      >
+                        <span className={`text-xs font-bold mr-2 ${isLight ? 'text-gray-700' : 'text-white/70'}`}>
+                          {selectedTasks.size} selected
+                        </span>
+                        <button onClick={handleSelectAll} className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${isLight ? 'bg-gray-100 text-gray-600' : 'bg-white/10 text-white/60'}`}>
+                          {selectedTasks.size === filteredTasks.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                        <button onClick={handleBulkComplete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-green-500/10 text-green-500">
+                          ✓ Complete
+                        </button>
+                        <div className="relative group">
+                          <button className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${isLight ? 'bg-blue-50 text-blue-600' : 'bg-blue-500/10 text-blue-400'}`}>
+                            Priority ▾
+                          </button>
+                          <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block">
+                            <div className={`p-1 rounded-lg shadow-lg ${isLight ? 'bg-white border' : 'bg-[#1a1a1a] border border-white/10'}`}>
+                              {(['urgent', 'high', 'medium', 'low'] as Priority[]).map(p => (
+                                <button key={p} onClick={() => handleBulkChangePriority(p)} className={`block w-full text-left px-3 py-1.5 rounded text-[10px] font-bold uppercase ${isLight ? 'hover:bg-gray-100' : 'hover:bg-white/5'}`}>
+                                  {p}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={handleBulkDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-red-500/10 text-red-500">
+                          🗑 Delete
+                        </button>
+                        <button onClick={handleToggleBulkMode} className={`px-2 py-1 rounded-lg text-[10px] font-semibold ${isLight ? 'bg-gray-100 text-gray-600' : 'bg-white/10 text-white/60'}`}>
+                          Cancel
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Grouped Task List */}
                   <div className="space-y-5 stagger-children">
                     {filteredTasks.length === 0 ? (
                       <div className={`p-12 text-center rounded-2xl ${isLight ? 'bg-gray-50' : 'bg-white/[0.02]'}`}>
-                        <Inbox className={`w-12 h-12 mx-auto mb-3 ${isLight ? 'text-gray-300' : 'text-white/15'}`} />
-                        <p className={`text-sm font-medium ${isLight ? 'text-gray-500' : 'text-white/40'}`}>{t('tasks.noTasks')}</p>
+                        <Inbox className={`w-16 h-16 mx-auto mb-4 ${isLight ? 'text-gray-200' : 'text-white/10'}`} />
+                        <p className={`text-base font-bold mb-1 ${isLight ? 'text-gray-700' : 'text-white/60'}`}>No tasks found</p>
+                        <p className={`text-xs mb-4 ${isLight ? 'text-gray-400' : 'text-white/30'}`}>
+                          {searchQuery ? 'Try a different search term' : 'Create your first task to get started'}
+                        </p>
+                        {!searchQuery && (
+                          <button
+                            onClick={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
+                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#c8ff00] to-[#b8f000] text-[#0a0a0a] font-bold text-xs shadow-[0_2px_12px_rgba(200,255,0,0.3)] active:scale-95 transition-all"
+                          >
+                            Create Task
+                          </button>
+                        )}
                       </div>
                     ) : (
-                      groupedTasks.map((group) => (
-                        <div key={group.id} className="space-y-2">
-                          <div className="task-section-header">
-                            <span className={`task-section-dot`} style={{
-                              backgroundColor: group.color === 'red' ? (isLight ? '#ef4444' : '#f87171')
-                                : group.color === 'amber' ? (isLight ? '#f59e0b' : '#fbbf24')
-                                : group.color === 'blue' ? (isLight ? '#3b82f6' : '#60a5fa')
-                                : group.color === 'green' ? (isLight ? '#22c55e' : '#4ade80')
-                                : (isLight ? '#9ca3af' : '#6b7280')
-                            }} />
-                            <span className={isLight ? 'text-gray-600' : 'text-white/50'}>{group.label}</span>
-                            <span className={`task-section-count ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{group.tasks.length}</span>
+                      (() => {
+                        // Smart grouping logic
+                        if (groupBy === 'none') {
+                          return (
+                            <div className="space-y-2">
+                              <AnimatePresence mode="popLayout">
+                                {filteredTasks.map((task) => (
+                                  <TaskCard
+                                    key={task.id}
+                                    task={task}
+                                    category={categoriesMap.get(task.categoryId)}
+                                    theme={theme}
+                                    onToggleComplete={handleToggleComplete}
+                                    onEdit={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                                    onDelete={handleDeleteTask}
+                                    onDuplicate={handleDuplicateTask}
+                                    onChangePriority={handleChangePriority}
+                                    onToggleSubtask={handleToggleSubtask}
+                                    onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
+                                    onAIBreakdown={(t) => { setEditingTask(t); setBreakdownTaskTitle(t.title); setBreakdownTaskDesc(t.description || ''); setIsTaskBreakdownOpen(true); }}
+                                    onToggleImportant={handleToggleImportant}
+                                    isSelected={selectedTasks.has(task.id)}
+                                    onSelectToggle={handleSelectTask}
+                                    bulkMode={bulkMode}
+                                  />
+                                ))}
+                              </AnimatePresence>
+                            </div>
+                          );
+                        }
+
+                        // Group by priority
+                        if (groupBy === 'priority') {
+                          const priorityGroups = [
+                            { id: 'urgent', label: '🔴 Urgent', color: 'red', tasks: filteredTasks.filter(t => t.priority === 'urgent') },
+                            { id: 'high', label: '🟠 High', color: 'amber', tasks: filteredTasks.filter(t => t.priority === 'high') },
+                            { id: 'medium', label: '🔵 Medium', color: 'blue', tasks: filteredTasks.filter(t => t.priority === 'medium') },
+                            { id: 'low', label: '🟢 Low', color: 'green', tasks: filteredTasks.filter(t => t.priority === 'low') },
+                          ].filter(g => g.tasks.length > 0);
+
+                          return priorityGroups.map(group => (
+                            <div key={group.id} className="space-y-2">
+                              <div className="task-section-header">
+                                <span className={`task-section-dot`} style={{
+                                  backgroundColor: group.color === 'red' ? (isLight ? '#ef4444' : '#f87171')
+                                    : group.color === 'amber' ? (isLight ? '#f59e0b' : '#fbbf24')
+                                    : group.color === 'blue' ? (isLight ? '#3b82f6' : '#60a5fa')
+                                    : (isLight ? '#22c55e' : '#4ade80')
+                                }} />
+                                <span className={isLight ? 'text-gray-600' : 'text-white/50'}>{group.label}</span>
+                                <span className={`task-section-count ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{group.tasks.length}</span>
+                              </div>
+                              <div className="space-y-2">
+                                <AnimatePresence mode="popLayout">
+                                  {group.tasks.map((task) => (
+                                    <TaskCard
+                                      key={task.id}
+                                      task={task}
+                                      category={categoriesMap.get(task.categoryId)}
+                                      theme={theme}
+                                      onToggleComplete={handleToggleComplete}
+                                      onEdit={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                                      onDelete={handleDeleteTask}
+                                      onDuplicate={handleDuplicateTask}
+                                      onChangePriority={handleChangePriority}
+                                      onToggleSubtask={handleToggleSubtask}
+                                      onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
+                                      onAIBreakdown={(t) => { setEditingTask(t); setBreakdownTaskTitle(t.title); setBreakdownTaskDesc(t.description || ''); setIsTaskBreakdownOpen(true); }}
+                                      onToggleImportant={handleToggleImportant}
+                                      isSelected={selectedTasks.has(task.id)}
+                                      onSelectToggle={handleSelectTask}
+                                      bulkMode={bulkMode}
+                                    />
+                                  ))}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          ));
+                        }
+
+                        // Group by category
+                        if (groupBy === 'category') {
+                          const catGroups = categories
+                            .map(c => ({ id: c.id, label: c.name, color: c.color, tasks: filteredTasks.filter(t => t.categoryId === c.id) }))
+                            .filter(g => g.tasks.length > 0);
+                          const ungrouped = filteredTasks.filter(t => !categories.find(c => c.id === t.categoryId));
+                          if (ungrouped.length > 0) catGroups.push({ id: 'none', label: 'Uncategorized', color: '#9ca3af', tasks: ungrouped });
+
+                          return catGroups.map(group => (
+                            <div key={group.id} className="space-y-2">
+                              <div className="task-section-header">
+                                <span className="task-section-dot" style={{ backgroundColor: group.color }} />
+                                <span className={isLight ? 'text-gray-600' : 'text-white/50'}>{group.label}</span>
+                                <span className={`task-section-count ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{group.tasks.length}</span>
+                              </div>
+                              <div className="space-y-2">
+                                <AnimatePresence mode="popLayout">
+                                  {group.tasks.map((task) => (
+                                    <TaskCard
+                                      key={task.id}
+                                      task={task}
+                                      category={categoriesMap.get(task.categoryId)}
+                                      theme={theme}
+                                      onToggleComplete={handleToggleComplete}
+                                      onEdit={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                                      onDelete={handleDeleteTask}
+                                      onDuplicate={handleDuplicateTask}
+                                      onChangePriority={handleChangePriority}
+                                      onToggleSubtask={handleToggleSubtask}
+                                      onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
+                                      onAIBreakdown={(t) => { setEditingTask(t); setBreakdownTaskTitle(t.title); setBreakdownTaskDesc(t.description || ''); setIsTaskBreakdownOpen(true); }}
+                                      onToggleImportant={handleToggleImportant}
+                                      isSelected={selectedTasks.has(task.id)}
+                                      onSelectToggle={handleSelectTask}
+                                      bulkMode={bulkMode}
+                                    />
+                                  ))}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          ));
+                        }
+
+                        // Default: group by date (existing)
+                        return groupedTasks.map((group) => (
+                          <div key={group.id} className="space-y-2">
+                            <div className="task-section-header">
+                              <span className={`task-section-dot`} style={{
+                                backgroundColor: group.color === 'red' ? (isLight ? '#ef4444' : '#f87171')
+                                  : group.color === 'amber' ? (isLight ? '#f59e0b' : '#fbbf24')
+                                  : group.color === 'blue' ? (isLight ? '#3b82f6' : '#60a5fa')
+                                  : group.color === 'green' ? (isLight ? '#22c55e' : '#4ade80')
+                                  : (isLight ? '#9ca3af' : '#6b7280')
+                              }} />
+                              <span className={isLight ? 'text-gray-600' : 'text-white/50'}>{group.label}</span>
+                              <span className={`task-section-count ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{group.tasks.length}</span>
+                            </div>
+                            <div className="space-y-2">
+                              <AnimatePresence mode="popLayout">
+                                {group.tasks.map((task) => (
+                                  <TaskCard
+                                    key={task.id}
+                                    task={task}
+                                    category={categoriesMap.get(task.categoryId)}
+                                    theme={theme}
+                                    onToggleComplete={handleToggleComplete}
+                                    onEdit={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
+                                    onDelete={handleDeleteTask}
+                                    onDuplicate={handleDuplicateTask}
+                                    onChangePriority={handleChangePriority}
+                                    onToggleSubtask={handleToggleSubtask}
+                                    onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
+                                    onAIBreakdown={(t) => { setEditingTask(t); setBreakdownTaskTitle(t.title); setBreakdownTaskDesc(t.description || ''); setIsTaskBreakdownOpen(true); }}
+                                    onToggleImportant={handleToggleImportant}
+                                    isSelected={selectedTasks.has(task.id)}
+                                    onSelectToggle={handleSelectTask}
+                                    bulkMode={bulkMode}
+                                  />
+                                ))}
+                              </AnimatePresence>
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <AnimatePresence mode="popLayout">
-                              {group.tasks.map((task) => (
-                                <TaskCard
-                                  key={task.id}
-                                  task={task}
-                                  category={categoriesMap.get(task.categoryId)}
-                                  theme={theme}
-                                  onToggleComplete={handleToggleComplete}
-                                  onEdit={(t) => { setEditingTask(t); setIsTaskModalOpen(true); }}
-                                  onDelete={handleDeleteTask}
-                                  onDuplicate={handleDuplicateTask}
-                                  onChangePriority={handleChangePriority}
-                                  onToggleSubtask={handleToggleSubtask}
-                                  onTriggerEmailReminder={(t) => { handleTriggerTestEmail(t, userEmail); setIsNotifModalOpen(true); }}
-                                  onAIBreakdown={(t) => { setEditingTask(t); setBreakdownTaskTitle(t.title); setBreakdownTaskDesc(t.description || ''); setIsTaskBreakdownOpen(true); }}
-                                />
-                              ))}
-                            </AnimatePresence>
-                          </div>
-                        </div>
-                      ))
+                        ));
+                      })()
                     )}
                   </div>
                 </div>

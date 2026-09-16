@@ -233,21 +233,41 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             </button>
           </div>
 
-          {/* Step Progress Bar */}
-          <div className="flex gap-1.5">
-            {STEPS.map((s, i) => (
-              <button
-                key={s.id}
-                onClick={() => { if (i <= step || (i === step + 1 && canGoNext())) { haptic.lightTap(); setStep(i); } }}
-                className={`flex-1 h-1.5 rounded-full transition-all cursor-pointer ${
-                  i < step
-                    ? 'bg-[#c8ff00]'
-                    : i === step
-                      ? 'bg-gradient-to-r from-[#c8ff00] to-[#c8ff00]/30'
-                      : isLight ? 'bg-gray-100' : 'bg-white/[0.06]'
-                }`}
-              />
-            ))}
+          {/* Step Progress Pills */}
+          <div className="flex gap-2">
+            {STEPS.map((s, i) => {
+              const isActive = i === step;
+              const isCompleted = i < step;
+              const isClickable = i <= step || (i === step + 1 && canGoNext());
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => { if (isClickable) { haptic.lightTap(); setStep(i); } }}
+                  disabled={!isClickable}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#c8ff00] to-[#b8f000] text-[#0a0a0a] shadow-[0_2px_12px_rgba(200,255,0,0.3)]'
+                      : isCompleted
+                        ? isLight
+                          ? 'bg-[#c8ff00]/15 text-[#6b8a00] border border-[#c8ff00]/30'
+                          : 'bg-[#c8ff00]/10 text-[#c8ff00] border border-[#c8ff00]/20'
+                        : isLight
+                          ? 'bg-gray-100 text-gray-400 border border-gray-200'
+                          : 'bg-white/[0.04] text-white/25 border border-white/[0.06]'
+                  } ${isClickable ? 'cursor-pointer active:scale-95' : 'cursor-not-allowed opacity-50'}`}
+                >
+                  {isCompleted ? (
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    s.icon
+                  )}
+                  <span className="hidden sm:inline">{s.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
