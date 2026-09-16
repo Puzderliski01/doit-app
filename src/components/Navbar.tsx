@@ -153,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }`}
                     >
                       <Flame className="w-4 h-4 text-orange-400" />
-                      Log Workout
+                      Workout Mode
                     </button>
                   </div>
                 </>

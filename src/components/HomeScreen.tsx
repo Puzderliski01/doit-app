@@ -340,7 +340,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
           <div className="text-left flex-1 min-w-0">
             <p className={`text-xs font-semibold ${isLight ? 'text-gray-700' : 'text-white/70'}`}>New Task</p>
-            <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/25'}`}>Quick add</p>
+            <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/25'}`}>Quick add it</p>
           </div>
         </button>
 
@@ -359,8 +359,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <Dumbbell className="w-4 h-4" />
           </div>
           <div className="text-left flex-1 min-w-0">
-            <p className={`text-xs font-semibold ${isLight ? 'text-gray-700' : 'text-white/70'}`}>Log Workout</p>
-            <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/25'}`}>Track sets</p>
+            <p className={`text-xs font-semibold ${isLight ? 'text-gray-700' : 'text-white/70'}`}>Workout Mode</p>
+            <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/25'}`}>Track sets like pro</p>
           </div>
         </button>
       </motion.div>
