@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { Task, Category, Priority } from '../types';
-import { 
-  Check, 
-  Clock, 
-  Repeat, 
-  Flame, 
-  Tag, 
-  ChevronDown, 
-  ChevronUp, 
-  MoreVertical, 
-  Trash2, 
-  Copy, 
-  Edit3, 
-  Mail, 
+import {
+  Check,
+  Clock,
+  Repeat,
+  Flame,
+  Tag,
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  Trash2,
+  Copy,
+  Edit3,
+  Mail,
   X,
   AlertCircle,
   CalendarDays,
@@ -25,7 +25,6 @@ import confetti from 'canvas-confetti';
 import { haptic } from '../utils/haptics';
 import { formatDeadlineRelative, formatDateTime, isOverdue } from '../utils/dateHelpers';
 import { getRecurringLabel } from '../utils/recurring';
-import { RadialProgressRing } from './RadialProgressRing';
 
 interface TaskCardProps {
   task: Task;
@@ -40,6 +39,37 @@ interface TaskCardProps {
   onTriggerEmailReminder: (task: Task) => void;
   onAIBreakdown?: (task: Task) => void;
 }
+
+const PRIORITY_STYLES: Record<Priority, { gradient: string; lightGradient: string; dot: string; label: string; lightLabel: string }> = {
+  urgent: {
+    gradient: 'from-red-500/80 to-red-600/40',
+    lightGradient: 'from-red-500 to-red-400',
+    dot: 'bg-red-500',
+    label: 'text-red-400',
+    lightLabel: 'text-red-500',
+  },
+  high: {
+    gradient: 'from-orange-500/80 to-orange-600/40',
+    lightGradient: 'from-orange-500 to-orange-400',
+    dot: 'bg-orange-500',
+    label: 'text-orange-400',
+    lightLabel: 'text-orange-500',
+  },
+  medium: {
+    gradient: 'from-blue-500/70 to-blue-600/30',
+    lightGradient: 'from-blue-500 to-blue-400',
+    dot: 'bg-blue-500',
+    label: 'text-blue-400',
+    lightLabel: 'text-blue-500',
+  },
+  low: {
+    gradient: 'from-green-500/70 to-green-600/30',
+    lightGradient: 'from-green-500 to-green-400',
+    dot: 'bg-green-500',
+    label: 'text-green-400',
+    lightLabel: 'text-green-500',
+  },
+};
 
 export const TaskCard: React.FC<TaskCardProps> = ({
   task,
@@ -63,62 +93,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const deadlineInfo = formatDeadlineRelative(task.dueDate, task.completed);
   const overdue = isOverdue(task.dueDate, task.completed);
-
   const isLight = theme === 'light';
-
-  const priorityStyles: Record<Priority, { label: string; bg: string; text: string; ring: string; dot: string; glow: string; borderColor: string }> = {
-    urgent: {
-      label: 'Urgent Priority',
-      bg: isLight ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-500/10 text-red-400 border-red-500/20',
-      text: isLight ? 'text-red-700' : 'text-red-400',
-      ring: isLight ? 'border-red-200' : 'border-red-500/20',
-      dot: 'bg-red-500',
-      glow: isLight ? 'shadow-[0_2px_8px_rgba(239,68,68,0.25)]' : 'shadow-[5px_0_15px_rgba(239,68,68,0.4)]',
-      borderColor: isLight ? '#fca5a5' : 'rgba(239,68,68,0.5)'
-    },
-    high: {
-      label: 'High Priority',
-      bg: isLight ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-      text: isLight ? 'text-orange-700' : 'text-orange-400',
-      ring: isLight ? 'border-orange-200' : 'border-orange-500/20',
-      dot: 'bg-orange-500',
-      glow: isLight ? 'shadow-[0_2px_8px_rgba(249,115,22,0.25)]' : 'shadow-[5px_0_15px_rgba(249,115,22,0.4)]',
-      borderColor: isLight ? '#fdba74' : 'rgba(249,115,22,0.5)'
-    },
-    medium: {
-      label: 'Standard Priority',
-      bg: isLight ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-sky-500/10 text-sky-400 border-sky-500/20',
-      text: isLight ? 'text-sky-700' : 'text-sky-400',
-      ring: isLight ? 'border-sky-200' : 'border-sky-500/20',
-      dot: 'bg-sky-500',
-      glow: isLight ? 'shadow-[0_2px_8px_rgba(14,165,233,0.2)]' : 'shadow-[5px_0_15px_rgba(14,165,233,0.3)]',
-      borderColor: isLight ? '#bae6fd' : 'rgba(14,165,233,0.4)'
-    },
-    low: {
-      label: 'Low Priority',
-      bg: isLight ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      text: isLight ? 'text-emerald-700' : 'text-emerald-400',
-      ring: isLight ? 'border-emerald-200' : 'border-emerald-500/20',
-      dot: 'bg-emerald-500',
-      glow: isLight ? 'shadow-[0_2px_8px_rgba(16,185,129,0.2)]' : 'shadow-[5px_0_15px_rgba(16,185,129,0.3)]',
-      borderColor: isLight ? '#a7f3d0' : 'rgba(16,185,129,0.4)'
-    }
-  };
-
-  const currentPriorityStyle = priorityStyles[task.priority];
-
-  const priorityStripeColor: Record<Priority, string> = {
-    urgent: isLight ? '#ef4444' : 'rgba(239,68,68,0.7)',
-    high: isLight ? '#f97316' : 'rgba(249,115,22,0.7)',
-    medium: isLight ? '#0ea5e9' : 'rgba(14,165,233,0.5)',
-    low: isLight ? '#10b981' : 'rgba(16,185,129,0.5)',
-  };
+  const ps = PRIORITY_STYLES[task.priority];
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!task.completed) {
       haptic.success();
-      // Trigger confetti burst
       try {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = (rect.left + rect.width / 2) / window.innerWidth;
@@ -127,7 +108,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           particleCount: 40,
           spread: 60,
           origin: { x, y },
-          colors: ['#f59e0b', '#10b981', '#6366f1', '#f97316', '#ffffff']
+          colors: ['#c8ff00', '#f59e0b', '#10b981', '#6366f1', '#ffffff']
         });
       } catch {}
     } else {
@@ -140,377 +121,261 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     haptic.lightTap();
     const currentSub = task.subtasks.find(s => s.id === subId);
     const willBeCompleted = !currentSub?.completed;
-    
-    // Check if this action completes all subtasks
     const otherCompletedCount = task.subtasks.filter(s => s.id !== subId && s.completed).length;
     const isNowAllDone = willBeCompleted && (otherCompletedCount + 1 === task.subtasks.length);
 
     if (isNowAllDone) {
       haptic.success();
       try {
-        confetti({
-          particleCount: 25,
-          spread: 45,
-          origin: { y: 0.7 },
-          colors: ['#34d399', '#10b981', '#f59e0b', '#ffffff']
-        });
+        confetti({ particleCount: 25, spread: 45, origin: { y: 0.7 }, colors: ['#c8ff00', '#10b981', '#f59e0b', '#ffffff'] });
       } catch {}
     }
-
     onToggleSubtask(task.id, subId);
   };
 
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.2 }}
-      className={`group relative rounded-2xl transition-all duration-200 sm:hover:-translate-y-0.5 sm:hover:shadow-lg ${
+      className={`group relative rounded-2xl transition-all duration-200 sm:hover:shadow-lg ${
         isLight
-          ? `bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${task.completed ? 'opacity-55' : ''}`
-          : `bg-gradient-to-r from-white/[0.06] to-white/[0.02] backdrop-blur-3xl shadow-[0_2px_12px_rgba(0,0,0,0.15)] ${task.completed ? 'opacity-55' : ''}`
+          ? `bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] sm:hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] ${task.completed ? 'opacity-50' : ''}`
+          : `bg-gradient-to-r from-white/[0.05] to-white/[0.02] backdrop-blur-3xl shadow-[0_2px_8px_rgba(0,0,0,0.12)] sm:hover:shadow-[0_4px_20px_rgba(0,0,0,0.2)] ${task.completed ? 'opacity-50' : ''}`
       }`}
-      style={{ borderLeft: `4px solid ${task.completed ? (isLight ? '#d1d5db' : 'rgba(255,255,255,0.15)') : priorityStripeColor[task.priority]}` }}
     >
-      <div className="p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-4">
-          
-          {/* Checkbox and Title Area */}
-          <div className="flex items-start gap-3.5 flex-1 min-w-0">
-            
-            {/* Custom Interactive Circular Checkbox */}
-            <button
-              id={`task-check-${task.id}`}
-              onClick={handleCheckboxClick}
-              className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 ${
+      {/* Gradient Left Border */}
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl bg-gradient-to-b ${ps.gradient}`}
+        style={isLight ? { background: `linear-gradient(to bottom, ${task.priority === 'urgent' ? '#ef4444' : task.priority === 'high' ? '#f97316' : task.priority === 'medium' ? '#3b82f6' : '#22c55e'}, transparent)` } : undefined}
+      />
+
+      <div className="p-4 pl-5">
+        <div className="flex items-start gap-3.5">
+          {/* Checkbox */}
+          <button
+            id={`task-check-${task.id}`}
+            onClick={handleCheckboxClick}
+            className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 ${
+              task.completed
+                ? 'bg-[#22c55e] border-2 border-[#22c55e] text-white shadow-[0_0_8px_rgba(34,197,94,0.3)]'
+                : task.priority === 'urgent' || task.priority === 'high'
+                  ? `border-2 ${isLight ? 'border-orange-300 hover:bg-orange-50 text-orange-400' : 'border-orange-500/30 hover:bg-orange-500/10 text-orange-400'}`
+                  : isLight
+                    ? 'border-2 border-gray-200 hover:border-[#22c55e] text-gray-300 hover:text-[#22c55e]'
+                    : 'border-2 border-white/15 hover:border-[#22c55e]/50 text-white/30 hover:text-[#22c55e]'
+            }`}
+          >
+            {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
+          </button>
+
+          {/* Task Info */}
+          <div className="flex-1 min-w-0">
+            {/* Title + Badges Row */}
+            <div className="flex items-start gap-2 mb-1">
+              <h3 className={`text-[15px] font-bold leading-snug break-words tracking-tight flex-1 min-w-0 ${
                 task.completed
-                  ? 'bg-mint-500 border-2 border-mint-400 text-white shadow-[0_0_10px_rgba(61,165,120,0.3)]'
-                  : task.priority === 'urgent' || task.priority === 'high'
-                    ? 'border-2 border-peach-400 hover:bg-peach-50 text-peach-400'
-                    : isLight
-                      ? 'border-2 border-[#d4dde8] hover:border-mint-400 text-[#b0bcc8]'
-                      : 'border-2 border-white/20 hover:border-mint-500/50 text-white/40'
-              }`}
-            >
-              {task.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-            </button>
+                  ? isLight ? 'line-through text-gray-300' : 'line-through text-white/25'
+                  : isLight ? 'text-gray-900' : 'text-white'
+              }`}>
+                {task.title}
+              </h3>
 
-            {/* Task Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                
-                {/* Title */}
-                <h3 className={`font-semibold text-[15px] sm:text-lg leading-snug break-words tracking-tight ${
-                  task.completed 
-                    ? isLight ? 'line-through text-[#b0bcc8]' : 'line-through text-white/40'
-                    : isLight ? 'text-[#1a2332]' : 'text-white'
-                }`}>
-                  {task.title}
-                </h3>
-
-                {/* Recurring indicator */}
-                {task.recurring.type !== 'none' && (
-                  <span 
-                    title={getRecurringLabel(task.recurring)}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                      isLight
-                        ? 'bg-mint-50 text-mint-600 border-mint-200'
-                        : 'bg-mint-500/10 text-mint-400 border-mint-500/20'
-                    }`}
-                  >
-                    <Repeat className="w-3 h-3" />
-                    <span>{task.recurring.type}</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Description */}
-              {task.description && (
-                <p className={`text-xs sm:text-sm line-clamp-2 mb-2.5 ${
-                  isLight ? 'text-[#6b7a8d]' : 'text-white/50'
-                }`}>
-                  {task.description}
-                </p>
-              )}
-
-              {/* Badges and Metadata in Pill formatting */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                
-                {/* Priority Chip */}
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider ${currentPriorityStyle.bg} ${currentPriorityStyle.text} border ${currentPriorityStyle.ring}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${currentPriorityStyle.dot}`} />
-                  {currentPriorityStyle.label}
-                </span>
-
-                {/* Category Chip */}
-                {category && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider border ${
-                    isLight
-                      ? 'bg-cream-100 text-[#6b7a8d] border-cream-300'
-                      : 'bg-white/5 text-white/60 border-white/10'
-                  }`}>
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
-                    {category.name}
-                  </span>
-                )}
-
-                {/* Deadline Tracking Badge */}
-                {task.dueDate && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[9px] sm:text-[10px] uppercase tracking-wider border ${
-                    overdue 
-                      ? isLight ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-red-500/10 text-red-400 border-red-500/30 animate-pulse'
-                      : deadlineInfo.status === 'today'
-                        ? isLight ? 'bg-peach-50 text-peach-600 border-peach-200' : 'bg-peach-500/10 text-peach-400 border-peach-500/20'
-                        : isLight ? 'bg-cream-100 text-[#6b7a8d] border-cream-300' : 'bg-white/5 text-white/40 border-white/10'
-                  }`}>
-                    <Clock className="w-3 h-3" />
-                    <span>{deadlineInfo.text}</span>
-                  </span>
-                )}
-
-                {/* Radial Progress Mini Badge */}
-                {totalSubtasksCount > 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      haptic.lightTap();
-                      setIsExpanded(!isExpanded);
-                    }}
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] sm:text-[10px] font-bold transition-all cursor-pointer ${
-                      isLight
-                        ? 'bg-cream-100 hover:bg-cream-200 border-cream-300 text-[#5a6678]'
-                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'
-                    }`}
-                    title="Click to toggle subtasks"
-                  >
-                    <RadialProgressRing 
-                      completed={completedSubtasksCount} 
-                      total={totalSubtasksCount} 
-                      size={20} 
-                      strokeWidth={2.5} 
-                      showText={false}
-                      isTaskCompleted={task.completed}
-                      theme={theme}
-                    />
-                    <span>{completedSubtasksCount}/{totalSubtasksCount}</span>
-                  </button>
-                )}
-
-                {/* Tags */}
-                {task.tags.slice(0, 3).map((tag) => (
-                  <span 
-                    key={tag} 
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border ${
-                      isLight
-                        ? 'bg-cream-100 text-[#8a96a8] border-cream-200'
-                        : 'text-white/40 bg-white/5 border-white/5'
-                    }`}
-                  >
-                    #{tag}
-                  </span>
-                ))}
-                {task.tags.length > 3 && (
-                  <span className={`text-[9px] sm:text-[10px] font-mono ${
-                    isLight ? 'text-[#b0bcc8]' : 'text-white/30'
-                  }`}>
-                    +{task.tags.length - 3}
-                  </span>
-                )}
-              </div>
-
-              {/* Subtasks Progress with Radial Ring */}
-              {totalSubtasksCount > 0 && (
-                <div className={`mt-3 pt-3 border-t ${isLight ? 'border-[#eef2f6]' : 'border-white/10'}`}>
-                  <div className="flex items-center justify-between gap-3">
-                    
-                    {/* Left: Interactive Toggle Header with Radial Ring */}
-                    <button
-                      onClick={() => {
-                        haptic.lightTap();
-                        setIsExpanded(!isExpanded);
-                      }}
-                      className={`flex items-center gap-3 text-xs font-semibold transition-colors cursor-pointer group/subhead ${
-                        isLight ? 'text-[#5a6678] hover:text-[#1a2332]' : 'text-white/80 hover:text-white'
-                      }`}
-                    >
-                      <RadialProgressRing
-                        completed={completedSubtasksCount}
-                        total={totalSubtasksCount}
-                        size={38}
-                        strokeWidth={3.5}
-                        isTaskCompleted={task.completed}
-                        theme={theme}
-                        className="transition-transform group-hover/subhead:scale-105"
-                      />
-                      
-                      <div className="text-left">
-                        <div className={`flex items-center gap-1.5 text-xs font-medium ${isLight ? 'text-[#1a2332]' : 'text-white'}`}>
-                          <span>Subtasks Progress</span>
-                          <span className={`text-[10px] font-mono font-normal ${isLight ? 'text-[#b0bcc8]' : 'text-white/40'}`}>
-                            ({completedSubtasksCount} of {totalSubtasksCount})
-                          </span>
-                        </div>
-                        <div className={`text-[11px] ${isLight ? 'text-[#8a96a8]' : 'text-white/40'}`}>
-                          {Math.round(subtasksProgress)}% completed · Click to {isExpanded ? 'collapse' : 'expand'}
-                        </div>
-                      </div>
-                    </button>
-
-                    {/* Right: Expand / Collapse chevron button */}
-                    <button
-                      onClick={() => {
-                        haptic.lightTap();
-                        setIsExpanded(!isExpanded);
-                      }}
-                      className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
-                        isLight
-                          ? 'bg-cream-100 hover:bg-cream-200 text-[#6b7a8d]'
-                          : 'bg-white/5 hover:bg-white/10 text-white/50'
-                      }`}
-                    >
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  </div>
-
-                  {/* Expanded Subtasks List */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-3 space-y-1.5"
-                      >
-                        {task.subtasks.map((sub) => (
-                          <div 
-                            key={sub.id}
-                            onClick={() => handleSubtaskToggleInternal(sub.id)}
-                            className={`flex items-start gap-3 p-3 rounded-2xl cursor-pointer transition-colors border ${
-                              isLight
-                                ? 'bg-cream-50 hover:bg-cream-100 border-cream-200/60'
-                                : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/5'
-                            }`}
-                          >
-                            <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs transition-all shrink-0 mt-0.5 ${
-                              sub.completed 
-                                ? 'bg-mint-500 border-mint-400 text-white shadow-[0_0_6px_rgba(61,165,120,0.3)]' 
-                                : isLight ? 'border-[#d4dde8] bg-white' : 'border-white/30 bg-transparent'
-                            }`}>
-                              {sub.completed && <Check className="w-3 h-3 stroke-[3]" />}
-                            </div>
-                            <div className={`text-xs select-none flex-1 min-w-0 leading-relaxed ${
-                              sub.completed 
-                                ? isLight ? 'line-through text-[#b0bcc8]' : 'line-through text-white/30'
-                                : isLight ? 'text-[#3a4658]' : 'text-white/80'
-                            }`}>
-                              {sub.title}
-                            </div>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-
+              {/* Action Button */}
+              <button
+                onClick={() => { haptic.lightTap(); setShowMenu(!showMenu); }}
+                className={`min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg transition-all cursor-pointer shrink-0 ${
+                  showMenu
+                    ? 'bg-[#c8ff00]/10 text-[#c8ff00]'
+                    : isLight ? 'text-gray-300 hover:text-gray-500 hover:bg-gray-50' : 'text-white/25 hover:text-white/60 hover:bg-white/[0.06]'
+                }`}
+              >
+                {showMenu ? <X className="w-3.5 h-3.5" /> : <MoreVertical className="w-3.5 h-3.5" />}
+              </button>
             </div>
-          </div>
 
-          {/* Card Right: Prominent Radial Ring & Actions Toggle */}
-          <div className="flex items-center gap-2 shrink-0">
-            {totalSubtasksCount > 0 && !isExpanded && (
-              <RadialProgressRing
-                completed={completedSubtasksCount}
-                total={totalSubtasksCount}
-                size={34}
-                strokeWidth={3}
-                isTaskCompleted={task.completed}
-                theme={theme}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  haptic.lightTap();
-                  setIsExpanded(true);
-                }}
-                className="hidden sm:inline-flex cursor-pointer"
-              />
+            {/* Description */}
+            {task.description && (
+              <p className={`text-xs line-clamp-1 mb-2 ${isLight ? 'text-gray-400' : 'text-white/35'}`}>
+                {task.description}
+              </p>
             )}
 
-            <button
-              onClick={() => { haptic.lightTap(); setShowMenu(!showMenu); }}
-              className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all cursor-pointer ${
-                showMenu
-                  ? isLight ? 'bg-peach-100 text-peach-600' : 'bg-peach-500/15 text-peach-400'
-                  : isLight ? 'text-[#b0bcc8] hover:text-[#6b7a8d] hover:bg-cream-100' : 'text-white/50 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              {showMenu ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
-            </button>
+            {/* Metadata Badges */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Priority */}
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${isLight ? ps.lightLabel : ps.label}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${ps.dot}`} />
+                {task.priority}
+              </span>
+
+              {/* Category */}
+              {category && (
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${isLight ? 'text-gray-400' : 'text-white/35'}`}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: category.color }} />
+                  {category.name}
+                </span>
+              )}
+
+              {/* Deadline */}
+              {task.dueDate && (
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${
+                  overdue
+                    ? 'text-red-400 animate-pulse'
+                    : deadlineInfo.status === 'today'
+                      ? 'text-amber-400'
+                      : isLight ? 'text-gray-400' : 'text-white/25'
+                }`}>
+                  <Clock className="w-2.5 h-2.5" />
+                  {deadlineInfo.text}
+                </span>
+              )}
+
+              {/* Recurring */}
+              {task.recurring.type !== 'none' && (
+                <span title={getRecurringLabel(task.recurring)} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider ${isLight ? 'text-teal-500' : 'text-teal-400'}`}>
+                  <Repeat className="w-2.5 h-2.5" />
+                  {task.recurring.type}
+                </span>
+              )}
+
+              {/* Tags */}
+              {task.tags.slice(0, 2).map((tag) => (
+                <span key={tag} className={`inline-flex px-1.5 py-0.5 rounded-md text-[9px] font-mono ${isLight ? 'text-gray-300' : 'text-white/20'}`}>
+                  #{tag}
+                </span>
+              ))}
+              {task.tags.length > 2 && (
+                <span className={`text-[9px] font-mono ${isLight ? 'text-gray-300' : 'text-white/15'}`}>
+                  +{task.tags.length - 2}
+                </span>
+              )}
+            </div>
+
+            {/* Subtasks Horizontal Progress Bar */}
+            {totalSubtasksCount > 0 && (
+              <div className="mt-3">
+                <button
+                  onClick={() => { haptic.lightTap(); setIsExpanded(!isExpanded); }}
+                  className="w-full text-left cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <ListTodo className={`w-3 h-3 ${isLight ? 'text-gray-400' : 'text-white/30'}`} />
+                      <span className={`text-[10px] font-semibold ${isLight ? 'text-gray-400' : 'text-white/30'}`}>
+                        {completedSubtasksCount}/{totalSubtasksCount} subtasks
+                      </span>
+                    </div>
+                    <span className={`text-[10px] font-bold ${isLight ? 'text-gray-500' : 'text-white/40'}`}>
+                      {Math.round(subtasksProgress)}%
+                    </span>
+                  </div>
+                  <div className={`h-1.5 rounded-full overflow-hidden ${isLight ? 'bg-gray-100' : 'bg-white/[0.06]'}`}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${subtasksProgress}%` }}
+                      transition={{ duration: 0.5 }}
+                      className="h-full rounded-full bg-gradient-to-r from-[#c8ff00] to-[#b8f000]"
+                    />
+                  </div>
+                </button>
+
+                {/* Expanded Subtasks */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-2 space-y-1"
+                    >
+                      {task.subtasks.map((sub) => (
+                        <div
+                          key={sub.id}
+                          onClick={() => handleSubtaskToggleInternal(sub.id)}
+                          className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${
+                            isLight ? 'hover:bg-gray-50' : 'hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border transition-all shrink-0 ${
+                            sub.completed
+                              ? 'bg-[#22c55e] border-[#22c55e] text-white'
+                              : isLight ? 'border-gray-200 bg-white' : 'border-white/20 bg-transparent'
+                          }`}>
+                            {sub.completed && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </div>
+                          <span className={`text-[11px] select-none flex-1 min-w-0 ${
+                            sub.completed
+                              ? isLight ? 'line-through text-gray-300' : 'line-through text-white/20'
+                              : isLight ? 'text-gray-600' : 'text-white/70'
+                          }`}>
+                            {sub.title}
+                          </span>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Inline Action Bar — appears below the card content when toggled */}
+        {/* Inline Action Bar */}
         <AnimatePresence>
           {showMenu && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className=""
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.15 }}
             >
-              <div className={`flex flex-wrap gap-2 pt-3 mt-3 border-t ${
-                isLight ? 'border-[#eef2f6]' : 'border-white/10'
-              }`}>
+              <div className={`flex flex-wrap gap-1.5 pt-3 mt-3 border-t ${isLight ? 'border-gray-100' : 'border-white/[0.06]'}`}>
                 <button
                   onClick={() => { setShowMenu(false); haptic.mediumClick(); onEdit(task); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                     isLight
-                      ? 'bg-peach-50 text-peach-600 border border-peach-200 hover:bg-peach-100'
-                      : 'bg-peach-500/10 text-peach-400 border border-peach-500/20 hover:bg-peach-500/20'
+                      ? 'bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100'
+                      : 'bg-orange-500/10 text-orange-400 border border-orange-500/15 hover:bg-orange-500/15'
                   }`}
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  Edit
+                  <Edit3 className="w-3 h-3" /> Edit
                 </button>
-
                 <button
                   onClick={() => { setShowMenu(false); onTriggerEmailReminder(task); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                     isLight
-                      ? 'bg-mint-50 text-mint-600 border border-mint-200 hover:bg-mint-100'
-                      : 'bg-mint-500/10 text-mint-400 border border-mint-500/20 hover:bg-mint-500/20'
+                      ? 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'
+                      : 'bg-blue-500/10 text-blue-400 border border-blue-500/15 hover:bg-blue-500/15'
                   }`}
                 >
-                  <Mail className="w-3.5 h-3.5" />
-                  Email
+                  <Mail className="w-3 h-3" /> Email
                 </button>
-
                 <button
                   onClick={() => { setShowMenu(false); haptic.lightTap(); onDuplicate(task); }}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                     isLight
-                      ? 'bg-cream-100 text-[#6b7a8d] border border-cream-300 hover:bg-cream-200'
-                      : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                      ? 'bg-gray-50 text-gray-500 border border-gray-100 hover:bg-gray-100'
+                      : 'bg-white/[0.04] text-white/50 border border-white/[0.06] hover:bg-white/[0.08]'
                   }`}
                 >
-                  <Copy className="w-3.5 h-3.5" />
-                  Duplicate
+                  <Copy className="w-3 h-3" /> Copy
                 </button>
 
-                {/* Priority quick-set */}
+                {/* Priority Quick-Set */}
                 {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
                   <button
                     key={p}
                     onClick={() => { setShowMenu(false); haptic.lightTap(); onChangePriority(task.id, p); }}
-                    className={`px-2.5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                    className={`px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                       task.priority === p
                         ? p === 'urgent' ? 'bg-red-500 text-white border-red-400'
-                          : p === 'high' ? 'bg-peach-500 text-white border-peach-400'
-                          : p === 'medium' ? 'bg-mint-500 text-white border-mint-400'
-                          : 'bg-cream-300 text-[#4a5568] border-cream-400'
-                        : isLight ? 'bg-cream-50 text-[#8a96a8] border-cream-200 hover:text-[#3a4658]' : 'bg-white/5 text-white/40 border-white/10 hover:text-white'
+                          : p === 'high' ? 'bg-orange-500 text-white border-orange-400'
+                          : p === 'medium' ? 'bg-blue-500 text-white border-blue-400'
+                          : 'bg-green-500 text-white border-green-400'
+                        : isLight ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-gray-600' : 'bg-white/[0.03] text-white/25 border-white/[0.06] hover:text-white/50'
                     }`}
                   >
                     {p}
@@ -519,23 +384,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
                 <button
                   onClick={() => { setShowMenu(false); haptic.deleteAction(); onDelete(task.id); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 dark:hover:bg-red-500/20"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer bg-red-50 text-red-500 border border-red-100 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/15 dark:hover:bg-red-500/15"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete
+                  <Trash2 className="w-3 h-3" /> Delete
                 </button>
 
                 {onAIBreakdown && (
                   <button
                     onClick={() => { setShowMenu(false); haptic.mediumClick(); onAIBreakdown(task); }}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                       isLight
-                        ? 'bg-mint-50 text-mint-700 border border-mint-200 hover:bg-mint-100'
-                        : 'bg-mint-500/10 text-mint-400 border border-mint-500/20 hover:bg-mint-500/20'
+                        ? 'bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100'
+                        : 'bg-purple-500/10 text-purple-400 border border-purple-500/15 hover:bg-purple-500/15'
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    AI Breakdown
+                    <Sparkles className="w-3 h-3" /> AI
                   </button>
                 )}
               </div>

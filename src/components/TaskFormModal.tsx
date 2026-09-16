@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Task, Priority, RecurringType, Category, SubTask } from '../types';
-import { 
-  X, 
-  Flag, 
-  Calendar, 
-  Clock, 
-  Repeat, 
-  Folder, 
-  ListPlus, 
-  Tag, 
-  Mail, 
-  Trash2, 
-  Check, 
+import {
+  X,
+  Flag,
+  Calendar,
+  Clock,
+  Repeat,
+  Folder,
+  ListPlus,
+  Tag,
+  Mail,
+  Trash2,
+  Check,
   Sparkles,
   Layers,
   AlertTriangle,
-  Plus
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Zap
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { haptic } from '../utils/haptics';
 import { formatISODateInput } from '../utils/dateHelpers';
 
@@ -29,7 +32,24 @@ interface TaskFormModalProps {
   onCategoriesChange?: (cats: Category[]) => void;
   initialTask?: Task | null;
   theme: 'dark' | 'light';
+  startStep?: number;
 }
+
+const STEPS = [
+  { id: 'details', label: 'Details', icon: <Zap className="w-3.5 h-3.5" /> },
+  { id: 'priority', label: 'Priority', icon: <Flag className="w-3.5 h-3.5" /> },
+  { id: 'schedule', label: 'Schedule', icon: <Calendar className="w-3.5 h-3.5" /> },
+  { id: 'extras', label: 'Extras', icon: <ListPlus className="w-3.5 h-3.5" /> },
+];
+
+const PRIORITY_OPTIONS: { value: Priority; label: string; desc: string; color: string; glow: string }[] = [
+  { value: 'urgent', label: 'Urgent', desc: 'Drop everything', color: '#ef4444', glow: 'shadow-[0_0_20px_rgba(239,68,68,0.3)]' },
+  { value: 'high', label: 'High', desc: 'Important & time-sensitive', color: '#f97316', glow: 'shadow-[0_0_20px_rgba(249,115,22,0.3)]' },
+  { value: 'medium', label: 'Medium', desc: 'Standard importance', color: '#3b82f6', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.3)]' },
+  { value: 'low', label: 'Low', desc: 'Do when possible', color: '#22c55e', glow: 'shadow-[0_0_20px_rgba(34,197,94,0.3)]' },
+];
+
+const CATEGORY_COLORS = ['#f59e0b','#10b981','#ec4899','#38bdf8','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#6366f1'];
 
 export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   isOpen,
@@ -38,8 +58,10 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   categories,
   onCategoriesChange,
   initialTask,
-  theme
+  theme,
+  startStep = 0,
 }) => {
+  const [step, setStep] = useState(startStep);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
@@ -55,11 +77,8 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#f59e0b');
-  const CATEGORY_COLORS = ['#f59e0b','#10b981','#ec4899','#38bdf8','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#6366f1'];
   const [reminderEmail, setReminderEmail] = useState('');
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(30);
-  const [isImportant, setIsImportant] = useState(true);
-  const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     setLocalCategories(categories);
@@ -79,10 +98,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setTagsInput(initialTask.tags ? initialTask.tags.join(', ') : '');
       setReminderEmail(initialTask.reminderEmail || '');
       setReminderMinutesBefore(initialTask.reminderMinutesBefore || 30);
-      setIsImportant(initialTask.isImportant ?? (initialTask.priority === 'urgent' || initialTask.priority === 'high'));
-      setIsUrgent(initialTask.isUrgent ?? initialTask.priority === 'urgent');
     } else {
-      // Default new task
       const defaultDue = new Date();
       defaultDue.setHours(defaultDue.getHours() + 4);
       setTitle('');
@@ -98,8 +114,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setTagsInput('');
       setReminderEmail('s.puzderliski@gmail.com');
       setReminderMinutesBefore(30);
-      setIsImportant(true);
-      setIsUrgent(false);
+      setStep(startStep);
     }
   }, [initialTask, isOpen]);
 
@@ -157,11 +172,16 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       tags: parsedTags,
       reminderEmail: reminderEmail.trim(),
       reminderMinutesBefore: Number(reminderMinutesBefore) || 30,
-      isImportant: priority === 'urgent' || priority === 'high' || isImportant,
-      isUrgent: priority === 'urgent' || isUrgent
+      isImportant: priority === 'urgent' || priority === 'high',
+      isUrgent: priority === 'urgent'
     });
 
     onClose();
+  };
+
+  const canGoNext = () => {
+    if (step === 0) return title.trim().length > 0;
+    return true;
   };
 
   return (
@@ -170,10 +190,10 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className={`w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-8 backdrop-blur-3xl max-h-[85vh] sm:max-h-[85vh] flex flex-col ${
+        className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-8 backdrop-blur-3xl max-h-[85vh] flex flex-col ${
           isLight
-            ? 'bg-white/80 border-white/40 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_40px_rgba(0,0,0,0.12)]'
-            : 'bg-[#0a0a0c]/80 border-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_40px_rgba(0,0,0,0.5)]'
+            ? 'bg-white/90 border-white/40 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_40px_rgba(0,0,0,0.12)]'
+            : 'bg-[#0a0a0c]/90 border-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_40px_rgba(0,0,0,0.5)]'
         }`}
       >
         {/* Mobile drag handle */}
@@ -181,473 +201,484 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           <div className={`w-10 h-1 rounded-full ${isLight ? 'bg-slate-300' : 'bg-white/20'}`} />
         </div>
 
-        {/* Header */}
-        <div className={`flex items-center justify-between px-6 sm:px-8 py-5 border-b backdrop-blur-2xl ${
-          isLight ? 'border-white/30 bg-white/40' : 'border-white/10 bg-white/[0.03]'
+        {/* Header with Step Indicator */}
+        <div className={`px-5 sm:px-6 py-4 border-b backdrop-blur-2xl ${
+          isLight ? 'border-gray-100 bg-white/60' : 'border-white/[0.06] bg-white/[0.02]'
         }`}>
-          <div className="flex items-center gap-3.5">
-            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.25)] ${
-              isLight ? 'bg-orange-50 border-orange-200 text-orange-500' : 'bg-orange-500/10 border-orange-500/30 text-orange-400'
-            }`}>
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className={`text-[10px] uppercase tracking-[0.2em] font-bold ${
-                isLight ? 'text-slate-400' : 'text-white/40'
-              }`}>Task Specification</div>
-              <h2 className={`font-light text-lg sm:text-xl tracking-tight ${
-                isLight ? 'text-slate-900' : 'text-white'
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                isLight
+                  ? 'bg-[#c8ff00]/15 text-[#7da300]'
+                  : 'bg-[#c8ff00]/10 text-[#c8ff00]'
               }`}>
-                {initialTask ? 'Refine Objective' : 'Deploy New Task'}
-              </h2>
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className={`text-base font-bold tracking-tight ${isLight ? 'text-gray-900' : 'text-white'}`}>
+                  {initialTask ? 'Edit Task' : 'New Task'}
+                </h2>
+                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? 'text-gray-400' : 'text-white/30'}`}>
+                  Step {step + 1} of {STEPS.length}: {STEPS[step].label}
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => { haptic.lightTap(); onClose(); }}
+              className={`p-2 rounded-full transition-colors cursor-pointer ${
+                isLight ? 'text-gray-400 hover:text-gray-700 hover:bg-gray-100' : 'text-white/40 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={() => { haptic.lightTap(); onClose(); }}
-            className={`p-2 rounded-full transition-colors cursor-pointer ${
-              isLight ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100' : 'text-white/40 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          {/* Step Progress Bar */}
+          <div className="flex gap-1.5">
+            {STEPS.map((s, i) => (
+              <button
+                key={s.id}
+                onClick={() => { if (i <= step || (i === step + 1 && canGoNext())) { haptic.lightTap(); setStep(i); } }}
+                className={`flex-1 h-1.5 rounded-full transition-all cursor-pointer ${
+                  i < step
+                    ? 'bg-[#c8ff00]'
+                    : i === step
+                      ? 'bg-gradient-to-r from-[#c8ff00] to-[#c8ff00]/30'
+                      : isLight ? 'bg-gray-100' : 'bg-white/[0.06]'
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className={`p-5 sm:p-8 space-y-5 flex-1 overflow-y-auto ${
-          isLight ? 'bg-white' : ''
-        }`}>
-          
-          {/* Title */}
-          <div>
-            <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-              isLight ? 'text-slate-500' : 'text-white/50'
-            }`}>
-              Task Directive <span className="text-orange-400">*</span>
-            </label>
-            <input
-              id="input-task-title"
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Finalize Multi-Cloud Synchronizer Architecture"
-                className={`w-full px-4 py-3 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all ${
-                isLight
-                  ? 'border-white/40 bg-white/50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400 backdrop-blur-xl'
-                  : 'border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-xl'
-              }`}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-              isLight ? 'text-slate-500' : 'text-white/50'
-            }`}>
-              Context & Documentation
-            </label>
-            <textarea
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add key deliverables, acceptance criteria, or technical constraints..."
-              className={`w-full px-4 py-3 rounded-2xl border text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all resize-none ${
-              isLight
-                ? 'border-white/40 bg-white/50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400 backdrop-blur-xl'
-                : 'border-white/10 bg-white/5 text-white placeholder:text-white/30 backdrop-blur-xl'
-            }`}
-            />
-          </div>
-
-          {/* Priority & Category Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Priority Picker */}
-            <div>
-              <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-                isLight ? 'text-slate-500' : 'text-white/50'
-              }`}>
-                Priority Tier
-              </label>
-              <div className={`grid grid-cols-4 gap-1.5 p-1 rounded-2xl border liquid-glass-pill`}>
-                {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => { haptic.lightTap(); setPriority(p); }}
-                    className={`py-2 rounded-xl text-[11px] font-bold capitalize transition-all cursor-pointer ${
-                      priority === p
-                        ? p === 'urgent' ? 'bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                          : p === 'high' ? 'bg-orange-500 text-black shadow-[0_0_12px_rgba(249,115,22,0.5)]'
-                          : p === 'medium' ? 'bg-sky-500 text-white shadow-[0_0_12px_rgba(14,165,233,0.5)]'
-                          : 'bg-emerald-500 text-black shadow-[0_0_12px_rgba(16,185,129,0.5)]'
-                        : isLight ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-200' : 'text-white/40 hover:text-white'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Category Picker */}
-            <div>
-              <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-                isLight ? 'text-slate-500' : 'text-white/50'
-              }`}>
-                Category
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {localCategories.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => { haptic.lightTap(); setCategoryId(c.id); }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                      categoryId === c.id
-                        ? 'ring-2 ring-offset-1'
-                        : isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
-                    }`}
-                    style={categoryId === c.id ? { backgroundColor: c.color + '20', borderColor: c.color, color: c.color } : undefined}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => { haptic.lightTap(); setShowCategoryForm(!showCategoryForm); }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border border-dashed transition-all cursor-pointer ${
-                    isLight ? 'border-slate-300 text-slate-500 hover:bg-slate-100' : 'border-white/20 text-white/40 hover:bg-white/5'
-                  }`}
-                >
-                  <Plus className="w-3 h-3 inline mr-1" />
-                  Add
-                </button>
-              </div>
-              {showCategoryForm && (
-                <div className={`mt-3 p-3 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+          <AnimatePresence mode="wait">
+            {/* Step 0: Details */}
+            {step === 0 && (
+              <motion.div
+                key="details"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="p-5 sm:p-6 space-y-5"
+              >
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Task Title <span className="text-red-400">*</span>
+                  </label>
                   <input
+                    id="input-task-title"
                     type="text"
-                    placeholder="Category name..."
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 mb-2 ${
-                      isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-white/10 bg-white/5 text-white'
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="What needs to be done?"
+                    autoFocus
+                    className={`w-full px-4 py-3 rounded-xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 transition-all ${
+                      isLight
+                        ? 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#c8ff00]/50'
+                        : 'border-white/[0.08] bg-white/[0.03] text-white placeholder:text-white/25'
                     }`}
                   />
-                  <div className="flex gap-1.5 mb-2">
-                    {CATEGORY_COLORS.map((color) => (
+                </div>
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Add context, notes, or details..."
+                    className={`w-full px-4 py-3 rounded-xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 transition-all resize-none ${
+                      isLight
+                        ? 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#c8ff00]/50'
+                        : 'border-white/[0.08] bg-white/[0.03] text-white placeholder:text-white/25'
+                    }`}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 1: Priority & Category */}
+            {step === 1 && (
+              <motion.div
+                key="priority"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="p-5 sm:p-6 space-y-5"
+              >
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-3 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Priority Level
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PRIORITY_OPTIONS.map((opt) => (
                       <button
-                        key={color}
+                        key={opt.value}
                         type="button"
-                        onClick={() => setNewCategoryColor(color)}
-                        className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${newCategoryColor === color ? 'scale-110 border-white' : 'border-transparent'}`}
-                        style={{ backgroundColor: color }}
-                      />
+                        onClick={() => { haptic.lightTap(); setPriority(opt.value); }}
+                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                          priority === opt.value
+                            ? `${opt.glow} border-transparent`
+                            : isLight
+                              ? 'border-gray-100 bg-gray-50 hover:bg-gray-100'
+                              : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
+                        }`}
+                        style={priority === opt.value ? { backgroundColor: opt.color + '12', borderColor: opt.color + '40' } : undefined}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: opt.color, boxShadow: priority === opt.value ? `0 0 8px ${opt.color}60` : 'none' }}
+                          />
+                          <div>
+                            <p className={`text-xs font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{opt.label}</p>
+                            <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{opt.desc}</p>
+                          </div>
+                        </div>
+                      </button>
                     ))}
                   </div>
-                  <div className="flex gap-2">
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-3 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Category
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {localCategories.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => { haptic.lightTap(); setCategoryId(c.id); }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                          categoryId === c.id
+                            ? 'ring-2 ring-offset-1'
+                            : isLight ? 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100' : 'bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.06]'
+                        }`}
+                        style={categoryId === c.id ? { backgroundColor: c.color + '18', borderColor: c.color + '60', color: c.color } : undefined}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
                     <button
                       type="button"
-                      onClick={() => {
-                        if (!newCategoryName.trim()) return;
-                        const id = 'cat-' + newCategoryName.trim().toLowerCase().replace(/\s+/g, '-');
-                        const newCat: Category = { id, name: newCategoryName.trim(), color: newCategoryColor, iconName: 'Folder' };
-                        const newCats = [...localCategories, newCat];
-                        setLocalCategories(newCats);
-                        onCategoriesChange?.(newCats);
-                        setCategoryId(id);
-                        setNewCategoryName('');
-                        setShowCategoryForm(false);
-                        haptic.mediumClick();
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-bold cursor-pointer"
+                      onClick={() => { haptic.lightTap(); setShowCategoryForm(!showCategoryForm); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border border-dashed transition-all cursor-pointer ${
+                        isLight ? 'border-gray-200 text-gray-400 hover:bg-gray-50' : 'border-white/10 text-white/30 hover:bg-white/[0.03]'
+                      }`}
                     >
-                      Create
+                      <Plus className="w-3 h-3 inline mr-1" />
+                      New
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => { setShowCategoryForm(false); setNewCategoryName(''); }}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${isLight ? 'border-slate-200 text-slate-600' : 'border-white/10 text-white/60'}`}
-                    >
-                      Cancel
-                    </button>
+                  </div>
+                  {showCategoryForm && (
+                    <div className={`mt-3 p-3 rounded-xl border ${isLight ? 'bg-gray-50 border-gray-100' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                      <input
+                        type="text"
+                        placeholder="Category name..."
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        className={`w-full px-3 py-2 rounded-lg border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 mb-2 ${
+                          isLight ? 'border-gray-200 bg-white text-gray-900' : 'border-white/[0.08] bg-white/[0.03] text-white'
+                        }`}
+                      />
+                      <div className="flex gap-1.5 mb-2">
+                        {CATEGORY_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setNewCategoryColor(color)}
+                            className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${newCategoryColor === color ? 'scale-110 border-white' : 'border-transparent'}`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!newCategoryName.trim()) return;
+                            const id = 'cat-' + newCategoryName.trim().toLowerCase().replace(/\s+/g, '-');
+                            const newCat: Category = { id, name: newCategoryName.trim(), color: newCategoryColor, iconName: 'Folder' };
+                            const newCats = [...localCategories, newCat];
+                            setLocalCategories(newCats);
+                            onCategoriesChange?.(newCats);
+                            setCategoryId(id);
+                            setNewCategoryName('');
+                            setShowCategoryForm(false);
+                            haptic.mediumClick();
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#c8ff00] text-[#0a0a0a] text-xs font-bold cursor-pointer"
+                        >
+                          Create
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowCategoryForm(false); setNewCategoryName(''); }}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${isLight ? 'border-gray-200 text-gray-500' : 'border-white/10 text-white/50'}`}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 2: Schedule */}
+            {step === 2 && (
+              <motion.div
+                key="schedule"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="p-5 sm:p-6 space-y-5"
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                      Deadline
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className={`w-full px-3 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 ${
+                        isLight
+                          ? 'border-gray-200 bg-gray-50 text-gray-900 focus:border-[#c8ff00]/50'
+                          : 'border-white/[0.08] bg-white/[0.03] text-white'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                      Est. Focus
+                    </label>
+                    <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${isLight ? 'border-gray-200 bg-gray-50' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+                      <input
+                        type="number"
+                        min={5}
+                        max={480}
+                        step={5}
+                        value={estimatedMinutes}
+                        onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
+                        className={`flex-1 bg-transparent text-xs font-semibold focus:outline-none ${isLight ? 'text-gray-900' : 'text-white'}`}
+                      />
+                      <span className={`text-[10px] font-semibold ${isLight ? 'text-gray-400' : 'text-white/30'}`}>min</span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Deadline & Estimated Time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-                isLight ? 'text-slate-500' : 'text-white/50'
-              }`}>
-                Target Deadline
-              </label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-2xl border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-                    isLight
-                      ? 'border-slate-200 bg-slate-50 text-slate-900 focus:border-orange-400'
-                      : 'border-white/10 bg-white/5 text-white'
-                  }`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-                isLight ? 'text-slate-500' : 'text-white/50'
-              }`}>
-                Estimated Focus (Minutes)
-              </label>
-              <input
-                type="number"
-                min={5}
-                max={480}
-                step={5}
-                value={estimatedMinutes}
-                onChange={(e) => setEstimatedMinutes(Number(e.target.value))}
-                className={`w-full px-4 py-2.5 rounded-2xl border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-                  isLight
-                    ? 'border-slate-200 bg-slate-50 text-slate-900 focus:border-orange-400'
-                    : 'border-white/10 bg-white/5 text-white'
-                }`}
-              />
-            </div>
-          </div>
-
-          {/* Recurring Schedule */}
-          <div className={`p-4 rounded-2xl border space-y-3 liquid-glass-card`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Repeat className="w-4 h-4 text-cyan-400" />
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                  isLight ? 'text-slate-500' : 'text-white/60'
-                }`}>
-                  Recurring Schedule Automation
-                </span>
-              </div>
-              <span className="text-[10px] text-cyan-400 font-mono">Auto-rolls on completion</span>
-            </div>
-
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-              {[
-                { id: 'none', label: 'None' },
-                { id: 'daily', label: 'Daily' },
-                { id: 'weekdays', label: 'Weekdays' },
-                { id: 'weekly', label: 'Weekly' },
-                { id: 'monthly', label: 'Monthly' },
-                { id: 'custom', label: 'Custom' }
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => { haptic.lightTap(); setRecurringType(item.id as RecurringType); }}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    recurringType === item.id 
-                      ? 'bg-cyan-500 text-black font-bold shadow-[0_0_10px_rgba(6,182,212,0.4)]' 
-                      : isLight ? 'bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-900' : 'bg-white/5 border border-white/10 text-white/40 hover:text-white'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            {recurringType === 'custom' && (
-              <div className="flex items-center gap-2 text-xs pt-1">
-                <span className={isLight ? 'text-slate-500' : 'text-white/50'}>Repeat every</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={customDays}
-                  onChange={(e) => setCustomDays(Number(e.target.value))}
-                  className={`w-16 px-2 py-1 rounded-xl border text-center text-xs font-bold text-cyan-400 ${
-                    isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/10 border-white/20'
-                  }`}
-                />
-                <span className={isLight ? 'text-slate-500' : 'text-white/50'}>days</span>
-              </div>
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Recurring
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'none', label: 'None' },
+                      { id: 'daily', label: 'Daily' },
+                      { id: 'weekdays', label: 'Weekdays' },
+                      { id: 'weekly', label: 'Weekly' },
+                      { id: 'monthly', label: 'Monthly' },
+                      { id: 'custom', label: 'Custom' }
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => { haptic.lightTap(); setRecurringType(item.id as RecurringType); }}
+                        className={`py-2 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
+                          recurringType === item.id
+                            ? 'bg-[#c8ff00] text-[#0a0a0a] shadow-[0_0_10px_rgba(200,255,0,0.25)]'
+                            : isLight ? 'bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100' : 'bg-white/[0.03] border border-white/[0.06] text-white/35 hover:text-white/60'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  {recurringType === 'custom' && (
+                    <div className="flex items-center gap-2 text-xs mt-2">
+                      <span className={isLight ? 'text-gray-400' : 'text-white/35'}>Every</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={customDays}
+                        onChange={(e) => setCustomDays(Number(e.target.value))}
+                        className={`w-14 px-2 py-1 rounded-lg border text-center text-xs font-bold text-[#c8ff00] ${
+                          isLight ? 'bg-gray-50 border-gray-200' : 'bg-white/[0.06] border-white/[0.1]'
+                        }`}
+                      />
+                      <span className={isLight ? 'text-gray-400' : 'text-white/35'}>days</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             )}
-          </div>
 
-          {/* Email Notification & Reminder */}
-          <div className={`p-4 rounded-2xl border space-y-3 liquid-glass-card`}>
-            <div className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest ${
-              isLight ? 'text-slate-500' : 'text-white/60'
-            }`}>
-              <Mail className="w-4 h-4 text-orange-400" />
-              <span>Email Notification & Due Alert</span>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <input
-                  type="email"
-                  value={reminderEmail}
-                  onChange={(e) => setReminderEmail(e.target.value)}
-                  placeholder="Recipient (e.g., s.puzderliski@gmail.com)"
-                  className={`w-full px-3.5 py-2.5 rounded-2xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-                    isLight
-                      ? 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-orange-400'
-                      : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <select
-                  value={reminderMinutesBefore}
-                  onChange={(e) => setReminderMinutesBefore(Number(e.target.value))}
-                  className={`w-full px-3.5 py-2.5 rounded-2xl border text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-                    isLight
-                      ? 'border-slate-200 bg-slate-50 text-slate-900 focus:border-orange-400'
-                      : 'border-white/10 bg-white/5 text-white'
-                  }`}
-                >
-                  <option value={15} className={isLight ? 'bg-white text-slate-900' : 'bg-[#121216]'}>15 mins before</option>
-                  <option value={30} className={isLight ? 'bg-white text-slate-900' : 'bg-[#121216]'}>30 mins before</option>
-                  <option value={60} className={isLight ? 'bg-white text-slate-900' : 'bg-[#121216]'}>1 hour before</option>
-                  <option value={120} className={isLight ? 'bg-white text-slate-900' : 'bg-[#121216]'}>2 hours before</option>
-                  <option value={1440} className={isLight ? 'bg-white text-slate-900' : 'bg-[#121216]'}>1 day before</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Subtasks Builder */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className={`block text-[10px] font-bold uppercase tracking-widest ${
-                isLight ? 'text-slate-500' : 'text-white/50'
-              }`}>
-                Subtasks & Milestones ({subtasks.length})
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={newSubtaskTitle}
-                onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddSubtask();
-                  }
-                }}
-                placeholder="Add checklist subtask..."
-                className={`flex-1 px-4 py-2.5 rounded-2xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-                  isLight
-                    ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400'
-                    : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={handleAddSubtask}
-                className={`px-4 py-2.5 rounded-2xl border font-bold text-xs cursor-pointer transition-colors ${
-                  isLight
-                    ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                    : 'bg-white/10 hover:bg-white/20 border-white/10 text-white'
-                }`}
+            {/* Step 3: Extras */}
+            {step === 3 && (
+              <motion.div
+                key="extras"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="p-5 sm:p-6 space-y-5"
               >
-                Add
-              </button>
-            </div>
-
-            {subtasks.length > 0 && (
-              <div className={`space-y-1.5 max-h-36 overflow-y-auto p-2 rounded-2xl border liquid-glass-subtle`}>
-                {subtasks.map((st) => (
-                  <div key={st.id} className={`flex items-start justify-between gap-2 p-2 rounded-xl ${
-                    isLight ? 'hover:bg-slate-100' : 'hover:bg-white/5'
-                  }`}>
+                {/* Subtasks */}
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Subtasks ({subtasks.length})
+                  </label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
+                      placeholder="Add subtask..."
+                      className={`flex-1 px-3 py-2 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 ${
+                        isLight
+                          ? 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#c8ff00]/50'
+                          : 'border-white/[0.08] bg-white/[0.03] text-white placeholder:text-white/25'
+                      }`}
+                    />
                     <button
                       type="button"
-                      onClick={() => handleToggleSubtask(st.id)}
-                      className="flex items-start gap-2.5 flex-1 text-left cursor-pointer"
+                      onClick={handleAddSubtask}
+                      className={`px-3 py-2 rounded-xl border font-bold text-xs cursor-pointer transition-colors ${
+                        isLight
+                          ? 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-600'
+                          : 'bg-white/[0.06] hover:bg-white/[0.1] border-white/[0.08] text-white'
+                      }`}
                     >
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border text-xs mt-0.5 ${
-                        st.completed ? 'bg-emerald-500 border-emerald-400 text-black' : isLight ? 'border-slate-300' : 'border-white/30'
-                      }`}>
-                        {st.completed && <Check className="w-3 h-3 stroke-[3]" />}
-                      </div>
-                      <div className={`text-xs flex-1 min-w-0 leading-relaxed ${st.completed ? 'line-through' : ''} ${
-                        st.completed
-                          ? isLight ? 'text-slate-400' : 'text-white/30'
-                          : isLight ? 'text-slate-900' : 'text-white'
-                      }`}>
-                        {st.title}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSubtask(st.id)}
-                      className={`p-1 cursor-pointer ${isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      Add
                     </button>
                   </div>
-                ))}
-              </div>
+                  {subtasks.length > 0 && (
+                    <div className={`space-y-1 max-h-32 overflow-y-auto p-2 rounded-xl border ${isLight ? 'bg-gray-50 border-gray-100' : 'bg-white/[0.02] border-white/[0.06]'}`}>
+                      {subtasks.map((st) => (
+                        <div key={st.id} className={`flex items-center justify-between gap-2 p-2 rounded-lg ${isLight ? 'hover:bg-gray-100' : 'hover:bg-white/[0.04]'}`}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSubtask(st.id)}
+                            className="flex items-center gap-2 flex-1 text-left cursor-pointer"
+                          >
+                            <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border ${
+                              st.completed ? 'bg-[#22c55e] border-[#22c55e] text-white' : isLight ? 'border-gray-300' : 'border-white/20'
+                            }`}>
+                              {st.completed && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                            </div>
+                            <span className={`text-xs ${st.completed ? 'line-through' : ''} ${
+                              st.completed
+                                ? isLight ? 'text-gray-400' : 'text-white/25'
+                                : isLight ? 'text-gray-700' : 'text-white/80'
+                            }`}>{st.title}</span>
+                          </button>
+                          <button type="button" onClick={() => handleRemoveSubtask(st.id)} className={`p-0.5 cursor-pointer ${isLight ? 'text-gray-300 hover:text-red-400' : 'text-white/20 hover:text-red-400'}`}>
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Tags
+                  </label>
+                  <input
+                    type="text"
+                    value={tagsInput}
+                    onChange={(e) => setTagsInput(e.target.value)}
+                    placeholder="Comma separated (e.g. work, urgent, api)"
+                    className={`w-full px-3 py-2 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 ${
+                      isLight
+                        ? 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#c8ff00]/50'
+                        : 'border-white/[0.08] bg-white/[0.03] text-white placeholder:text-white/25'
+                    }`}
+                  />
+                </div>
+
+                {/* Email Reminder */}
+                <div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    Email Reminder
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={reminderEmail}
+                      onChange={(e) => setReminderEmail(e.target.value)}
+                      placeholder="Email address"
+                      className={`flex-1 px-3 py-2 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#c8ff00]/30 ${
+                        isLight
+                          ? 'border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:border-[#c8ff00]/50'
+                          : 'border-white/[0.08] bg-white/[0.03] text-white placeholder:text-white/25'
+                      }`}
+                    />
+                    <select
+                      value={reminderMinutesBefore}
+                      onChange={(e) => setReminderMinutesBefore(Number(e.target.value))}
+                      className={`px-2 py-2 rounded-xl border text-[10px] font-semibold focus:outline-none ${
+                        isLight ? 'border-gray-200 bg-gray-50 text-gray-700' : 'border-white/[0.08] bg-white/[0.03] text-white/60'
+                      }`}
+                    >
+                      <option value={15}>15m</option>
+                      <option value={30}>30m</option>
+                      <option value={60}>1h</option>
+                      <option value={120}>2h</option>
+                      <option value={1440}>1d</option>
+                    </select>
+                  </div>
+                </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
-          {/* Tags */}
-          <div>
-            <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${
-              isLight ? 'text-slate-500' : 'text-white/50'
-            }`}>
-              Tags (Comma separated)
-            </label>
-            <input
-              type="text"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="e.g. Mobile, Architecture, Release"
-              className={`w-full px-4 py-2.5 rounded-2xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 ${
-                isLight
-                  ? 'border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-orange-400'
-                  : 'border-white/10 bg-white/5 text-white placeholder:text-white/30'
-              }`}
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-5 border-t sticky bottom-0 backdrop-blur-2xl ${
-            isLight ? 'bg-white/80 border-white/30' : 'bg-[#0a0a0c]/80 border-white/10'
+          {/* Footer Navigation */}
+          <div className={`px-5 sm:px-6 py-4 border-t flex items-center justify-between backdrop-blur-2xl ${
+            isLight ? 'bg-white/80 border-gray-100' : 'bg-[#0a0a0c]/80 border-white/[0.06]'
           }`}>
             <button
               type="button"
-              onClick={() => { haptic.lightTap(); onClose(); }}
-              className={`px-5 py-3 sm:py-2.5 rounded-full border font-bold text-xs transition-colors cursor-pointer ${
-                isLight
-                  ? 'border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  : 'border-white/10 text-white/60 hover:text-white hover:bg-white/10'
+              onClick={() => { haptic.lightTap(); if (step > 0) setStep(step - 1); else onClose(); }}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                isLight ? 'text-gray-500 hover:bg-gray-100' : 'text-white/50 hover:bg-white/[0.06]'
               }`}
             >
-              Cancel
+              <ChevronLeft className="w-3.5 h-3.5" />
+              {step > 0 ? 'Back' : 'Cancel'}
             </button>
-            <button
-              id="btn-save-task"
-              type="submit"
-              className={`px-6 py-3 sm:py-2.5 rounded-full font-bold text-xs shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                isLight
-                  ? 'bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.35)]'
-                  : 'bg-white text-black'
-              }`}
-            >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>{initialTask ? 'Save Directive' : 'Deploy Task'}</span>
-            </button>
-          </div>
 
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={() => { if (canGoNext()) { haptic.lightTap(); setStep(step + 1); } }}
+                disabled={!canGoNext()}
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#c8ff00] text-[#0a0a0a] font-bold text-xs shadow-[0_2px_10px_rgba(200,255,0,0.25)] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next
+                <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
+            ) : (
+              <button
+                id="btn-save-task"
+                type="submit"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#c8ff00] to-[#b8f000] text-[#0a0a0a] font-bold text-xs shadow-[0_2px_12px_rgba(200,255,0,0.3)] active:scale-95 transition-all cursor-pointer"
+              >
+                <Check className="w-4 h-4 stroke-[3]" />
+                {initialTask ? 'Save Changes' : 'Create Task'}
+              </button>
+            )}
+          </div>
         </form>
       </motion.div>
     </div>

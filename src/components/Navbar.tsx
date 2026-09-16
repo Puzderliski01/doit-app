@@ -58,10 +58,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c8ff00] to-[#b8f000] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-[#0a0a0a]" />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo1.jpg"
+              alt="DoIT"
+              className="w-8 h-8 rounded-xl object-cover shadow-md"
+            />
             <span className={`text-sm font-bold tracking-tight ${isLight ? 'text-gray-900' : 'text-white'}`}>
               DoIT
             </span>

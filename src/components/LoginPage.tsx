@@ -172,11 +172,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             initial={{ scale: 0.7, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, type: 'spring', damping: 18 }}
-            className="w-24 h-24 mx-auto rounded-[28px] bg-gradient-to-br from-amber-400 via-orange-400 to-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30"
+            className="w-24 h-24 mx-auto rounded-[28px] overflow-hidden shadow-2xl shadow-amber-500/20"
           >
-            <span className="text-5xl font-black text-white tracking-tighter" style={{ fontFamily: 'system-ui' }}>
-              D
-            </span>
+            <img
+              src="/logo1.jpg"
+              alt="DoIT"
+              className="w-full h-full object-cover"
+            />
           </motion.div>
 
           <div>

@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Priority, RecurringType, Category } from '../types';
-import { 
-  Plus, 
-  Sparkles, 
-  Calendar, 
-  Repeat, 
-  Flag, 
-  Folder, 
-  Mail, 
-  Clock, 
+import {
+  Plus,
+  Sparkles,
+  Calendar,
+  Repeat,
+  Flag,
+  Folder,
+  Mail,
+  Clock,
   ArrowRight,
-  Zap
+  Zap,
+  ChevronDown,
+  X,
+  Layers
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { haptic } from '../utils/haptics';
 import { formatISODateInput } from '../utils/dateHelpers';
 
@@ -26,12 +30,21 @@ interface QuickAddBarProps {
     recurringType: RecurringType;
     reminderEmail?: string;
   }) => void;
+  onOpenFullModal?: () => void;
 }
+
+const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; ring: string; lightBg: string }> = {
+  urgent: { label: 'Urgent', color: '#ef4444', ring: 'ring-red-500/40', lightBg: 'bg-red-50 text-red-600' },
+  high: { label: 'High', color: '#f97316', ring: 'ring-orange-500/40', lightBg: 'bg-orange-50 text-orange-600' },
+  medium: { label: 'Medium', color: '#3b82f6', ring: 'ring-blue-500/40', lightBg: 'bg-blue-50 text-blue-600' },
+  low: { label: 'Low', color: '#22c55e', ring: 'ring-green-500/40', lightBg: 'bg-green-50 text-green-600' },
+};
 
 export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   categories,
   theme,
-  onAddTask
+  onAddTask,
+  onOpenFullModal,
 }) => {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority>('high');
@@ -40,8 +53,8 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const [dueOption, setDueOption] = useState<'today' | 'tomorrow' | 'nextWeek' | 'custom'>('today');
   const [customDate, setCustomDate] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync categoryId when categories prop changes (e.g., from Firestore)
   useEffect(() => {
     if (categories.length > 0 && !categories.find(c => c.id === categoryId)) {
       setCategoryId(categories[0].id);
@@ -51,11 +64,11 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const getComputedDueDate = (): string => {
     const now = new Date();
     if (dueOption === 'today') {
-      now.setHours(18, 0, 0, 0); // 6 PM today
+      now.setHours(18, 0, 0, 0);
       return formatISODateInput(now);
     } else if (dueOption === 'tomorrow') {
       now.setDate(now.getDate() + 1);
-      now.setHours(12, 0, 0, 0); // 12 PM tomorrow
+      now.setHours(12, 0, 0, 0);
       return formatISODateInput(now);
     } else if (dueOption === 'nextWeek') {
       now.setDate(now.getDate() + 7);
@@ -87,18 +100,27 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <div className={`w-full rounded-3xl border transition-all overflow-hidden liquid-glass-card ${
-      isLight 
-        ? 'hover:border-orange-300' 
-        : 'hover:border-white/20'
-    }`}>
-      <form onSubmit={handleSubmit} className="p-4 sm:p-5">
-        <div className="flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
+    <motion.div
+      layout
+      className={`w-full rounded-2xl border transition-all overflow-hidden ${
+        isLight
+          ? 'bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] border-gray-100'
+          : 'bg-white/[0.04] border-white/[0.06] backdrop-blur-xl'
+      }`}
+    >
+      <form onSubmit={handleSubmit} className="p-4">
+        {/* Main Input Row */}
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+            isLight
+              ? 'bg-[#c8ff00]/15 text-[#7da300]'
+              : 'bg-[#c8ff00]/10 text-[#c8ff00] shadow-[0_0_12px_rgba(200,255,0,0.15)]'
+          }`}>
             <Zap className="w-4 h-4" />
           </div>
 
           <input
+            ref={inputRef}
             id="quick-add-input"
             type="text"
             value={title}
@@ -109,151 +131,143 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
               }
             }}
             onFocus={() => setIsExpanded(true)}
-            placeholder="Quick capture task... (e.g. 'Review security audit tomorrow 5pm')"
-            className={`flex-1 min-w-0 bg-transparent text-sm sm:text-base font-medium focus:outline-none ${
-              isLight 
-                ? 'text-slate-900 placeholder:text-slate-400' 
-                : 'text-white placeholder:text-white/30'
+            placeholder="Quick capture... (e.g. 'Review audit tomorrow 5pm')"
+            className={`flex-1 min-w-0 bg-transparent text-sm font-medium focus:outline-none placeholder:font-normal ${
+              isLight
+                ? 'text-gray-900 placeholder:text-gray-400'
+                : 'text-white placeholder:text-white/25'
             }`}
           />
+
+          {/* Priority Indicator Circle */}
+          {isExpanded && (
+            <motion.button
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              type="button"
+              onClick={() => {
+                haptic.lightTap();
+                const priorities: Priority[] = ['urgent', 'high', 'medium', 'low'];
+                const idx = priorities.indexOf(priority);
+                setPriority(priorities[(idx + 1) % 4]);
+              }}
+              className="shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all active:scale-90"
+              style={{ borderColor: PRIORITY_CONFIG[priority].color, backgroundColor: PRIORITY_CONFIG[priority].color + '15' }}
+              title={`Priority: ${priority}`}
+            >
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PRIORITY_CONFIG[priority].color }} />
+            </motion.button>
+          )}
 
           <button
             id="btn-quick-add-submit"
             type="submit"
             disabled={!title.trim()}
-            className="shrink-0 min-h-[44px] px-4 sm:px-5 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 disabled:opacity-30 disabled:cursor-not-allowed text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-[0_2px_12px_rgba(245,158,11,0.35)] active:scale-95 transition-all cursor-pointer"
+            className="shrink-0 h-9 px-4 rounded-xl bg-gradient-to-r from-[#c8ff00] to-[#b8f000] disabled:opacity-25 disabled:cursor-not-allowed text-[#0a0a0a] font-bold text-xs flex items-center gap-1.5 shadow-[0_2px_10px_rgba(200,255,0,0.25)] active:scale-95 transition-all cursor-pointer"
           >
-            <span>Capture</span>
-            <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
+            <span>Add</span>
+            <ArrowRight className="w-3 h-3 stroke-[3]" />
           </button>
         </div>
 
-        {/* Quick controls expansion bar */}
-        {isExpanded && (
-            <div className={`mt-3.5 pt-3.5 border-t space-y-3 animate-in fade-in slide-in-from-top-1 duration-150 ${
-            isLight ? 'border-white/30' : 'border-white/10'
-          }`}>
-            
-            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 text-xs">
-              
-              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
-                
-                {/* Due Date Shortcut Selector */}
-                <div className={`flex items-center gap-1 p-1 rounded-full px-2 border liquid-glass-pill ${
-                  isLight ? '' : ''
-                }`}>
-                  <Clock className={`w-3.5 h-3.5 ml-1 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
-                  <button
-                    type="button"
-                    onClick={() => { haptic.lightTap(); setDueOption('today'); }}
-                    className={`flex-1 sm:flex-none px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                      dueOption === 'today' 
-                        ? 'bg-orange-500 text-white shadow-sm font-black' 
-                        : isLight ? 'text-slate-500 hover:text-slate-900' : 'text-white/40 hover:text-white'
-                    }`}
-                  >
-                    Today
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { haptic.lightTap(); setDueOption('tomorrow'); }}
-                    className={`flex-1 sm:flex-none px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                      dueOption === 'tomorrow' 
-                        ? 'bg-orange-500 text-white shadow-sm font-black' 
-                        : isLight ? 'text-slate-500 hover:text-slate-900' : 'text-white/40 hover:text-white'
-                    }`}
-                  >
-                    Tomorrow
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { haptic.lightTap(); setDueOption('nextWeek'); }}
-                    className={`flex-1 sm:flex-none px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
-                      dueOption === 'nextWeek' 
-                        ? 'bg-orange-500 text-white shadow-sm font-black' 
-                        : isLight ? 'text-slate-500 hover:text-slate-900' : 'text-white/40 hover:text-white'
-                    }`}
-                  >
-                    Next Week
-                  </button>
-                </div>
+        {/* Expanded Controls */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className={`mt-3.5 pt-3.5 border-t space-y-3 ${isLight ? 'border-gray-100' : 'border-white/[0.06]'}`}>
+                {/* Due Date + Recurring Row */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Due Date Chips */}
+                  <div className={`flex items-center gap-0.5 p-0.5 rounded-xl border ${isLight ? 'bg-gray-50 border-gray-100' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                    <Clock className={`w-3 h-3 ml-1.5 ${isLight ? 'text-gray-400' : 'text-white/30'}`} />
+                    {(['today', 'tomorrow', 'nextWeek'] as const).map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => { haptic.lightTap(); setDueOption(opt); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          dueOption === opt
+                            ? 'bg-[#c8ff00] text-[#0a0a0a] shadow-sm'
+                            : isLight ? 'text-gray-500 hover:text-gray-700' : 'text-white/35 hover:text-white/60'
+                        }`}
+                      >
+                        {opt === 'nextWeek' ? 'Next Wk' : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                      </button>
+                    ))}
+                  </div>
 
-                {/* Priority Chips */}
-                <div className={`flex items-center gap-1 p-1 rounded-full px-2 border liquid-glass-pill`}>
-                  <Flag className={`w-3.5 h-3.5 ml-1 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
-                  {(['urgent', 'high', 'medium', 'low'] as Priority[]).map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => { haptic.lightTap(); setPriority(p); }}
-                      className={`flex-1 sm:flex-none px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider capitalize transition-colors cursor-pointer ${
-                        priority === p 
-                          ? 'bg-orange-500 text-white shadow-sm' 
-                          : isLight ? 'text-slate-500 hover:text-slate-900' : 'text-white/40 hover:text-white'
+                  {/* Recurring */}
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-xl border ${isLight ? 'bg-gray-50 border-gray-100' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                    <Repeat className="w-3 h-3 text-cyan-400" />
+                    <select
+                      value={recurringType}
+                      onChange={(e) => { haptic.lightTap(); setRecurringType(e.target.value as RecurringType); }}
+                      className={`bg-transparent text-[10px] font-bold uppercase tracking-wider focus:outline-none cursor-pointer ${
+                        isLight ? 'text-gray-600' : 'text-white/60'
                       }`}
                     >
-                      {p}
+                      <option value="none" className={isLight ? 'bg-white text-gray-900' : 'bg-[#111] text-white'}>No Repeat</option>
+                      <option value="daily" className={isLight ? 'bg-white text-gray-900' : 'bg-[#111] text-white'}>Daily</option>
+                      <option value="weekdays" className={isLight ? 'bg-white text-gray-900' : 'bg-[#111] text-white'}>Weekdays</option>
+                      <option value="weekly" className={isLight ? 'bg-white text-gray-900' : 'bg-[#111] text-white'}>Weekly</option>
+                      <option value="monthly" className={isLight ? 'bg-white text-gray-900' : 'bg-[#111] text-white'}>Monthly</option>
+                    </select>
+                  </div>
+
+                  {/* Category */}
+                  <div className={`flex items-center gap-1 px-2 py-1 rounded-xl border ${isLight ? 'bg-gray-50 border-gray-100' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                    <Folder className={`w-3 h-3 ${isLight ? 'text-gray-400' : 'text-white/30'}`} />
+                    <select
+                      value={categoryId}
+                      onChange={(e) => { haptic.lightTap(); setCategoryId(e.target.value); }}
+                      className={`bg-transparent text-[10px] font-bold uppercase tracking-wider focus:outline-none cursor-pointer max-w-[80px] ${
+                        isLight ? 'text-gray-600' : 'text-white/60'
+                      }`}
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id} className={isLight ? 'bg-white text-gray-900' : 'bg-[#111] text-white'}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Bottom Row: More Details + Collapse */}
+                <div className="flex items-center justify-between">
+                  {onOpenFullModal && (
+                    <button
+                      type="button"
+                      onClick={() => { haptic.lightTap(); onOpenFullModal(); }}
+                      className={`flex items-center gap-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${
+                        isLight ? 'text-gray-400 hover:text-[#7da300]' : 'text-white/25 hover:text-[#c8ff00]'
+                      }`}
+                    >
+                      <Layers className="w-3 h-3" />
+                      More details
                     </button>
-                  ))}
-                </div>
-
-                {/* Recurring Selector */}
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border liquid-glass-pill`}>
-                  <Repeat className="w-3.5 h-3.5 text-orange-500" />
-                  <select
-                    value={recurringType}
-                    onChange={(e) => {
-                      haptic.lightTap();
-                      setRecurringType(e.target.value as RecurringType);
-                    }}
-                    className={`bg-transparent text-[11px] font-bold uppercase tracking-wider focus:outline-none pr-1 cursor-pointer ${
-                      isLight ? 'text-slate-700' : 'text-white/80'
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(false)}
+                    className={`text-[11px] font-semibold transition-colors cursor-pointer ${
+                      isLight ? 'text-gray-400 hover:text-gray-600' : 'text-white/25 hover:text-white/50'
                     }`}
                   >
-                    <option value="none" className={isLight ? "bg-white text-slate-900" : "bg-[#111] text-white"}>No Repeat</option>
-                    <option value="daily" className={isLight ? "bg-white text-slate-900" : "bg-[#111] text-white"}>Daily</option>
-                    <option value="weekdays" className={isLight ? "bg-white text-slate-900" : "bg-[#111] text-white"}>Weekdays (Mon-Fri)</option>
-                    <option value="weekly" className={isLight ? "bg-white text-slate-900" : "bg-[#111] text-white"}>Weekly</option>
-                    <option value="monthly" className={isLight ? "bg-white text-slate-900" : "bg-[#111] text-white"}>Monthly</option>
-                  </select>
+                    Collapse
+                  </button>
                 </div>
-
-                {/* Category Selector */}
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border liquid-glass-pill`}>
-                  <Folder className={`w-3.5 h-3.5 ${isLight ? 'text-slate-400' : 'text-white/40'}`} />
-                  <select
-                    value={categoryId}
-                    onChange={(e) => {
-                      haptic.lightTap();
-                      setCategoryId(e.target.value);
-                    }}
-                    className={`bg-transparent text-[11px] font-bold uppercase tracking-wider focus:outline-none pr-1 cursor-pointer ${
-                      isLight ? 'text-slate-700' : 'text-white/80'
-                    }`}
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id} className={isLight ? "bg-white text-slate-900" : "bg-[#111] text-white"}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
               </div>
-
-              <button
-                type="button"
-                onClick={() => setIsExpanded(false)}
-                className={`text-[11px] underline cursor-pointer self-end ${
-                  isLight ? 'text-slate-400 hover:text-slate-700' : 'text-white/40 hover:text-white'
-                }`}
-              >
-                Hide options
-              </button>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </form>
-    </div>
+    </motion.div>
   );
 };

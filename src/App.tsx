@@ -1614,27 +1614,38 @@ export default function App() {
           
               {/* HOME VIEW - New Fitness App Design */}
           {currentView === 'home' && !showWorkoutDetail && !showTrainerProfile && (
-            <HomeScreen
-              theme={theme}
-              userName={currentUser?.displayName || 'there'}
-              tasks={tasks}
-              fitnessEntries={fitnessEntries}
-              totalWorkoutsLogged={fitnessEntries.length}
-              userProfile={userProfile}
-              onSelectWorkout={(id) => {
-                setSelectedWorkoutId(id);
-                setShowWorkoutDetail(true);
-              }}
-              onNavigateToView={(view, filter) => {
-                setCurrentView(view);
-                if (filter) setStatusFilter(filter);
-              }}
-              onNewTask={() => {
-                setEditingTask(null);
-                setIsTaskModalOpen(true);
-              }}
-              onLogWorkout={() => setShowExercisePicker(true)}
-            />
+            <div className="space-y-5">
+              <QuickAddBar
+                categories={categories}
+                theme={theme}
+                onAddTask={handleQuickAdd}
+                onOpenFullModal={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
+              />
+              <HomeScreen
+                theme={theme}
+                userName={currentUser?.displayName || 'there'}
+                tasks={tasks}
+                fitnessEntries={fitnessEntries}
+                totalWorkoutsLogged={fitnessEntries.length}
+                userProfile={userProfile}
+                onSelectWorkout={(id) => {
+                  setSelectedWorkoutId(id);
+                  setShowWorkoutDetail(true);
+                }}
+                onNavigateToView={(view, filter) => {
+                  setCurrentView(view);
+                  if (filter) setStatusFilter(filter);
+                }}
+                onNewTask={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
+                onLogWorkout={() => setShowExercisePicker(true)}
+              />
+            </div>
           )}
 
           {/* BROWSE VIEW - Workout/Trainer Cards */}
@@ -1738,6 +1749,17 @@ export default function App() {
               {/* List View */}
               {taskSubView === 'list' && (
                 <div className="space-y-5">
+                  {/* Quick Add Bar */}
+                  <QuickAddBar
+                    categories={categories}
+                    theme={theme}
+                    onAddTask={handleQuickAdd}
+                    onOpenFullModal={() => {
+                      setEditingTask(null);
+                      setIsTaskModalOpen(true);
+                    }}
+                  />
+
                   {/* Hero Stats */}
                   <div className={`flex gap-2 overflow-x-auto pb-1 ${isLight ? 'bg-gray-50/80' : 'bg-white/[0.02]'} rounded-2xl px-2 py-1`}>
                     {[

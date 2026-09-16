@@ -80,6 +80,14 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         }}
       >
         <div className="flex items-center justify-around px-2 py-2">
+          {/* DoIT Logo - left side */}
+          <div className="flex items-center -ml-1 mr-1">
+            <img
+              src="/logo1.jpg"
+              alt="DoIT"
+              className="w-7 h-7 rounded-lg object-cover shadow-sm"
+            />
+          </div>
           {tabs.map((tab) => {
             if (tab.id === 'fab') {
               return (
