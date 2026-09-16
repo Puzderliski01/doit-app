@@ -111,7 +111,7 @@ import {
   subscribeToUserGroups,
   subscribeToGroupTasks,
 } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, signOut as fbSignOut, User } from 'firebase/auth';
 
 import { 
   Search, 
@@ -151,6 +151,7 @@ export default function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState<AuthUser | User | null>(() => getLocalAuthSession());
   const [authLoading, setAuthLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Persistence & Global State
@@ -365,6 +366,7 @@ export default function App() {
         }
       }
       setAuthLoading(false);
+      setAuthReady(true);
     });
     return () => unsubscribeAuth();
   }, []);
@@ -380,6 +382,7 @@ export default function App() {
 
   // Real-time Firestore Sync for Authenticated User (Disabled in Guest & Local Mode)
   useEffect(() => {
+    if (!authReady) return;
     if (!currentUser) {
       setTasks([]);
       return;
@@ -493,7 +496,7 @@ export default function App() {
       unsubscribeGroups();
       clearInterval(nonCriticalInterval);
     };
-  }, [currentUser?.uid]);
+  }, [authReady, currentUser?.uid]);
 
   // Subscribe to group tasks for all user's groups
   useEffect(() => {
@@ -516,7 +519,7 @@ export default function App() {
 
   // One-time migration: push local fitness data to Firestore on first login
   useEffect(() => {
-    if (!currentUser?.uid || (currentUser as AuthUser).isGuest) return;
+    if (!authReady || !currentUser?.uid || (currentUser as AuthUser).isGuest) return;
     const migratedKey = `doit_fitness_migrated_${currentUser.uid}`;
     if (localStorage.getItem(migratedKey)) return;
 
@@ -536,11 +539,11 @@ export default function App() {
     }
 
     localStorage.setItem(migratedKey, '1');
-  }, [currentUser?.uid]);
+  }, [authReady, currentUser?.uid]);
 
   // One-time migration: push local tasks to Firestore on first login
   useEffect(() => {
-    if (!currentUser || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
+    if (!authReady || !currentUser || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
     const migratedKey = `doit_tasks_migrated_${currentUser.uid}`;
     if (localStorage.getItem(migratedKey)) return;
 
@@ -552,11 +555,11 @@ export default function App() {
       });
     }
     localStorage.setItem(migratedKey, '1');
-  }, [currentUser?.uid]);
+  }, [authReady, currentUser?.uid]);
 
   // Polling fallback: fetch tasks from Firestore every 15s as backup for onSnapshot
   useEffect(() => {
-    if (!currentUser?.uid || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
+    if (!authReady || !currentUser?.uid || (currentUser as AuthUser).isGuest || (currentUser as AuthUser).isLocal) return;
 
     const poll = async () => {
       try {
@@ -594,7 +597,7 @@ export default function App() {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [currentUser?.uid]);
+  }, [authReady, currentUser?.uid]);
 
   // Sync to localStorage as offline cache for current user / guest
   useEffect(() => {
@@ -1288,17 +1291,25 @@ export default function App() {
       message: `${entry.exerciseName}: ${entry.sets.filter(s => s.completed).length} sets, ${entry.totalVolume} ${entry.sets[0]?.weightUnit || 'kg'}`,
     });
     // Sync to Firestore with pending writes tracking
-    if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
+    if (canSyncToFirestore) {
       pendingFitnessWritesRef.current.set(entry.id, entry);
-      saveFitnessEntryToFirestore(currentUser.uid, entry)
+      saveFitnessEntryToFirestore(currentUser!.uid, entry)
         .then(() => { pendingFitnessWritesRef.current.delete(entry.id); })
-        .catch(console.error);
+        .catch((err) => {
+          console.error('Failed to save fitness entry to cloud:', err);
+          pendingFitnessWritesRef.current.delete(entry.id);
+          triggerAppNotification({
+            type: 'sync',
+            title: '⚠️ Cloud Sync Failed',
+            message: 'Workout saved locally but failed to sync. Will retry.',
+          });
+        });
     }
   };
 
   const handleDeleteFitnessEntry = (entryId: string) => {
     setFitnessEntries(prev => prev.filter(e => e.id !== entryId));
-    if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
+    if (canSyncToFirestore) {
       pendingFitnessDeletesRef.current.add(entryId);
       deleteUserFitnessEntryFromFirestore(currentUser.uid, entryId)
         .then(() => { pendingFitnessDeletesRef.current.delete(entryId); })
@@ -1454,6 +1465,7 @@ export default function App() {
   const todayCount = homeTasks.filter(t => isDueToday(t.dueDate) && !t.completed).length;
 
   const handleLogout = async () => {
+    try { await fbSignOut(auth); } catch { /* ignore */ }
     clearLocalAuthSession();
     setCurrentUser(null);
     setTasks([]);

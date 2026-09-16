@@ -106,6 +106,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         displayName: user.displayName,
         photoURL: user.photoURL,
         isLocal: false,
+        isGuest: false,
       };
       setSuccessMsg(`Welcome, ${user.displayName || user.email}!`);
       if (onAuthSuccess) onAuthSuccess(authUser);
@@ -151,6 +152,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         displayName: user.displayName || displayName || email.split('@')[0],
         photoURL: user.photoURL,
         isLocal: false,
+        isGuest: false,
       };
 
       if (onAuthSuccess) onAuthSuccess(authUser);
