@@ -190,7 +190,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-8 backdrop-blur-3xl max-h-[85vh] flex flex-col ${
+        className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-20 sm:mb-8 backdrop-blur-3xl max-h-[85vh] flex flex-col ${
           isLight
             ? 'bg-white/90 border-white/40 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_40px_rgba(0,0,0,0.12)]'
             : 'bg-[#0a0a0c]/90 border-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_40px_rgba(0,0,0,0.5)]'

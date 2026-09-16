@@ -93,7 +93,7 @@ export const FitnessOnboarding: React.FC<FitnessOnboardingProps> = ({
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-md ${
       isLight ? 'bg-black/40' : 'bg-black/75'
     }`}>
-      <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-0 ${
+      <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden mb-20 sm:mb-0 ${
         isLight
           ? 'bg-white border border-slate-200 text-slate-900'
           : 'bg-[#121215] border border-white/15 text-white'

@@ -466,7 +466,7 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-md ${
       isLight ? 'bg-black/40' : 'bg-black/75'
     }`}>
-      <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col mb-[env(safe-area-inset-bottom,0px)] sm:mb-0 ${
+      <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col mb-20 sm:mb-0 ${
         isLight
           ? 'bg-white/80 border border-white/40 text-slate-900 backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_8px_40px_rgba(0,0,0,0.12)]'
           : 'bg-[#121215]/80 border border-white/15 text-white backdrop-blur-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_40px_rgba(0,0,0,0.5)]'
