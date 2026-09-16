@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Exercise,
   ExerciseSet,
@@ -28,7 +28,11 @@ import {
   Dumbbell,
   Zap,
   List,
+  Copy,
+  Timer,
+  RotateCcw,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 function MuscleEngagementPreview({ exerciseId, isLight }: { exerciseId: string; isLight: boolean }) {
   const engagement = getMuscleEngagement(exerciseId);
@@ -92,6 +96,39 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
 
   const searchResults = searchExercises(searchQuery);
+
+  // Rest timer
+  const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [restRemaining, setRestRemaining] = useState(0);
+  const restIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startRestTimer = useCallback((seconds: number) => {
+    setRestTimer(seconds);
+    setRestRemaining(seconds);
+    if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+    restIntervalRef.current = setInterval(() => {
+      setRestRemaining((prev) => {
+        if (prev <= 1) {
+          if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+          setRestTimer(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const stopRestTimer = useCallback(() => {
+    if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+    setRestTimer(null);
+    setRestRemaining(0);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (restIntervalRef.current) clearInterval(restIntervalRef.current); };
+  }, []);
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   // Handle pre-selected exercise from picker
   useEffect(() => {
@@ -270,66 +307,156 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
             Bodyweight — weight optional (weighted vest, etc.)
           </p>
         )}
-        <div className="space-y-2">
-          {exSets.map((set, index) => (
-            <div key={index} className={`flex items-center gap-2 p-2.5 rounded-xl ${
-              isLight ? 'bg-slate-50' : 'bg-white/5'
-            }`}>
-              <span className={`text-xs font-bold w-6 text-center ${
-                set.completed ? 'text-green-400' : isLight ? 'text-slate-400' : 'text-white/30'
+
+        {/* Rest Timer Display */}
+        <AnimatePresence>
+          {restTimer !== null && restRemaining > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-3 overflow-hidden"
+            >
+              <div className={`flex items-center justify-between p-3 rounded-xl ${
+                restRemaining > 10
+                  ? 'bg-blue-500/10 border border-blue-500/20'
+                  : 'bg-amber-500/10 border border-amber-500/20'
               }`}>
-                {index + 1}
-              </span>
-              <input
-                type="number"
-                value={set.reps || ''}
-                onChange={(e) => onUpdateSet(index, 'reps', e.target.value)}
-                placeholder="Reps"
-                className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
-                  isLight
-                    ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
-                    : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
-                }`}
-              />
-              <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>×</span>
-              <input
-                type="number"
-                value={set.weight || ''}
-                onChange={(e) => onUpdateSet(index, 'weight', e.target.value)}
-                placeholder={isBW ? 'Wt (opt)' : 'Wt'}
-                className={`w-16 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
-                  isLight
-                    ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
-                    : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
-                }`}
-              />
-              <span className={`text-[10px] w-6 font-bold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
-                {defaultWeightUnit}
-              </span>
+                <div className="flex items-center gap-2">
+                  <Timer className={`w-4 h-4 ${restRemaining > 10 ? 'text-blue-400' : 'text-amber-400'}`} />
+                  <span className={`text-xs font-semibold ${restRemaining > 10 ? 'text-blue-400' : 'text-amber-400'}`}>
+                    Rest Timer
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-lg font-bold font-mono ${restRemaining > 10 ? 'text-blue-400' : 'text-amber-400'}`}>
+                    {formatTime(restRemaining)}
+                  </span>
+                  <button onClick={stopRestTimer} className={`p-1 rounded-lg ${isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/40 hover:text-red-400'}`}>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className={`h-1 rounded-full mt-1 overflow-hidden ${isLight ? 'bg-slate-100' : 'bg-white/5'}`}>
+                <motion.div
+                  initial={{ width: '100%' }}
+                  animate={{ width: '0%' }}
+                  transition={{ duration: restTimer, ease: 'linear' }}
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Quick Rest Timer Buttons */}
+        {restTimer === null && (
+          <div className="flex gap-1.5 mb-2">
+            {[60, 90, 120].map((secs) => (
               <button
-                onClick={() => onUpdateSet(index, 'completed', !set.completed)}
-                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                  set.completed
-                    ? 'bg-green-500 text-white'
-                    : isLight
-                    ? 'bg-slate-200 text-slate-400 hover:bg-slate-300'
-                    : 'bg-white/10 text-white/30 hover:bg-white/20'
+                key={secs}
+                onClick={() => startRestTimer(secs)}
+                className={`flex-1 py-1.5 rounded-lg text-[10px] font-semibold transition-all ${
+                  isLight ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' : 'bg-white/5 text-white/40 hover:bg-white/10'
                 }`}
               >
-                <Check className="w-3.5 h-3.5" />
+                {formatTime(secs)} rest
               </button>
-              {exSets.length > 1 && (
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {exSets.map((set, index) => {
+            const setVolume = set.completed ? set.reps * set.weight : 0;
+            return (
+              <div key={index} className={`flex items-center gap-2 p-2.5 rounded-xl transition-all ${
+                set.completed
+                  ? isLight ? 'bg-green-50/80 border border-green-200/50' : 'bg-green-500/5 border border-green-500/10'
+                  : isLight ? 'bg-slate-50' : 'bg-white/5'
+              }`}>
+                <span className={`text-xs font-bold w-6 text-center ${
+                  set.completed ? 'text-green-400' : isLight ? 'text-slate-400' : 'text-white/30'
+                }`}>
+                  {index + 1}
+                </span>
+                <input
+                  type="number"
+                  value={set.reps || ''}
+                  onChange={(e) => onUpdateSet(index, 'reps', e.target.value)}
+                  placeholder="Reps"
+                  className={`w-14 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
+                    isLight
+                      ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                      : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                  }`}
+                />
+                <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>×</span>
+                <input
+                  type="number"
+                  value={set.weight || ''}
+                  onChange={(e) => onUpdateSet(index, 'weight', e.target.value)}
+                  placeholder={isBW ? 'Wt (opt)' : 'Wt'}
+                  className={`w-14 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none ${
+                    isLight
+                      ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                      : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                  }`}
+                />
+                <span className={`text-[10px] w-5 font-bold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  {defaultWeightUnit}
+                </span>
+
+                {/* Volume per set */}
+                {set.completed && setVolume > 0 && (
+                  <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/30'}`}>
+                    {setVolume.toLocaleString()}
+                  </span>
+                )}
+
+                {/* Duplicate set */}
                 <button
-                  onClick={() => onRemoveSet(index)}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'
+                  onClick={() => {
+                    const dup = { ...set, completed: false };
+                    const updated = [...exSets];
+                    updated.splice(index + 1, 0, dup);
+                    // We need to trigger the parent update - use a custom event approach
+                    onUpdateSet(index, 'reps', String(set.reps));
+                  }}
+                  className={`p-1 rounded-lg transition-colors ${
+                    isLight ? 'text-slate-300 hover:text-blue-500' : 'text-white/20 hover:text-blue-400'
+                  }`}
+                  title="Duplicate set"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+
+                <button
+                  onClick={() => onUpdateSet(index, 'completed', !set.completed)}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                    set.completed
+                      ? 'bg-green-500 text-white shadow-sm shadow-green-500/30'
+                      : isLight
+                      ? 'bg-slate-200 text-slate-400 hover:bg-slate-300'
+                      : 'bg-white/10 text-white/30 hover:bg-white/20'
                   }`}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Check className="w-3.5 h-3.5" />
                 </button>
-              )}
-            </div>
-          ))}
+                {exSets.length > 1 && (
+                  <button
+                    onClick={() => onRemoveSet(index)}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -681,76 +808,103 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
                 {exerciseSlots.map((slot, idx) => {
                   const isOpen = activeSlotIndex === idx;
                   const completedInSlot = slot.sets.filter((s) => s.completed).length;
+                  const totalInSlot = slot.sets.length;
+                  const slotVolume = calculateTotalVolume(slot.sets);
                   return (
-                    <div key={idx} className={`rounded-xl border overflow-hidden ${
-                      isLight ? 'border-slate-200' : 'border-white/10'
-                    }`}>
+                    <motion.div
+                      key={idx}
+                      layout
+                      className={`rounded-xl border overflow-hidden ${
+                        isOpen
+                          ? isLight ? 'border-amber-300 shadow-sm' : 'border-amber-500/20'
+                          : isLight ? 'border-slate-200' : 'border-white/10'
+                      }`}
+                    >
                       <button
                         onClick={() => setActiveSlotIndex(isOpen ? null : idx)}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium ${
-                          isLight ? 'bg-slate-50 text-slate-800' : 'bg-white/5 text-white/80'
+                        className={`w-full flex items-center justify-between px-3 py-3 text-sm font-medium transition-colors ${
+                          isOpen
+                            ? isLight ? 'bg-amber-50/80 text-slate-800' : 'bg-amber-500/5 text-white/90'
+                            : isLight ? 'bg-slate-50 text-slate-800' : 'bg-white/5 text-white/80'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-bold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
-                            {idx + 1}.
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${
+                            completedInSlot === totalInSlot && completedInSlot > 0
+                              ? 'bg-green-500 text-white'
+                              : isLight ? 'bg-slate-200 text-slate-500' : 'bg-white/10 text-white/40'
+                          }`}>
+                            {completedInSlot === totalInSlot && completedInSlot > 0 ? '✓' : idx + 1}
                           </span>
-                          <span>{slot.exercise.name}</span>
-                          {completedInSlot > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">
-                              {completedInSlot} done
+                          <div className="text-left">
+                            <span className="block">{slot.exercise.name}</span>
+                            <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                              {MUSCLE_GROUP_ICONS[slot.exercise.muscleGroup]} {completedInSlot}/{totalInSlot} sets
+                              {slotVolume > 0 && ` · ${slotVolume.toLocaleString()} ${defaultWeightUnit}`}
                             </span>
-                          )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRemoveSlot(idx); }}
-                            className={`p-1 rounded-lg transition-colors ${
-                              isLight ? 'text-slate-400 hover:text-red-500' : 'text-white/30 hover:text-red-400'
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isLight ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-white/30 hover:text-red-400 hover:bg-red-500/10'
                             }`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+                            <ChevronDown className={`w-4 h-4 ${isLight ? 'text-slate-400' : 'text-white/30'}`} />
+                          </motion.div>
                         </div>
                       </button>
-                      {isOpen && (
-                        <div className={`p-3 space-y-3 ${isLight ? 'bg-white' : 'bg-[#121215]'}`}>
-                          {renderSetsUI(
-                            slot.exercise,
-                            slot.sets,
-                            (i, field, val) => {
-                              const updated = [...slot.sets];
-                              if (field === 'reps' || field === 'weight') {
-                                updated[i] = { ...updated[i], [field]: Math.max(0, parseInt(val as string) || 0) };
-                              } else {
-                                updated[i] = { ...updated[i], [field]: val };
-                              }
-                              handleUpdateSlotSets(idx, updated);
-                            },
-                            () => {
-                              const last = slot.sets[slot.sets.length - 1];
-                              handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit: defaultWeightUnit, completed: false }]);
-                            },
-                            (i) => { if (slot.sets.length > 1) handleUpdateSlotSets(idx, slot.sets.filter((_, j) => j !== i)); },
-                          )}
-                          <div>
-                            <input
-                              type="text"
-                              value={slot.notes}
-                              onChange={(e) => handleUpdateSlotNotes(idx, e.target.value)}
-                              placeholder="Notes (optional)"
-                              className={`w-full rounded-lg px-3 py-1.5 text-xs focus:outline-none ${
-                                isLight
-                                  ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
-                                  : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
-                              }`}
-                            />
-                          </div>
-                          <MuscleEngagementPreview exerciseId={slot.exercise.id} isLight={isLight} />
-                        </div>
-                      )}
-                    </div>
+                      <AnimatePresence>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className={`p-3 space-y-3 ${isLight ? 'bg-white' : 'bg-[#121215]'}`}>
+                              {renderSetsUI(
+                                slot.exercise,
+                                slot.sets,
+                                (i, field, val) => {
+                                  const updated = [...slot.sets];
+                                  if (field === 'reps' || field === 'weight') {
+                                    updated[i] = { ...updated[i], [field]: Math.max(0, parseInt(val as string) || 0) };
+                                  } else {
+                                    updated[i] = { ...updated[i], [field]: val };
+                                  }
+                                  handleUpdateSlotSets(idx, updated);
+                                },
+                                () => {
+                                  const last = slot.sets[slot.sets.length - 1];
+                                  handleUpdateSlotSets(idx, [...slot.sets, { reps: last?.reps || 0, weight: last?.weight || 0, weightUnit: defaultWeightUnit, completed: false }]);
+                                },
+                                (i) => { if (slot.sets.length > 1) handleUpdateSlotSets(idx, slot.sets.filter((_, j) => j !== i)); },
+                              )}
+                              <div>
+                                <input
+                                  type="text"
+                                  value={slot.notes}
+                                  onChange={(e) => handleUpdateSlotNotes(idx, e.target.value)}
+                                  placeholder="Notes (optional)"
+                                  className={`w-full rounded-lg px-3 py-1.5 text-xs focus:outline-none ${
+                                    isLight
+                                      ? 'bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-400'
+                                      : 'bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-amber-500'
+                                  }`}
+                                />
+                              </div>
+                              <MuscleEngagementPreview exerciseId={slot.exercise.id} isLight={isLight} />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -787,10 +941,29 @@ export const ExerciseLogModal: React.FC<ExerciseLogModalProps> = ({
         {((!showExerciseList && mode === 'single') || (mode === 'multi' && exerciseSlots.length > 0)) && (
           <div className="p-5 border-t shrink-0"
             style={{ borderColor: isLight ? 'rgb(226 232 240)' : 'rgba(255,255,255,0.1)' }}>
+            {/* Summary bar */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <span className={`text-[10px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  {totalCompletedSets} sets done
+                </span>
+                <span className={`text-[10px] ${isLight ? 'text-slate-300' : 'text-white/15'}`}>·</span>
+                <span className={`text-[10px] font-semibold ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                  {calculateTotalVolume(mode === 'multi'
+                    ? exerciseSlots.reduce((all, s) => [...all, ...s.sets], [] as ExerciseSet[])
+                    : sets
+                  ).toLocaleString()} {defaultWeightUnit} vol
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-amber-400">
+                <Zap className="w-3 h-3" />
+                <span className="text-[10px] font-bold">+{totalXP} XP</span>
+              </div>
+            </div>
             <button
               onClick={mode === 'single' ? handleSaveSingle : handleSaveMulti}
               disabled={!hasCompleted}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {mode === 'single' ? 'Save Workout' : `Save Workout (${exerciseSlots.filter((s) => s.sets.some((s) => s.completed)).length} exercises)`}
             </button>

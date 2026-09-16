@@ -56,7 +56,7 @@ export const CongratulationScreen: React.FC<CongratulationScreenProps> = ({
             transition={{ delay: 0.3 }}
             className={`text-xl font-bold mb-3 ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}
           >
-            Congratulation
+            Workout Complete!
           </motion.h2>
           
           <motion.p
@@ -65,7 +65,7 @@ export const CongratulationScreen: React.FC<CongratulationScreenProps> = ({
             transition={{ delay: 0.4 }}
             className={`text-sm leading-relaxed mb-6 ${isLight ? 'text-[#888]' : 'text-white/50'}`}
           >
-            Your Boking has been confirmed. A confirmation email has been send to***@gmail.com
+            Amazing effort! You've crushed your workout. Keep up the momentum and stay consistent — every rep counts.
           </motion.p>
 
           <motion.button

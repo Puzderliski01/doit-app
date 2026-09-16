@@ -1615,15 +1615,6 @@ export default function App() {
               {/* HOME VIEW - New Fitness App Design */}
           {currentView === 'home' && !showWorkoutDetail && !showTrainerProfile && (
             <div className="space-y-5">
-              <QuickAddBar
-                categories={categories}
-                theme={theme}
-                onAddTask={handleQuickAdd}
-                onOpenFullModal={() => {
-                  setEditingTask(null);
-                  setIsTaskModalOpen(true);
-                }}
-              />
               <HomeScreen
                 theme={theme}
                 userName={currentUser?.displayName || 'there'}

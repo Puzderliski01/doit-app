@@ -35,6 +35,7 @@ import {
   getWeeklyComparison,
   getMoodTrend,
   getActiveDaysData,
+  calculateTotalVolume,
 } from '../utils/fitness';
 import {
   Flame,
@@ -198,6 +199,14 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
             )}
           </div>
         </div>
+        {/* Quick Log CTA */}
+        <button
+          onClick={onOpenLogModal}
+          className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold text-sm shadow-lg shadow-amber-500/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Log Workout
+        </button>
       </div>
 
       {/* Tab Navigation */}
@@ -418,19 +427,37 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                     Quick Log
                   </h3>
                 </div>
+                <button
+                  onClick={onOpenLogModal}
+                  className={`text-[10px] font-semibold ${isLight ? 'text-amber-600 hover:text-amber-700' : 'text-amber-400 hover:text-amber-300'}`}
+                >
+                  View All →
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {topExercises.slice(0, 4).map(({ exercise }, i) => (
+                {topExercises.slice(0, 4).map(({ exercise, count, lastDate }, i) => (
                   <button
                     key={i}
                     onClick={() => exercise && onSelectExercise(exercise.id)}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl text-left transition-colors ${
-                      isLight ? 'bg-slate-50 hover:bg-slate-100' : 'bg-white/5 hover:bg-white/10'
+                    className={`flex flex-col p-3 rounded-xl text-left transition-all active:scale-[0.97] ${
+                      isLight
+                        ? 'bg-gradient-to-br from-slate-50 to-white border border-slate-100 hover:shadow-md'
+                        : 'bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] hover:border-white/[0.12]'
                     }`}
                   >
-                    <span className="text-xs font-bold text-amber-400">#{i + 1}</span>
-                    <span className={`text-xs font-medium truncate ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-lg">{MUSCLE_GROUP_ICONS[exercise?.muscleGroup || 'chest']}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                        isLight ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/15 text-amber-400'
+                      }`}>
+                        #{i + 1}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-semibold truncate ${isLight ? 'text-slate-800' : 'text-white/80'}`}>
                       {exercise?.name}
+                    </span>
+                    <span className={`text-[9px] mt-0.5 ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                      {count}x logged
                     </span>
                   </button>
                 ))}
@@ -448,23 +475,38 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                 </h3>
               </div>
               <div className="space-y-2">
-                {recentEntries.map((entry) => (
-                  <div key={entry.id}
-                    className={`flex items-center justify-between p-2.5 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-white/5'}`}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm">{MUSCLE_GROUP_ICONS[entry.muscleGroup]}</span>
-                      <span className={`text-xs font-medium truncate ${isLight ? 'text-slate-700' : 'text-white/80'}`}>
-                        {entry.exerciseName}
-                      </span>
+                {recentEntries.map((entry) => {
+                  const entryVolume = calculateTotalVolume(entry.sets);
+                  const completedSets = entry.sets.filter(s => s.completed).length;
+                  return (
+                    <div key={entry.id}
+                      className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                        isLight ? 'bg-slate-50 hover:bg-slate-100' : 'bg-white/5 hover:bg-white/[0.07]'
+                      }`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          isLight ? 'bg-white shadow-sm' : 'bg-white/[0.06]'
+                        }`}>
+                          <span className="text-sm">{MUSCLE_GROUP_ICONS[entry.muscleGroup]}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <span className={`text-xs font-semibold block truncate ${isLight ? 'text-slate-800' : 'text-white/80'}`}>
+                            {entry.exerciseName}
+                          </span>
+                          <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
+                            {completedSets} sets · {entryVolume > 0 ? `${entryVolume.toLocaleString()} ${entry.weightUnit || 'kg'}` : 'BW'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {entry.mood && <span className="text-xs">{MOOD_EMOJI[entry.mood]}</span>}
+                        <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
+                          {new Date(entry.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {entry.mood && <span className="text-xs">{MOOD_EMOJI[entry.mood]}</span>}
-                      <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
-                        {new Date(entry.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
