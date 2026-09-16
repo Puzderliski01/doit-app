@@ -203,7 +203,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className={`w-full sm:max-w-[420px] max-h-[92vh] overflow-y-auto sm:rounded-[32px] rounded-t-[32px] shadow-2xl relative ${
+        className={`w-full sm:max-w-[420px] max-h-[92vh] overflow-y-auto sm:rounded-[32px] rounded-t-[32px] shadow-2xl relative mb-[env(safe-area-inset-bottom,0px)] sm:mb-0 ${
           isLight
             ? 'bg-white text-slate-900'
             : 'bg-[#0a0a0c] text-white'

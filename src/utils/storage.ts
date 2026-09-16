@@ -248,5 +248,16 @@ export const storage = {
     } catch (e) {
       console.error('Failed to persist fitness entries to local storage:', e);
     }
+  },
+
+  getFitnessEntries(userId?: string): FitnessEntry[] {
+    try {
+      const key = userId ? `doit_fitness_entries_${userId}` : 'doit_fitness_entries';
+      const data = localStorage.getItem(key);
+      if (!data) return [];
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
   }
 };

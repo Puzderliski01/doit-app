@@ -101,7 +101,9 @@ import {
   getLocalAuthSession,
   resolveGoogleRedirectResult,
   fetchUserFitness,
+  subscribeToUserFitness,
   saveFitnessEntryToFirestore,
+  deleteUserFitnessEntryFromFirestore,
   saveUserProfileToFirestore,
   fetchUserProfile,
   saveLocalAuthSession,
@@ -270,13 +272,7 @@ export default function App() {
     } catch { /* ignore */ }
     return DEFAULT_USER_PROFILE;
   });
-  const [fitnessEntries, setFitnessEntries] = useState<FitnessEntry[]>(() => {
-    try {
-      const stored = localStorage.getItem('doit_fitness_entries');
-      if (stored) return JSON.parse(stored);
-    } catch { /* ignore */ }
-    return [];
-  });
+  const [fitnessEntries, setFitnessEntries] = useState<FitnessEntry[]>([]);
   const [isExerciseLogModalOpen, setIsExerciseLogModalOpen] = useState(false);
   const [isFitnessOnboardingOpen, setIsFitnessOnboardingOpen] = useState(false);
 
@@ -438,31 +434,40 @@ export default function App() {
       }
     );
 
+    // Real-time fitness subscription (same pattern as tasks)
+    const unsubscribeFitness = subscribeToUserFitness(
+      currentUser.uid,
+      (userFitness) => {
+        setFitnessEntries(prev => {
+          const pending = pendingFitnessWritesRef.current;
+          const deletes = pendingFitnessDeletesRef.current;
+          if (pending.size === 0 && deletes.size === 0) {
+            const firestoreIds = new Set(userFitness.map(e => e.id));
+            const localOnly = prev.filter(e => !firestoreIds.has(e.id));
+            const merged = [...userFitness, ...localOnly];
+            storage.saveFitnessEntries(merged, currentUser.uid);
+            return merged;
+          }
+          const firestoreMap = new Map(userFitness.filter(e => !deletes.has(e.id)).map(e => [e.id, e]));
+          for (const [id, localEntry] of pending) {
+            firestoreMap.set(id, localEntry);
+          }
+          const merged = Array.from(firestoreMap.values());
+          storage.saveFitnessEntries(merged, currentUser.uid);
+          return merged;
+        });
+      }
+    );
+
     // One-shot fetch for non-critical data (saves Firestore quota)
     const loadNonCritical = async () => {
-      const [cats, notifs, fitness, profile] = await Promise.all([
+      const [cats, notifs, profile] = await Promise.all([
         fetchUserCategories(currentUser!.uid),
         fetchUserNotifications(currentUser!.uid),
-        fetchUserFitness(currentUser!.uid),
         fetchUserProfile(currentUser!.uid),
       ]);
       if (cats.length > 0) setCategories(cats);
       if (notifs.length > 0) setAppNotifications(notifs);
-      if (fitness.length > 0) {
-        setFitnessEntries(prev => {
-          const pending = pendingFitnessWritesRef.current;
-          const deletes = pendingFitnessDeletesRef.current;
-          const firestoreIds = new Set(fitness.map(e => e.id));
-          const localOnly = prev.filter(e => !firestoreIds.has(e.id) && !deletes.has(e.id));
-          const firestoreMap = new Map(fitness.filter(e => !deletes.has(e.id)).map(e => [e.id, e]));
-          for (const [id, localEntry] of pending) {
-            firestoreMap.set(id, localEntry);
-          }
-          const merged = [...firestoreMap.values(), ...localOnly];
-          storage.saveFitnessEntries(merged, currentUser!.uid);
-          return merged;
-        });
-      }
       if (profile) {
         setUserProfile(prev => {
           const merged = { ...prev, ...profile };
@@ -484,6 +489,7 @@ export default function App() {
 
     return () => {
       unsubscribeTasks();
+      unsubscribeFitness();
       unsubscribeGroups();
       clearInterval(nonCriticalInterval);
     };
@@ -515,7 +521,7 @@ export default function App() {
     if (localStorage.getItem(migratedKey)) return;
 
     // Check if we have local data to migrate
-    const localEntries = JSON.parse(localStorage.getItem('doit_fitness_entries') || '[]');
+    const localEntries = storage.getFitnessEntries();
     const localProfile = JSON.parse(localStorage.getItem('doit_user_profile') || 'null');
 
     if (localEntries.length > 0 || (localProfile && localProfile.fitnessStats?.xp > 0)) {
@@ -615,15 +621,7 @@ export default function App() {
   }, [userProfile, currentUser?.uid]);
 
   useEffect(() => {
-    localStorage.setItem('doit_fitness_entries', JSON.stringify(fitnessEntries));
-    if (currentUser?.uid && !(currentUser as AuthUser).isGuest && !(currentUser as AuthUser).isLocal) {
-      // Sync to Firestore for non-guest users
-      fitnessEntries.forEach(entry => {
-        if (!pendingFitnessWritesRef.current.has(entry.id)) {
-          saveFitnessEntryToFirestore(currentUser.uid, entry).catch(console.error);
-        }
-      });
-    }
+    storage.saveFitnessEntries(fitnessEntries, currentUser?.uid);
   }, [fitnessEntries, currentUser?.uid]);
 
   useEffect(() => {
@@ -1298,6 +1296,16 @@ export default function App() {
     }
   };
 
+  const handleDeleteFitnessEntry = (entryId: string) => {
+    setFitnessEntries(prev => prev.filter(e => e.id !== entryId));
+    if (currentUser?.uid && !(currentUser as AuthUser).isGuest) {
+      pendingFitnessDeletesRef.current.add(entryId);
+      deleteUserFitnessEntryFromFirestore(currentUser.uid, entryId)
+        .then(() => { pendingFitnessDeletesRef.current.delete(entryId); })
+        .catch(console.error);
+    }
+  };
+
   const handleFitnessOnboardingComplete = (data: {
     fitnessMode: boolean;
     weightUnit: 'kg' | 'lbs';
@@ -1537,6 +1545,9 @@ export default function App() {
     localStorage.removeItem('doit_categories_v2');
     localStorage.removeItem('doit_user_profile');
     localStorage.removeItem('doit_fitness_entries');
+    if (currentUser?.uid) {
+      localStorage.removeItem(`doit_fitness_entries_${currentUser.uid}`);
+    }
     localStorage.removeItem('doit_notification_logs_v2');
     localStorage.removeItem('doit_user_email_v2');
     localStorage.removeItem('doit_app_notifications_v1');
@@ -2009,7 +2020,7 @@ export default function App() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
-                        className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl ${
+                        className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[55] flex items-center gap-2 px-4 py-3 rounded-2xl shadow-xl ${
                           isLight ? 'bg-white border border-gray-200' : 'bg-[#1a1a1a] border border-white/10'
                         }`}
                       >
@@ -2380,6 +2391,7 @@ export default function App() {
                       entries={fitnessEntries}
                       onOpenLogModal={() => setIsExerciseLogModalOpen(true)}
                       onSelectExercise={handleSelectExercise}
+                      onDeleteEntry={handleDeleteFitnessEntry}
                     />
                   )}
                 </Suspense>

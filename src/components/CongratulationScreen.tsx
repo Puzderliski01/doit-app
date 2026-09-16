@@ -14,7 +14,7 @@ export const CongratulationScreen: React.FC<CongratulationScreenProps> = ({
   const isLight = theme === 'light';
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-6">
+    <div className="fixed inset-0 flex items-center justify-center z-[60] p-6">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       

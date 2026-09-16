@@ -34,7 +34,7 @@ export const GetReadyScreen: React.FC<GetReadyScreenProps> = ({
   }, [count, onReady]);
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col items-center justify-center z-[60] overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0 bg-[#0a0a0a]">
         <motion.div

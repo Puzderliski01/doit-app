@@ -489,7 +489,7 @@ export const TrainerDashboard: React.FC<TrainerDashboardProps> = ({
       {/* Plan Builder Modal */}
       {showPlanBuilder && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-xl">
-          <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden ${
+          <div className={`w-full sm:max-w-lg sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-0 ${
             isLight ? 'bg-white border-slate-200' : 'bg-[#0a0a0c] border-white/10'
           }`}>
             {/* Header */}

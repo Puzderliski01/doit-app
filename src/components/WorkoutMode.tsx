@@ -311,7 +311,7 @@ export const WorkoutMode: React.FC<WorkoutModeProps> = ({
   // ==================== SELECT PHASE ====================
   if (phase === 'select') {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0a]">
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[#0a0a0a]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 pt-12 border-b border-white/10">
           <button onClick={onClose} className="p-2 rounded-xl bg-white/5 text-white/60">
@@ -439,7 +439,7 @@ export const WorkoutMode: React.FC<WorkoutModeProps> = ({
   // ==================== READY PHASE ====================
   if (phase === 'ready') {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0a0a0a] overflow-hidden">
+      <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#0a0a0a] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#c8ff00]/5 via-transparent to-[#c8ff00]/5" />
 
         {/* Pulse rings */}
@@ -503,7 +503,7 @@ export const WorkoutMode: React.FC<WorkoutModeProps> = ({
     const isBW = isBodyweightExercise(exercise.exercise.id);
 
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0a]">
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[#0a0a0a]">
         {/* Background gradient */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-b from-[#c8ff00]/3 via-transparent to-[#c8ff00]/3" />
@@ -812,7 +812,7 @@ export const WorkoutMode: React.FC<WorkoutModeProps> = ({
     const avgWeight = totalSetsDone > 0 ? Math.round(totalVolume / totalSetsDone) : 0;
 
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0a]">
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[#0a0a0a]">
         <div className="absolute inset-0 bg-gradient-to-b from-[#c8ff00]/5 via-transparent to-transparent" />
 
         {/* Header */}

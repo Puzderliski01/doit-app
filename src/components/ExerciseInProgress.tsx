@@ -107,7 +107,7 @@ export const ExerciseInProgress: React.FC<ExerciseInProgressProps> = ({
   const setProgress = (completedSets / totalSets) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0a]">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#0a0a0a]">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#c8ff00]/5 via-transparent to-[#c8ff00]/5" />
 

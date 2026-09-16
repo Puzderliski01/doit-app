@@ -64,6 +64,7 @@ import {
   AlertTriangle,
   Heart,
   Hash,
+  Trash2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -76,6 +77,7 @@ interface FitnessDashboardProps {
   entries: FitnessEntry[];
   onOpenLogModal: () => void;
   onSelectExercise: (exerciseId: string) => void;
+  onDeleteEntry?: (entryId: string) => void;
 }
 
 type DashboardTab = 'overview' | 'progress' | 'achievements' | 'insights';
@@ -102,6 +104,7 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
   entries,
   onOpenLogModal,
   onSelectExercise,
+  onDeleteEntry,
 }) => {
   const isLight = theme === 'light';
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
@@ -515,6 +518,14 @@ export const FitnessDashboard: React.FC<FitnessDashboardProps> = ({
                         <span className={`text-[10px] ${isLight ? 'text-slate-400' : 'text-white/40'}`}>
                           {new Date(entry.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
                         </span>
+                        {onDeleteEntry && (
+                          <button
+                            onClick={() => onDeleteEntry(entry.id)}
+                            className={`p-1 rounded-lg cursor-pointer ${isLight ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-white/20 hover:text-red-400 hover:bg-red-500/10'}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

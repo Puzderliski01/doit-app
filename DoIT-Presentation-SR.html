@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoIT - Suite za Zadatke i Rokove</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --doit-primary: #6C63FF;
+            --doit-secondary: #FF6584;
+            --doit-accent: #43E97B;
+            --doit-dark: #0D0D1A;
+            --doit-card: rgba(255,255,255,0.06);
+        }
+
+        .reveal {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .reveal .slides section {
+            text-align: left;
+            padding: 40px 60px;
+        }
+
+        .reveal h1, .reveal h2, .reveal h3 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            text-transform: none;
+            letter-spacing: -0.02em;
+        }
+
+        .reveal h1 {
+            font-size: 3.2em;
+            line-height: 1.1;
+        }
+
+        .reveal h2 {
+            font-size: 2.2em;
+            margin-bottom: 0.4em;
+        }
+
+        .reveal h3 {
+            font-size: 1.4em;
+            color: var(--doit-primary);
+            margin-bottom: 0.3em;
+        }
+
+        .reveal p, .reveal li {
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #c0c0c0;
+        }
+
+        .reveal ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .reveal ul li::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--doit-primary);
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+
+        .reveal ul li {
+            margin-bottom: 12px;
+        }
+
+        .hero-slide {
+            text-align: center !important;
+        }
+
+        .hero-slide h1 {
+            font-size: 4.5em;
+            background: linear-gradient(135deg, var(--doit-primary), var(--doit-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.1em;
+        }
+
+        .hero-slide .tagline {
+            font-size: 1.5em;
+            color: #888;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+        }
+
+        .hero-slide .version-badge {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 8px 24px;
+            border: 1px solid var(--doit-primary);
+            border-radius: 50px;
+            color: var(--doit-primary);
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            background: var(--doit-card);
+            border: 1px solid rgba(108, 99, 255, 0.15);
+            border-radius: 16px;
+            padding: 28px;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--doit-primary);
+        }
+
+        .feature-card .icon {
+            font-size: 2em;
+            margin-bottom: 12px;
+        }
+
+        .feature-card h4 {
+            color: #fff;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.85em;
+            color: #999;
+            margin: 0;
+        }
+
+        .split-layout {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            height: 100%;
+        }
+
+        .split-layout .content {
+            flex: 1;
+        }
+
+        .split-layout .visual {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-mockup {
+            width: 260px;
+            height: 500px;
+            background: #1a1a2e;
+            border-radius: 36px;
+            border: 3px solid #333;
+            padding: 12px;
+            position: relative;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 40px rgba(108, 99, 255, 0.1);
+        }
+
+        .phone-mockup .notch {
+            width: 100px;
+            height: 24px;
+            background: #0D0D1A;
+            border-radius: 0 0 16px 16px;
+            margin: 0 auto 12px;
+        }
+
+        .phone-mockup .screen {
+            background: linear-gradient(180deg, #1a1a3e, #0D0D1A);
+            border-radius: 24px;
+            height: calc(100% - 36px);
+            padding: 16px;
+            overflow: hidden;
+        }
+
+        .phone-mockup .screen-header {
+            font-size: 0.7em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .phone-task {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid;
+        }
+
+        .phone-task.urgent { border-left-color: #FF6584; }
+        .phone-task.high { border-left-color: #FFA726; }
+        .phone-task.medium { border-left-color: #6C63FF; }
+        .phone-task.low { border-left-color: #43E97B; }
+
+        .phone-task .task-title {
+            font-size: 0.55em;
+            color: #ddd;
+            font-weight: 600;
+        }
+
+        .phone-task .task-meta {
+            font-size: 0.45em;
+            color: #777;
+            margin-top: 3px;
+        }
+
+        .matrix-mock {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 4px;
+            width: 280px;
+            height: 240px;
+        }
+
+        .matrix-cell {
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .matrix-cell.q1 { background: rgba(255, 69, 58, 0.2); border: 1px solid rgba(255, 69, 58, 0.3); }
+        .matrix-cell.q2 { background: rgba(108, 99, 255, 0.2); border: 1px solid rgba(108, 99, 255, 0.3); }
+        .matrix-cell.q3 { background: rgba(255, 167, 38, 0.2); border: 1px solid rgba(255, 167, 38, 0.3); }
+        .matrix-cell.q4 { background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.3); }
+
+        .matrix-cell .q-label {
+            font-size: 0.55em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .matrix-cell.q1 .q-label { color: #FF453A; }
+        .matrix-cell.q2 .q-label { color: #6C63FF; }
+        .matrix-cell.q3 .q-label { color: #FFA726; }
+        .matrix-cell.q4 .q-label { color: #4CAF50; }
+
+        .matrix-cell .q-tasks {
+            font-size: 0.5em;
+            color: #aaa;
+            line-height: 1.5;
+        }
+
+        .kanban-mock {
+            display: flex;
+            gap: 10px;
+            width: 360px;
+            overflow: hidden;
+        }
+
+        .kanban-col {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .kanban-col-header {
+            font-size: 0.5em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--doit-primary);
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid rgba(108, 99, 255, 0.3);
+        }
+
+        .kanban-card {
+            background: rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 6px;
+            font-size: 0.45em;
+            color: #ccc;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-box {
+            background: var(--doit-card);
+            border-radius: 16px;
+            padding: 24px;
+            flex: 1;
+            text-align: center;
+            border: 1px solid rgba(108, 99, 255, 0.1);
+        }
+
+        .stat-box .number {
+            font-size: 2.8em;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--doit-primary), var(--doit-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-box .label {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .rank-progress {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .rank-bar {
+            flex: 1;
+            height: 12px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .rank-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--doit-primary), var(--doit-accent));
+            transition: width 1.5s ease;
+        }
+
+        .rank-label {
+            font-size: 0.7em;
+            font-weight: 700;
+            color: var(--doit-accent);
+            min-width: 100px;
+        }
+
+        .rank-badges {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .rank-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.6em;
+            font-weight: 700;
+            border: 1px solid;
+        }
+
+        .rank-badge.r1 { border-color: #888; color: #888; }
+        .rank-badge.r2 { border-color: #4CAF50; color: #4CAF50; }
+        .rank-badge.r3 { border-color: #2196F3; color: #2196F3; }
+        .rank-badge.r4 { border-color: #9C27B0; color: #9C27B0; }
+        .rank-badge.r5 { border-color: #FF9800; color: #FF9800; }
+        .rank-badge.r6 { border-color: #F44336; color: #F44336; }
+        .rank-badge.r7 { border-color: var(--doit-primary); color: var(--doit-primary); }
+
+        .group-mock {
+            background: var(--doit-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(108, 99, 255, 0.15);
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .group-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .group-members {
+            display: flex;
+            margin-left: auto;
+        }
+
+        .group-members .member-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--doit-dark);
+            margin-left: -8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55em;
+            font-weight: 700;
+        }
+
+        .group-task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .group-task-item:last-child {
+            border-bottom: none;
+        }
+
+        .group-task-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #555;
+            flex-shrink: 0;
+        }
+
+        .group-task-check.done {
+            background: var(--doit-accent);
+            border-color: var(--doit-accent);
+        }
+
+        .group-task-text {
+            font-size: 0.7em;
+            color: #ccc;
+        }
+
+        .group-task-assignee {
+            margin-left: auto;
+            font-size: 0.55em;
+            color: #888;
+            background: rgba(255,255,255,0.05);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .macro-bars {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .macro-bar {
+            flex: 1;
+            text-align: center;
+        }
+
+        .macro-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 8px;
+            position: relative;
+        }
+
+        .macro-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .macro-ring .value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1em;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .macro-label {
+            font-size: 0.65em;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .tech-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .tech-tag {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            background: var(--doit-card);
+            border: 1px solid rgba(108, 99, 255, 0.15);
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tech-tag .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .problem-card {
+            background: rgba(255, 69, 58, 0.08);
+            border: 1px solid rgba(255, 69, 58, 0.2);
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .problem-card .emoji {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .problem-card h4 {
+            color: #FF6584;
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+
+        .problem-card p {
+            font-size: 0.8em;
+            color: #999;
+            margin: 0;
+        }
+
+        .cta-slide {
+            text-align: center !important;
+        }
+
+        .cta-slide h2 {
+            font-size: 2.8em;
+            background: linear-gradient(135deg, var(--doit-primary), var(--doit-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 16px 48px;
+            background: linear-gradient(135deg, var(--doit-primary), var(--doit-secondary));
+            color: #fff;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 700;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(108, 99, 255, 0.4);
+        }
+
+        .cta-links {
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .cta-link {
+            color: #888;
+            font-size: 0.85em;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .cta-link:hover {
+            color: var(--doit-primary);
+        }
+
+        .reveal .fragment.fade-up {
+            transform: translateY(30px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .reveal .fragment.fade-up.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .reveal .slide-number {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .reveal .slides section .background-gradient {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            z-index: -1;
+        }
+
+        @media (max-width: 768px) {
+            .reveal h1 { font-size: 2.2em; }
+            .reveal h2 { font-size: 1.6em; }
+            .hero-slide h1 { font-size: 2.8em; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .split-layout { flex-direction: column; gap: 30px; }
+            .problem-grid { grid-template-columns: 1fr; }
+            .stat-row { flex-direction: column; }
+            .kanban-mock { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- SLAJD 1: Naslovna -->
+            <section class="hero-slide">
+                <div class="background-gradient" style="background: var(--doit-primary); top: -100px; right: -100px;"></div>
+                <div class="background-gradient" style="background: var(--doit-secondary); bottom: -100px; left: -100px;"></div>
+                <h1>DoIT</h1>
+                <p class="tagline">Tvoji zadaci. Tvoji ciljevi. Tvoja snaga.</p>
+                <span class="version-badge fragment fade-up">Verzija 3.0 — Sada sa AI Ličnim Trenerom</span>
+            </section>
+
+            <!-- SLAJD 2: Problem -->
+            <section>
+                <h2>Problem</h2>
+                <p style="color: #888; font-size: 1.1em;">Postojeći menadžeri zadataka su neefikasni.</p>
+                <div class="problem-grid">
+                    <div class="problem-card fragment fade-up">
+                        <div class="emoji">🤯</div>
+                        <h4>Prekomplicirano</h4>
+                        <p>Većina aplikacija vas opterećuje funkcijama koje nikada nećete koristiti.</p>
+                    </div>
+                    <div class="problem-card fragment fade-up">
+                        <div class="emoji">🏋️</div>
+                        <h4>Nema Fitness Integracije</h4>
+                        <p>Zadatke pratite u jednoj aplikaciji, vežbe u drugoj. Haos.</p>
+                    </div>
+                    <div class="problem-card fragment fade-up">
+                        <div class="emoji">🤖</div>
+                        <h4>Nema Inteligencije</h4>
+                        <p>Statičke liste koje se ne prilagođavaju vašim prioritetima ni ciljevima.</p>
+                    </div>
+                    <div class="problem-card fragment fade-up">
+                        <div class="emoji">📵</div>
+                        <h4>Bez Interneta? Srećno.</h4>
+                        <p>Većina aplikacija prestaje da radi bez interneta. Ne bi tako trebalo da bude.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 3: Rešenje -->
+            <section>
+                <h2>Rešenje</h2>
+                <div class="split-layout">
+                    <div class="content">
+                        <h3>Upoznaj DoIT</h3>
+                        <p style="font-size: 1.05em; color: #bbb; margin-bottom: 20px;">
+                            Jedna aplikacija koja zamenjuje vašu listu zadataka, dnevnik navika, fitness beležnik, planer obroka i alat za timsku saradnju.
+                        </p>
+                        <ul>
+                            <li class="fragment fade-up">Upravljanje zadacima sa AI prioritetima</li>
+                            <li class="fragment fade-up">Ugrađeno praćenje fitnessa sa gamifikacijom</li>
+                            <li class="fragment fade-up">Beleženje ishrane i planiranje obroka</li>
+                            <li class="fragment fade-up">Timsku saradnja sa grupama</li>
+                            <li class="fragment fade-up">Radi bez interneta — sinhronizuje se kada se vratite</li>
+                        </ul>
+                    </div>
+                    <div class="visual">
+                        <div class="phone-mockup fragment fade-up">
+                            <div class="notch"></div>
+                            <div class="screen">
+                                <div class="screen-header">Današnji zadaci</div>
+                                <div class="phone-task urgent">
+                                    <div class="task-title">Završi prezentaciju</div>
+                                    <div class="task-meta">Rok danas · Hitno</div>
+                                </div>
+                                <div class="phone-task high">
+                                    <div class="task-title">Teretana — Potisni dan</div>
+                                    <div class="task-meta">Zakazano u 18:00</div>
+                                </div>
+                                <div class="phone-task medium">
+                                    <div class="task-title">Pregledaj PR-ove</div>
+                                    <div class="task-meta">Rok sutra · 3 podzadatka</div>
+                                </div>
+                                <div class="phone-task low">
+                                    <div class="task-title">Priprema obroka nedelja</div>
+                                    <div class="task-meta">Ponavljajuće nedeljno</div>
+                                </div>
+                                <div class="phone-task medium">
+                                    <div class="task-title">Pročitaj 30 strana</div>
+                                    <div class="task-meta">Niz: 12 dana 🔥</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 4: Upravljanje zadacima -->
+            <section>
+                <h2>Pametno Upravljanje Zadacima</h2>
+                <p style="color: #888;">Tri moćna prikaza. Jedno ujedinjeno iskustvo.</p>
+
+                <div class="feature-grid" style="margin-top: 24px;">
+                    <div class="fragment fade-up">
+                        <h3>Eisenhower Matrica</h3>
+                        <div class="matrix-mock">
+                            <div class="matrix-cell q1">
+                                <div class="q-label">Prvo uradi</div>
+                                <div class="q-tasks">• Popravi kritičan bag<br>• Pozovi klijenta</div>
+                            </div>
+                            <div class="matrix-cell q2">
+                                <div class="q-label">Zakaži</div>
+                                <div class="q-tasks">• Planiraj roadmap<br>• Nauči Rust</div>
+                            </div>
+                            <div class="matrix-cell q3">
+                                <div class="q-label">Delegiraj</div>
+                                <div class="q-tasks">• Pregled koda<br>• Ažuriranja tima</div>
+                            </div>
+                            <div class="matrix-cell q4">
+                                <div class="q-label">Ukloni</div>
+                                <div class="q-tasks">• Društvene mreže<br>• Suvišan posao</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fragment fade-up">
+                        <h3>Kanban Tabla</h3>
+                        <div class="kanban-mock">
+                            <div class="kanban-col">
+                                <div class="kanban-col-header">Za kasnije</div>
+                                <div class="kanban-card">Dizajn nove landing stranice</div>
+                                <div class="kanban-card">Napiši unit testove</div>
+                            </div>
+                            <div class="kanban-col">
+                                <div class="kanban-col-header">Da se uradi</div>
+                                <div class="kanban-card">API integracija</div>
+                                <div class="kanban-card">Povratne informacije</div>
+                            </div>
+                            <div class="kanban-col">
+                                <div class="kanban-col-header">U toku</div>
+                                <div class="kanban-card" style="border-left: 2px solid var(--doit-primary);">Redizajn kontrolne table</div>
+                            </div>
+                            <div class="kanban-col">
+                                <div class="kanban-col-header">Gotovo</div>
+                                <div class="kanban-card" style="opacity: 0.6;">Podesi CI/CD</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-row fragment fade-up">
+                    <div class="stat-box">
+                        <div class="number">5</div>
+                        <div class="label">Nivoa prioriteta</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="number">7</div>
+                        <div class="label">Opcija ponavljanja</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="number">∞</div>
+                        <div class="label">Podzadataka</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="number">3</div>
+                        <div class="label">Načina prikaza</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 5: AI Lični Trener -->
+            <section>
+                <h2>AI Lični Trener</h2>
+                <div class="split-layout">
+                    <div class="content">
+                        <h3>Treniraj Pametnije, Ne Teže</h3>
+                        <p style="color: #bbb; margin-bottom: 16px;">
+                            DoIT analizira vašu istoriju vežbanja i generiše personalizovane nedeljne planove treninga na osnovu vaših ciljeva, iskustva i statusa oporavka.
+                        </p>
+                        <ul>
+                            <li class="fragment fade-up"><strong>Otkrivanje Slabih Tačaka</strong> — AI identifikuje nedovoljno trenirane mišićne grupe</li>
+                            <li class="fragment fade-up"><strong>Praćenje Oporavka</strong> — Znajte kada je svaki mišić spreman</li>
+                            <li class="fragment fade-up"><strong>Progresivno Opterećenje</strong> — Automatski predlozi za težinu/ponavljanja</li>
+                            <li class="fragment fade-up"><strong>5 Tipova Podela</strong> — PPL, Gornji/Donji, Celo Telo, Bro Split, Prilagođeno</li>
+                            <li class="fragment fade-up"><strong>1RM Kalkulator</strong> — Pratite svoje napore u snazi</li>
+                        </ul>
+                    </div>
+                    <div class="visual">
+                        <div class="phone-mockup fragment fade-up">
+                            <div class="notch"></div>
+                            <div class="screen">
+                                <div class="screen-header">💪 Potisni dan</div>
+                                <div class="phone-task" style="border-left-color: var(--doit-accent); background: rgba(67, 233, 123, 0.08);">
+                                    <div class="task-title">Bench Press</div>
+                                    <div class="task-meta">4 × 8-10 @ 80kg</div>
+                                </div>
+                                <div class="phone-task" style="border-left-color: var(--doit-accent); background: rgba(67, 233, 123, 0.08);">
+                                    <div class="task-title">Propadanja sa šipkom</div>
+                                    <div class="task-meta">3 × 10-12 @ 50kg</div>
+                                </div>
+                                <div class="phone-task" style="border-left-color: var(--doit-accent); background: rgba(67, 233, 123, 0.08);">
+                                    <div class="task-title">Bench pod uglom</div>
+                                    <div class="task-meta">3 × 12 @ 24kg</div>
+                                </div>
+                                <div class="phone-task" style="border-left-color: var(--doit-accent); background: rgba(67, 233, 123, 0.08);">
+                                    <div class="task-title">Bočna podizanja</div>
+                                    <div class="task-meta">4 × 15 @ 10kg</div>
+                                </div>
+                                <div class="phone-task" style="border-left-color: var(--doit-accent); background: rgba(67, 233, 123, 0.08);">
+                                    <div class="task-title">Triceps potisuci</div>
+                                    <div class="task-meta">3 × 12 @ 25kg</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 6: XP i sistem rangova -->
+            <section>
+                <h2>Gamifikovani Fitness</h2>
+                <p style="color: #888;">Nivoi se povećavaju vežbanjem. Budite dosledni. Zaradite rangove.</p>
+
+                <div style="margin-top: 30px;">
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label">Početnik</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 5%;"></div></div>
+                    </div>
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label">Regrut III</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 20%;"></div></div>
+                    </div>
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label">Vojnik II</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 50%;"></div></div>
+                    </div>
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label">Elitni vojnik I</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 70%;"></div></div>
+                    </div>
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label">Titan III</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 92%;"></div></div>
+                    </div>
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label" style="color: var(--doit-secondary);">Spartanac</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 98%; background: linear-gradient(90deg, var(--doit-secondary), #FFD700);"></div></div>
+                    </div>
+                    <div class="rank-progress fragment fade-up">
+                        <span class="rank-label" style="color: #FFD700;">Bog Fizike</span>
+                        <div class="rank-bar"><div class="rank-bar-fill" style="width: 100%; background: linear-gradient(90deg, #FFD700, #FF6584);"></div></div>
+                    </div>
+                </div>
+
+                <div class="rank-badges fragment fade-up">
+                    <span class="rank-badge r1">Početnik</span>
+                    <span class="rank-badge r2">Regrut</span>
+                    <span class="rank-badge r3">Amater</span>
+                    <span class="rank-badge r4">Vojnik</span>
+                    <span class="rank-badge r5">Elitni</span>
+                    <span class="rank-badge r6">Majstor</span>
+                    <span class="rank-badge r7">Apex → Spartanac → Bog</span>
+                </div>
+            </section>
+
+            <!-- SLAJD 7: Ishrana -->
+            <section>
+                <h2>Pratilac Ishrane</h2>
+                <div class="split-layout">
+                    <div class="content">
+                        <h3>Gorivo za Napredak</h3>
+                        <p style="color: #bbb; margin-bottom: 16px;">
+                            Pratite svaki obrok, monitorišite makronutrijente i dozvolite AI da generiše personalizovane planove ishrane na osnovu vaših ciljeva.
+                        </p>
+                        <ul>
+                            <li class="fragment fade-up"><strong>Baza Hrane</strong> — Pretražujite ili dodajte sopstvene namirnice</li>
+                            <li class="fragment fade-up"><strong>Praćenje Makronutrijenata</strong> — Kalorije, proteini, ugljeni hidrati, masti</li>
+                            <li class="fragment fade-up"><strong>AI Planovi Obroka</strong> — Generisani na osnovu vaših preferencija</li>
+                            <li class="fragment fade-up"><strong>Dijetetska Ograničenja</strong> — Veganski, keto, alergije</li>
+                            <li class="fragment fade-up"><strong>Dnevni Ciljevi</strong> — Personalizovani ciljevi za kalorije/makronutrijente</li>
+                        </ul>
+                    </div>
+                    <div class="visual">
+                        <div class="fragment fade-up" style="width: 280px;">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="font-size: 0.8em; color: #888;">Dnevni unos</div>
+                                <div style="font-size: 2.5em; font-weight: 900; color: #fff;">1.847 <span style="font-size: 0.4em; color: #666;">/ 2.200 kcal</span></div>
+                            </div>
+                            <div class="macro-bars">
+                                <div class="macro-bar">
+                                    <div class="macro-ring">
+                                        <svg width="80" height="80" viewBox="0 0 80 80">
+                                            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+                                            <circle cx="40" cy="40" r="34" fill="none" stroke="#FF6584" stroke-width="6" stroke-dasharray="180 214" stroke-linecap="round"/>
+                                        </svg>
+                                        <span class="value" style="color: #FF6584;">142g</span>
+                                    </div>
+                                    <div class="macro-label">Proteini</div>
+                                </div>
+                                <div class="macro-bar">
+                                    <div class="macro-ring">
+                                        <svg width="80" height="80" viewBox="0 0 80 80">
+                                            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+                                            <circle cx="40" cy="40" r="34" fill="none" stroke="#6C63FF" stroke-width="6" stroke-dasharray="150 214" stroke-linecap="round"/>
+                                        </svg>
+                                        <span class="value" style="color: #6C63FF;">218g</span>
+                                    </div>
+                                    <div class="macro-label">Ugljeni hidrati</div>
+                                </div>
+                                <div class="macro-bar">
+                                    <div class="macro-ring">
+                                        <svg width="80" height="80" viewBox="0 0 80 80">
+                                            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+                                            <circle cx="40" cy="40" r="34" fill="none" stroke="#43E97B" stroke-width="6" stroke-dasharray="120 214" stroke-linecap="round"/>
+                                        </svg>
+                                        <span class="value" style="color: #43E97B;">68g</span>
+                                    </div>
+                                    <div class="macro-label">Masti</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 8: Grupe -->
+            <section>
+                <h2>Grupe i Saradnja</h2>
+                <p style="color: #888;">Radite zajedno. Budite usklađeni. Brže isporučujte.</p>
+
+                <div style="display: flex; gap: 40px; margin-top: 30px; align-items: flex-start;">
+                    <div class="group-mock fragment fade-up" style="flex: 1;">
+                        <div class="group-header">
+                            <div class="group-avatar" style="background: linear-gradient(135deg, #6C63FF, #FF6584);">🚀</div>
+                            <div>
+                                <div style="font-size: 0.85em; font-weight: 700; color: #fff;">Projekat Alfa</div>
+                                <div style="font-size: 0.6em; color: #888;">4 člana · Kod za pridruživanje: ABC123</div>
+                            </div>
+                            <div class="group-members">
+                                <div class="member-dot" style="background: #6C63FF;">A</div>
+                                <div class="member-dot" style="background: #FF6584;">M</div>
+                                <div class="member-dot" style="background: #43E97B;">S</div>
+                                <div class="member-dot" style="background: #FFA726;">J</div>
+                            </div>
+                        </div>
+                        <div class="group-task-item">
+                            <div class="group-task-check done"></div>
+                            <span class="group-task-text">Postavi repozitorijum projekta</span>
+                            <span class="group-task-assignee">Aleksandar</span>
+                        </div>
+                        <div class="group-task-item">
+                            <div class="group-task-check done"></div>
+                            <span class="group-task-text">Dizajniraj wireframe-ove</span>
+                            <span class="group-task-assignee">Maja</span>
+                        </div>
+                        <div class="group-task-item">
+                            <div class="group-task-check"></div>
+                            <span class="group-task-text">Implementiraj autentifikaciju</span>
+                            <span class="group-task-assignee">Stefan</span>
+                        </div>
+                        <div class="group-task-item">
+                            <div class="group-task-check"></div>
+                            <span class="group-task-text">Napiši API dokumentaciju</span>
+                            <span class="group-task-assignee">Jovan</span>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1;" class="fragment fade-up">
+                        <h3>Funkcije Tima</h3>
+                        <ul>
+                            <li><strong>Zajedničke Table Zadataka</strong> — Svi vide isti prikaz</li>
+                            <li><strong>Dodeljivanje Zadataka</strong> — Delegirajte članovima tima</li>
+                            <li><strong>Komentari</strong> — Diskutujte o zadacima u kontekstu</li>
+                            <li><strong>Kodovi za Pridruživanje</strong> - Jednostavno uključivanje u tim</li>
+                            <li><strong>Pristup na Osnovu Uloga</strong> — Administratori i članovi</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 9: Offline i tehnologija -->
+            <section>
+                <h2>Napravljeno za Stvarni Život</h2>
+                <div class="split-layout">
+                    <div class="content">
+                        <h3>Offline-Prvi. Više Platformi.</h3>
+                        <p style="color: #bbb; margin-bottom: 20px;">
+                            Vaši podaci su uvek dostupni — čak i bez interneta. Promene se sinhronizuju automatski kada se ponovo povežete.
+                        </p>
+                        <ul>
+                            <li class="fragment fade-up"><strong>Firebase Sinhronizacija</strong> — Podaci u realnom vremenu na svim uređajima</li>
+                            <li class="fragment fade-up"><strong>Android Aplikacija</strong> — Nativna preko Capacitor-a</li>
+                            <li class="fragment fade-up"><strong>Web Aplikacija</strong> — Radi u svakom pregledaču</li>
+                            <li class="fragment fade-up"><strong>Email Podsetnici</strong> — Nikada ne propustite rok</li>
+                            <li class="fragment fade-up"><strong>Dnevni Briefingovi</strong> — AI-pokretani jutarnji pregledi</li>
+                        </ul>
+
+                        <div class="tech-grid fragment fade-up">
+                            <div class="tech-tag"><span class="dot" style="background: #61DAFB;"></span>React 19</div>
+                            <div class="tech-tag"><span class="dot" style="background: #646CFF;"></span>Vite</div>
+                            <div class="tech-tag"><span class="dot" style="background: #999;"></span>Capacitor</div>
+                            <div class="tech-tag"><span class="dot" style="background: #FFCA28;"></span>Firebase</div>
+                            <div class="tech-tag"><span class="dot" style="background: #4285F4;"></span>Gemini AI</div>
+                            <div class="tech-tag"><span class="dot" style="background: #38BDF8;"></span>Tailwind</div>
+                        </div>
+                    </div>
+                    <div class="visual">
+                        <div class="stat-box fragment fade-up" style="text-align: center;">
+                            <div style="font-size: 3em; margin-bottom: 10px;">📴 → 📶</div>
+                            <div style="font-size: 1.1em; font-weight: 700; color: #fff;">Nula Prekida Rada</div>
+                            <p style="font-size: 0.85em; color: #999; margin-top: 8px;">
+                                Pišite zadatke bez interneta.<br>
+                                Beležite vežbe u pokretu.<br>
+                                Sve se sinhronizuje kada se vratite.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLAJD 10: Poziv na akciju -->
+            <section class="cta-slide">
+                <div class="background-gradient" style="background: var(--doit-primary); top: -100px; left: 50%; transform: translateX(-50%);"></div>
+                <h2 class="fragment fade-up">Prestanite da Upravljate. Počnite da Radite.</h2>
+                <p class="fragment fade-up" style="color: #888; font-size: 1.1em; max-width: 500px; margin: 0 auto;">
+                    DoIT vam daje sve što vam je potrebno da osvojite svoje zadace, savladate vežbe i podignete svoj život na viši nivo.
+                </p>
+                <div class="fragment fade-up">
+                    <a href="#" class="cta-btn">Započnite — Besplatno je</a>
+                </div>
+                <div class="cta-links fragment fade-up">
+                    <a href="#" class="cta-link">Web Aplikacija</a>
+                    <a href="#" class="cta-link">Android</a>
+                    <a href="#" class="cta-link">Dokumentacija</a>
+                </div>
+                <div class="fragment fade-up" style="margin-top: 40px;">
+                    <p style="font-size: 0.75em; color: #555;">Verzija 3.0 · Napravljeno sa strašću · DoIT</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            slideNumber: 'c/t',
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            center: true,
+            width: 1200,
+            height: 700,
+            margin: 0.04,
+            controls: true,
+            controlsTutorial: true,
+            progress: true,
+            keyboard: true,
+            overview: true,
+            touch: true,
+        });
+    </script>
+</body>
+</html>

@@ -868,7 +868,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </AnimatePresence>
 
       {/* Quick Note (FAB) */}
-      <div className="fixed bottom-24 right-5 z-40 sm:hidden">
+      <div className="fixed bottom-24 right-5 z-[55] sm:hidden">
         <button
           onClick={() => setShowQuickNote(!showQuickNote)}
           className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${
@@ -887,7 +887,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className={`fixed bottom-38 right-5 left-5 z-40 p-4 rounded-2xl shadow-xl sm:hidden ${
+            className={`fixed bottom-38 right-5 left-5 z-[55] p-4 rounded-2xl shadow-xl sm:hidden ${
               isLight ? 'bg-white border border-gray-200' : 'bg-gray-900 border border-white/10'
             }`}
           >

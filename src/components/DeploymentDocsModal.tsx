@@ -128,7 +128,7 @@ eas submit -p ios --latest`;
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className={`w-full sm:max-w-4xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-0 sm:my-8 backdrop-blur-2xl ${
+        className={`w-full sm:max-w-4xl sm:rounded-3xl rounded-t-3xl border shadow-2xl overflow-hidden mb-[env(safe-area-inset-bottom,0px)] sm:mb-0 sm:my-8 backdrop-blur-2xl ${
           isLight
             ? 'bg-white border-slate-200 text-slate-900 shadow-[0_8px_40px_rgba(0,0,0,0.12)]'
             : 'bg-[#0a0a0c]/95 border-white/10 text-white'
