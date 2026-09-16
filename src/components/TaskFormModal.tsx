@@ -43,10 +43,10 @@ const STEPS = [
 ];
 
 const PRIORITY_OPTIONS: { value: Priority; label: string; desc: string; color: string; glow: string }[] = [
-  { value: 'urgent', label: 'Urgent', desc: 'Drop everything', color: '#ef4444', glow: 'shadow-[0_0_20px_rgba(239,68,68,0.3)]' },
-  { value: 'high', label: 'High', desc: 'Important & time-sensitive', color: '#f97316', glow: 'shadow-[0_0_20px_rgba(249,115,22,0.3)]' },
-  { value: 'medium', label: 'Medium', desc: 'Standard importance', color: '#3b82f6', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.3)]' },
-  { value: 'low', label: 'Low', desc: 'Do when possible', color: '#22c55e', glow: 'shadow-[0_0_20px_rgba(34,197,94,0.3)]' },
+  { value: 'urgent', label: 'Urgent', desc: 'Drop everything', color: '#ef4444', glow: 'shadow-[0_0_20px_rgba(239,68,68,0.25)]' },
+  { value: 'high', label: 'High', desc: 'Important & time-sensitive', color: '#f97316', glow: 'shadow-[0_0_20px_rgba(249,115,22,0.25)]' },
+  { value: 'medium', label: 'Medium', desc: 'Standard importance', color: '#3b82f6', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.25)]' },
+  { value: 'low', label: 'Low', desc: 'Do when possible', color: '#22c55e', glow: 'shadow-[0_0_20px_rgba(34,197,94,0.25)]' },
 ];
 
 const CATEGORY_COLORS = ['#f59e0b','#10b981','#ec4899','#38bdf8','#8b5cf6','#f97316','#06b6d4','#ef4444','#84cc16','#6366f1'];
@@ -264,7 +264,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 className="p-5 sm:p-6 space-y-5"
               >
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Task Title <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -283,7 +283,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Description
                   </label>
                   <textarea
@@ -311,7 +311,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 className="p-5 sm:p-6 space-y-5"
               >
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-3 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-3 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Priority Level
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -322,21 +322,21 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                         onClick={() => { haptic.lightTap(); setPriority(opt.value); }}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                           priority === opt.value
-                            ? `${opt.glow} border-transparent`
+                            ? `${opt.glow} border-2`
                             : isLight
-                              ? 'border-gray-100 bg-gray-50 hover:bg-gray-100'
-                              : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'
+                              ? 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                              : 'border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06]'
                         }`}
-                        style={priority === opt.value ? { backgroundColor: opt.color + '12', borderColor: opt.color + '40' } : undefined}
+                        style={priority === opt.value ? { backgroundColor: opt.color + '15', borderColor: opt.color } : undefined}
                       >
                         <div className="flex items-center gap-2.5">
                           <div
-                            className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: opt.color, boxShadow: priority === opt.value ? `0 0 8px ${opt.color}60` : 'none' }}
+                            className="w-3.5 h-3.5 rounded-full shrink-0"
+                            style={{ backgroundColor: opt.color, boxShadow: priority === opt.value ? `0 0 10px ${opt.color}50` : 'none' }}
                           />
                           <div>
-                            <p className={`text-xs font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{opt.label}</p>
-                            <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/30'}`}>{opt.desc}</p>
+                            <p className={`text-sm font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{opt.label}</p>
+                            <p className={`text-[11px] ${isLight ? 'text-gray-500' : 'text-white/45'}`}>{opt.desc}</p>
                           </div>
                         </div>
                       </button>
@@ -345,7 +345,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-3 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-3 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Category
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -357,7 +357,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           categoryId === c.id
                             ? 'ring-2 ring-offset-1'
-                            : isLight ? 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100' : 'bg-white/[0.03] border-white/[0.06] text-white/50 hover:bg-white/[0.06]'
+                            : isLight ? 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100' : 'bg-white/[0.04] border-white/[0.08] text-white/60 hover:bg-white/[0.08]'
                         }`}
                         style={categoryId === c.id ? { backgroundColor: c.color + '18', borderColor: c.color + '60', color: c.color } : undefined}
                       >
@@ -368,7 +368,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                       type="button"
                       onClick={() => { haptic.lightTap(); setShowCategoryForm(!showCategoryForm); }}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold border border-dashed transition-all cursor-pointer ${
-                        isLight ? 'border-gray-200 text-gray-400 hover:bg-gray-50' : 'border-white/10 text-white/30 hover:bg-white/[0.03]'
+                        isLight ? 'border-gray-300 text-gray-500 hover:bg-gray-50' : 'border-white/15 text-white/40 hover:bg-white/[0.04]'
                       }`}
                     >
                       <Plus className="w-3 h-3 inline mr-1" />
@@ -441,7 +441,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                       Deadline
                     </label>
                     <input
@@ -456,7 +456,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                     />
                   </div>
                   <div>
-                    <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                       Est. Focus
                     </label>
                     <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${isLight ? 'border-gray-200 bg-gray-50' : 'border-white/[0.08] bg-white/[0.03]'}`}>
@@ -475,7 +475,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 </div>
 
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Recurring
                   </label>
                   <div className="grid grid-cols-3 gap-1.5">
@@ -494,7 +494,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                         className={`py-2 px-2 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
                           recurringType === item.id
                             ? 'bg-[#c8ff00] text-[#0a0a0a] shadow-[0_0_10px_rgba(200,255,0,0.25)]'
-                            : isLight ? 'bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100' : 'bg-white/[0.03] border border-white/[0.06] text-white/35 hover:text-white/60'
+                            : isLight ? 'bg-gray-50 border border-gray-200 text-gray-600 hover:bg-gray-100' : 'bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/70'
                         }`}
                       >
                         {item.label}
@@ -503,7 +503,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                   </div>
                   {recurringType === 'custom' && (
                     <div className="flex items-center gap-2 text-xs mt-2">
-                      <span className={isLight ? 'text-gray-400' : 'text-white/35'}>Every</span>
+                      <span className={isLight ? 'text-gray-500' : 'text-white/45'}>Every</span>
                       <input
                         type="number"
                         min={1}
@@ -514,7 +514,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                           isLight ? 'bg-gray-50 border-gray-200' : 'bg-white/[0.06] border-white/[0.1]'
                         }`}
                       />
-                      <span className={isLight ? 'text-gray-400' : 'text-white/35'}>days</span>
+                      <span className={isLight ? 'text-gray-500' : 'text-white/45'}>days</span>
                     </div>
                   )}
                 </div>
@@ -532,7 +532,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               >
                 {/* Subtasks */}
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Subtasks ({subtasks.length})
                   </label>
                   <div className="flex items-center gap-2 mb-2">
@@ -591,7 +591,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
                 {/* Tags */}
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Tags
                   </label>
                   <input
@@ -609,7 +609,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
                 {/* Email Reminder */}
                 <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-400' : 'text-white/40'}`}>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-gray-600' : 'text-white/60'}`}>
                     Email Reminder
                   </label>
                   <div className="flex gap-2">

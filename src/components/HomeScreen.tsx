@@ -420,35 +420,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </motion.div>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Workout Capture */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="flex gap-3"
+        onClick={onLogWorkout}
+        className={`flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer transition-all active:scale-[0.98] ${
+          isLight
+            ? 'bg-orange-50 border border-orange-100 hover:bg-orange-100'
+            : 'bg-orange-500/[0.06] border border-orange-500/10 hover:bg-orange-500/10'
+        }`}
       >
-        <button
-          onClick={onNewTask}
-          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.97] ${
-            isLight
-              ? 'bg-gradient-to-r from-[#c8ff00] to-[#b8f000] text-[#0a0a0a] shadow-[0_2px_12px_rgba(200,255,0,0.25)]'
-              : 'bg-gradient-to-r from-[#c8ff00] to-[#b8f000] text-[#0a0a0a] shadow-[0_4px_20px_rgba(200,255,0,0.2)]'
-          }`}
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          New Task
-        </button>
-        <button
-          onClick={onLogWorkout}
-          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.97] ${
-            isLight
-              ? 'bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100'
-              : 'bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20'
-          }`}
-        >
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+          isLight ? 'bg-orange-100 text-orange-600' : 'bg-orange-500/15 text-orange-400'
+        }`}>
           <Dumbbell className="w-4 h-4" />
-          Log Workout
-        </button>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={`text-xs font-semibold ${isLight ? 'text-gray-700' : 'text-white/70'}`}>
+            Log a workout
+          </p>
+          <p className={`text-[10px] ${isLight ? 'text-gray-400' : 'text-white/25'}`}>
+            Tap to open exercise picker
+          </p>
+        </div>
+        <ChevronRight className={`w-4 h-4 shrink-0 ${isLight ? 'text-orange-300' : 'text-orange-400/40'}`} />
       </motion.div>
 
       {/* Fitness Quick Card */}
