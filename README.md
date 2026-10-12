@@ -19,6 +19,9 @@ npm run lint       # TypeScript provera
 npm run android:apk    # build + Cap sync + gradlew assembleDebug
 ```
 
+- Zahteva **Java 21+** (Capacitor 8). Ako sistemski `JAVA_HOME` kaže na stariju verziju, reši u `~\.gradle\gradle.properties`: `org.gradle.java.home=C:/Program Files/Android/Android Studio/jbr`
+- Rezultat: `android\app\build\outputs\apk\debug\app-debug.apk` — prebaci na telefon i instaliraj (debug varijanta, ne treba Google Play)
+
 ## Struktura
 
 ```
