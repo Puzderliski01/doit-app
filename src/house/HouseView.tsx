@@ -102,6 +102,8 @@ export const HouseView: React.FC<HouseViewProps> = ({ theme }) => {
   const {
     s,
     me,
+    syncStatus,
+    houseId,
     switchUser,
     addExpense,
     settleDebt,
@@ -109,6 +111,15 @@ export const HouseView: React.FC<HouseViewProps> = ({ theme }) => {
   } = useHouse();
 
   const inputCls = isLight ? 'input-light' : 'input-dark';
+
+  const syncBadge =
+    syncStatus === 'live'
+      ? { text: 'cloud ✅', cls: isLight ? 'bg-green-50 text-green-600' : 'bg-[#c8ff00]/10 text-[#c8ff00]' }
+      : syncStatus === 'connecting'
+        ? { text: 'povezujem…', cls: isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/50' }
+        : syncStatus === 'error'
+          ? { text: 'greska ⚠️', cls: isLight ? 'bg-red-50 text-red-500' : 'bg-red-500/10 text-red-400' }
+          : { text: 'lokalno 📱', cls: isLight ? 'bg-slate-100 text-slate-500' : 'bg-white/5 text-white/50' };
 
   return (
     <div className="space-y-4 pb-24">
@@ -123,6 +134,7 @@ export const HouseView: React.FC<HouseViewProps> = ({ theme }) => {
             </p>
           </div>
         </div>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${syncBadge.cls}`}>{syncBadge.text}</span>
       </div>
 
       <div className="tab-group">
@@ -562,7 +574,7 @@ const ZadaciTab = ({ isLight, inputCls }: { isLight: boolean; inputCls: string }
 /* ===== Tab: Lista ===== */
 
 const ListaTab = ({ isLight, inputCls }: { isLight: boolean; inputCls: string }) => {
-  const { s, me, memberById, addListItem, buyItem, returnItem, toggleInShopping } = useHouse();
+  const { s, me, memberById, addListItem, buyItem, returnItem, toggleInShopping, syncStatus } = useHouse();
   const [novi, setNovi] = useState('');
 
   const needed = s.list.filter((i) => i.status === 'needed');
@@ -665,7 +677,9 @@ const ListaTab = ({ isLight, inputCls }: { isLight: boolean; inputCls: string })
 
       <p className={`px-1 text-center text-xs ${isLight ? 'text-slate-400' : 'text-white/25'}`}>
         <ShoppingCart size={12} className="mr-1 inline" />
-        Lista se vidi svima u kući — u realnom vremenu (uskoro: cloud sync).
+        {syncStatus === 'live'
+          ? 'Lista se vidi svima u kući — u realnom vremenu.'
+          : 'Lista je za sada samo na ovom uređaju — napravi cloud kuću da je deliš.'}
       </p>
     </>
   );
@@ -688,11 +702,13 @@ const KucaTab = ({
   settleDebt: (fromId: string, toId: string, amount: number) => void;
   resetHouse: () => void;
 }) => {
-  const { s, me, memberById } = useHouse();
+  const { s, me, memberById, identity, houseId, cloudBusy, cloudError, createHouse, joinHouse, leaveHouse } = useHouse();
   const [kopirano, setKopirano] = useState(false);
   const [opis, setOpis] = useState('');
   const [iznos, setIznos] = useState('');
   const [platio, setPlatio] = useState(me.id);
+  const [novaKucaIme, setNovaKucaIme] = useState('');
+  const [joinKod, setJoinKod] = useState('');
 
   const debts = pairwiseDebts(s);
   const scores = monthlyScores(s);
@@ -714,29 +730,134 @@ const KucaTab = ({
 
   return (
     <>
-      {/* Pozivni kod */}
-      <HouseCard title="Pozovi u kuću" isLight={isLight}>
-        <div className="flex items-center gap-3">
-          <div className="flex-1">
-            <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Pozivni kod</p>
-            <p className={`font-mono text-lg font-bold tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>{s.house.inviteCode}</p>
+      {/* Cloud sinhronizacija */}
+      <HouseCard title={houseId ? 'Kuća u cloudu' : 'Sync sa ukućanima'} isLight={isLight}>
+        {!identity && (
+          <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+            Prijavi se na DoIT nalog da bi kuću delio/la sa ukućanima u realnom vremenu. Bez naloga, kuća radi samo na
+            ovom uređaju.
+          </p>
+        )}
+
+        {identity && houseId && (
+          <div className="space-y-3">
+            <p className={`text-sm ${isLight ? 'text-slate-500' : 'text-white/50'}`}>
+              Svi članovi vide izmene u realnom vremenu. Pošalji im pozivni kod:
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Pozivni kod</p>
+                <p className={`font-mono text-lg font-bold tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>{s.house.inviteCode}</p>
+              </div>
+              <button onClick={kopiraj} className="btn-secondary">
+                {kopirano ? <Check size={15} className="text-[#c8ff00]" /> : <Copy size={15} />}
+                {kopirano ? 'Kopirano' : 'Kopiraj'}
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                if (confirm('Napustiti kuću? Podaci ostaju drugim članovima, a ti se vraćaš na lokalnu demo kuću.')) {
+                  leaveHouse();
+                }
+              }}
+              disabled={cloudBusy}
+              className={`btn-secondary w-full text-xs ${isLight ? 'text-red-500' : 'text-red-400'} ${cloudBusy ? 'opacity-50' : ''}`}
+            >
+              Napusti kuću
+            </button>
           </div>
-          <button onClick={kopiraj} className="btn-secondary">
-            {kopirano ? <Check size={15} className="text-[#c8ff00]" /> : <Copy size={15} />}
-            {kopirano ? 'Kopirano' : 'Kopiraj link'}
-          </button>
-        </div>
+        )}
+
+        {identity && !houseId && (
+          <div className="space-y-4">
+            <form
+              className="space-y-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                createHouse(novaKucaIme || 'Naša kuća').then((ok) => {
+                  if (ok) setNovaKucaIme('');
+                });
+              }}
+            >
+              <p className={`text-[13px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/80'}`}>Napravi novu kuću</p>
+              <div className="flex gap-2">
+                <input
+                  className={inputCls}
+                  placeholder="Ime kuće (npr. Stan na Vračaru)"
+                  value={novaKucaIme}
+                  onChange={(e) => setNovaKucaIme(e.target.value)}
+                />
+                <button type="submit" disabled={cloudBusy} className={`btn-primary px-4 ${cloudBusy ? 'opacity-50' : ''}`}>
+                  Napravi
+                </button>
+              </div>
+            </form>
+
+            <div className={`border-t pt-4 ${isLight ? 'border-black/5' : 'border-white/5'}`}>
+              <form
+                className="space-y-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  joinHouse(joinKod).then((res) => {
+                    if (res === 'joined') setJoinKod('');
+                  });
+                }}
+              >
+                <p className={`text-[13px] font-semibold ${isLight ? 'text-slate-700' : 'text-white/80'}`}>Pridruži se postojećoj</p>
+                <div className="flex gap-2">
+                  <input
+                    className={`${inputCls} font-mono uppercase tracking-widest`}
+                    placeholder="POZIVNI KOD"
+                    maxLength={6}
+                    value={joinKod}
+                    onChange={(e) => setJoinKod(e.target.value.toUpperCase())}
+                  />
+                  <button type="submit" disabled={cloudBusy} className={`btn-primary px-4 ${cloudBusy ? 'opacity-50' : ''}`}>
+                    Uđi
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {cloudError && (
+              <p className={`text-xs font-medium ${isLight ? 'text-red-500' : 'text-red-400'}`}>{cloudError}</p>
+            )}
+          </div>
+        )}
       </HouseCard>
 
+      {/* Pozivni kod (samo lokalni demo — radi kao i do sada) */}
+      {!houseId && (
+        <HouseCard title="Pozivni kod (demo)" isLight={isLight}>
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/30'}`}>Demo kod — ne radi u cloudu</p>
+              <p className={`font-mono text-lg font-bold tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>{s.house.inviteCode}</p>
+            </div>
+            <button onClick={kopiraj} className="btn-secondary">
+              {kopirano ? <Check size={15} className="text-[#c8ff00]" /> : <Copy size={15} />}
+              {kopirano ? 'Kopirano' : 'Kopiraj'}
+            </button>
+          </div>
+        </HouseCard>
+      )}
+
       {/* Članovi */}
-      <HouseCard title="Članovi — dodirni da se prebaciš (demo)" isLight={isLight}>
+      <HouseCard
+        title={houseId ? 'Članovi kuće' : 'Članovi — dodirni da se prebaciš (demo)'}
+        isLight={isLight}
+      >
         <ul className={`divide-y ${isLight ? 'divide-black/5' : 'divide-white/5'}`}>
           {s.members.map((m) => {
             const aktivan = m.id === me.id;
             const naPasusu = s.availability.some((a) => a.memberId === m.id);
             return (
               <li key={m.id}>
-                <button onClick={() => switchUser(m.id)} className="flex w-full items-center gap-3 py-2.5 text-left">
+                <button
+                  onClick={() => { if (!houseId) switchUser(m.id); }}
+                  disabled={!!houseId}
+                  className={`flex w-full items-center gap-3 py-2.5 text-left ${houseId ? 'cursor-default' : ''}`}
+                >
                   <HouseAvatar member={m} isLight={isLight} />
                   <span className={`flex-1 text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {m.name}
@@ -878,16 +999,20 @@ const KucaTab = ({
 
       <div className="space-y-2 pt-2 text-center">
         <p className={`text-xs ${isLight ? 'text-slate-400' : 'text-white/30'}`}>
-          Demo kuća — podaci se čuvaju samo u tvom pregledaču. Cloud sync stiže u sledećem sprintu.
+          {houseId
+            ? 'Kuća je u cloudu — izmene se sinhronizuju sa svim članovima.'
+            : 'Lokalna demo kuća — podaci se čuvaju samo u tvom pregledaču. Prijavi se i napravi kuću za sync.'}
         </p>
-        <button
-          onClick={() => {
-            if (confirm('Vrati demo kuću na početno stanje?')) resetHouse();
-          }}
-          className={`btn-secondary text-xs ${isLight ? 'text-slate-500' : 'text-white/40'}`}
-        >
-          <RotateCcw size={13} /> Resetuj demo
-        </button>
+        {!houseId && (
+          <button
+            onClick={() => {
+              if (confirm('Vrati demo kuću na početno stanje?')) resetHouse();
+            }}
+            className={`btn-secondary text-xs ${isLight ? 'text-slate-500' : 'text-white/40'}`}
+          >
+            <RotateCcw size={13} /> Resetuj demo
+          </button>
+        )}
       </div>
     </>
   );

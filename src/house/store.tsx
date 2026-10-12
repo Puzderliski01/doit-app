@@ -1,8 +1,14 @@
 /**
  * DoIT — House modul: React context stanje (kuća, zadaci, lista, troškovi, bodovi).
- * Portano iz Project BetterMe/src/lib/store.tsx, prilagođeno DoIT aplikaciji:
- *  - localStorage per-user ključ (podaci odvojeni po nalogu)
- *  - "u kupovini sam" status automatski istekne posle 2h (po speku)
+ *
+ * V1 lokalno: localStorage per-user ključ + demo seed (radi i kao guest).
+ * Faza 1 cloud: kada je korisnik prijavljen — kuća živi u Firestore kolekciji
+ * `houses` (realtime pretplata + debounce upis), pozivni kod za pridruživanje.
+ *
+ * Pravila:
+ *  - currentUserId je UREĐAJSKI (svaki uređaj "gleda" sebe) — na svaki cloud
+ *    snapshot se nameće na identitet uređaja ako je član kuće.
+ *  - Upis celog dokumenta (LWW) — dovoljno za kuću od 3-5 ljudi (v1).
  */
 import {
   createContext,
@@ -10,6 +16,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -25,12 +32,29 @@ import {
   uid,
 } from './dates';
 import { seedHouseState } from './seed';
+import {
+  createCloudHouse,
+  findCloudHousesForUser,
+  joinCloudHouse,
+  leaveCloudHouse,
+  pushHouseState,
+  subscribeHouseDoc,
+  type HouseIdentity,
+} from './cloud';
 import type { HouseAvailability, HouseMember, HouseRepeat, HouseShift, HouseState, HouseTask } from './types';
 
 const STORAGE_KEY_PREFIX = 'doit_house_v1';
+const META_KEY_PREFIX = 'doit_house_meta_v1';
+const BACKUP_KEY_PREFIX = 'doit_house_backup_v1';
 
 /** "u kupovini sam" traje 2 sata, pa se automatski oslobađa */
 const SHOPPING_STATUS_TTL_MS = 2 * 60 * 60 * 1000;
+
+/** debounce pre cloud upisa */
+const PUSH_DEBOUNCE_MS = 600;
+
+export type HouseSyncStatus = 'local' | 'connecting' | 'live' | 'error';
+export type JoinResult = 'joined' | 'not-found' | 'error';
 
 export type HouseAssignment = {
   task: HouseTask;
@@ -59,24 +83,96 @@ type HouseCtx = {
   addExpense: (input: { description: string; amount: number; paidBy: string }) => void;
   settleDebt: (fromId: string, toId: string, amount: number) => void;
   resetHouse: () => void;
+
+  // Cloud (Faza 1)
+  identity: HouseIdentity | null;
+  setIdentity: (id: HouseIdentity | null) => void;
+  houseId: string | null;
+  syncStatus: HouseSyncStatus;
+  cloudBusy: boolean;
+  cloudError: string | null;
+  createHouse: (name: string) => Promise<boolean>;
+  joinHouse: (code: string) => Promise<JoinResult>;
+  leaveHouse: () => Promise<void>;
 };
 
 const HouseContext = createContext<HouseCtx | null>(null);
+
+/* ===== storage pomoćne ===== */
 
 function storageKey(userId?: string): string {
   return userId ? `${STORAGE_KEY_PREFIX}_${userId}` : STORAGE_KEY_PREFIX;
 }
 
+function metaKey(userId?: string): string {
+  return userId ? `${META_KEY_PREFIX}_${userId}` : META_KEY_PREFIX;
+}
+
+function backupKey(userId: string): string {
+  return `${BACKUP_KEY_PREFIX}_${userId}`;
+}
+
 function loadState(userId?: string): HouseState {
-  let initial = seedHouseState();
   try {
     const raw = localStorage.getItem(storageKey(userId));
-    if (raw) initial = { ...initial, ...JSON.parse(raw) } as HouseState;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.house) return parsed as HouseState;
+    }
   } catch {
-    // ako je storage pokvaren — startuj sa seed-om
+    // pokvaren storage — pad na seed
   }
-  return initial;
+  return seedHouseState();
 }
+
+function persistState(userId: string | undefined, state: HouseState): void {
+  try {
+    localStorage.setItem(storageKey(userId), JSON.stringify(state));
+  } catch {
+    // storage pun — ignoriši
+  }
+}
+
+function loadMetaHouseId(userId?: string): string | null {
+  try {
+    const raw = localStorage.getItem(metaKey(userId));
+    if (raw) return (JSON.parse(raw) as { houseId?: string | null }).houseId ?? null;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function saveMetaHouseId(userId: string, houseId: string | null): void {
+  try {
+    localStorage.setItem(metaKey(userId), JSON.stringify({ houseId }));
+  } catch {
+    // ignore
+  }
+}
+
+function backupLocal(userId: string, state: HouseState): void {
+  try {
+    localStorage.setItem(backupKey(userId), JSON.stringify(state));
+  } catch {
+    // ignore
+  }
+}
+
+function restoreBackup(userId: string): HouseState {
+  try {
+    const raw = localStorage.getItem(backupKey(userId));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && parsed.house) return parsed as HouseState;
+    }
+  } catch {
+    // ignore
+  }
+  return seedHouseState();
+}
+
+/* ===== izvedene funkcije ===== */
 
 /** pairwise dugovanja: "a duguje b" */
 export function pairwiseDebts(s: HouseState): Map<string, number> {
@@ -117,34 +213,260 @@ export function monthlyScores(s: HouseState): Map<string, number> {
   return scores;
 }
 
-export function HouseProvider({ userId, children }: { userId?: string; children: ReactNode }) {
-  const [s, setS] = useState<HouseState>(() => loadState(userId));
+/* ===== provider ===== */
 
-  // Čuvanje u localStorage, odvojeno po korisniku
-  const persist = useCallback(
-    (state: HouseState) => {
-      try {
-        localStorage.setItem(storageKey(userId), JSON.stringify(state));
-      } catch {
-        // storage pun — ignoriši
+export function HouseProvider({ children }: { children: ReactNode }) {
+  const [identity, setIdentityState] = useState<HouseIdentity | null>(null);
+  const [s, setS] = useState<HouseState>(() => loadState(undefined));
+  const [houseId, setHouseIdState] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<HouseSyncStatus>('local');
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+
+  // ref-ovi za stable callback-e (debounce, push)
+  const sRef = useRef(s);
+  const houseIdRef = useRef<string | null>(houseId);
+  const identityRef = useRef<HouseIdentity | null>(identity);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => { sRef.current = s; }, [s]);
+  useEffect(() => { houseIdRef.current = houseId; }, [houseId]);
+  useEffect(() => { identityRef.current = identity; }, [identity]);
+
+  const activeUid = identity?.uid ?? null;
+
+  /** jedinstvena tačka primene stanja (optimistično + ref) */
+  const applyState = useCallback((next: HouseState) => {
+    sRef.current = next;
+    setS(next);
+    persistState(identityRef.current?.uid, next);
+  }, []);
+
+  const applyHouseId = useCallback((id: string | null) => {
+    houseIdRef.current = id;
+    setHouseIdState(id);
+  }, []);
+
+  /* --- identitet (poziva App posle authReady) --- */
+  const setIdentity = useCallback((id: HouseIdentity | null) => {
+    setIdentityState(id);
+  }, []);
+
+  /* --- učitavanje stanja/metа pri promeni identiteta + otkrivanje postojeće kuće --- */
+  useEffect(() => {
+    const key = activeUid ?? undefined;
+    const local = loadState(key);
+    sRef.current = local;
+    setS(local);
+    const meta = loadMetaHouseId(key);
+    houseIdRef.current = meta;
+    setHouseIdState(meta);
+
+    if (activeUid && !meta) {
+      let stale = false;
+      findCloudHousesForUser(activeUid)
+        .then((houses) => {
+          if (stale || houses.length === 0) return;
+          const found = houses[0];
+          saveMetaHouseId(activeUid, found.houseId);
+          houseIdRef.current = found.houseId;
+          setHouseIdState(found.houseId);
+          sRef.current = found.state;
+          setS(found.state);
+        })
+        .catch(() => {
+          // offline / pravila — kuća ostaje lokalna
+        });
+      return () => { stale = true; };
+    }
+    return undefined;
+  }, [activeUid]);
+
+  /* --- realtime pretplata na cloud kuću --- */
+  useEffect(() => {
+    if (!activeUid || !houseId) {
+      setSyncStatus('local');
+      return undefined;
+    }
+    setSyncStatus('connecting');
+    const unsub = subscribeHouseDoc(
+      houseId,
+      (remote) => {
+        const isMember = remote.members.some((m) => m.id === activeUid);
+        const next: HouseState = {
+          ...remote,
+          currentUserId: isMember ? activeUid : remote.currentUserId,
+        };
+        sRef.current = next;
+        setS(next);
+        persistState(activeUid, next);
+        setSyncStatus('live');
+      },
+      (err) => {
+        if (err.message === 'house-deleted') {
+          saveMetaHouseId(activeUid, null);
+          houseIdRef.current = null;
+          setHouseIdState(null);
+          setSyncStatus('local');
+        } else {
+          setSyncStatus('error');
+        }
+      },
+    );
+    return () => {
+      unsub();
+      if (pushTimer.current) {
+        clearTimeout(pushTimer.current);
+        pushTimer.current = null;
       }
-    },
-    [userId],
-  );
+    };
+  }, [activeUid, houseId]);
 
-  // istek "u kupovini sam" statusa (2h) — proverava se pri mount-u i pri promeni
+  /* --- debounce cloud push --- */
+  const schedulePush = useCallback((state: HouseState) => {
+    const hid = houseIdRef.current;
+    if (!hid) return;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => {
+      pushTimer.current = null;
+      pushHouseState(hid, state).catch((err) => {
+        console.warn('[House] Push failed:', err);
+        setSyncStatus((prev) => (prev === 'live' ? 'error' : prev));
+      });
+    }, PUSH_DEBOUNCE_MS);
+  }, []);
+
+  /* --- istek "u kupovini sam" (2h) --- */
   useEffect(() => {
     if (s.inShoppingBy && s.inShoppingAt) {
       const age = Date.now() - new Date(s.inShoppingAt).getTime();
       if (age > SHOPPING_STATUS_TTL_MS) {
-        setS((prev) => {
-          const cleared = { ...prev, inShoppingBy: null, inShoppingAt: null };
-          persist(cleared);
-          return cleared;
-        });
+        const cleared = { ...s, inShoppingBy: null, inShoppingAt: null };
+        sRef.current = cleared;
+        setS(cleared);
+        persistState(activeUid ?? undefined, cleared);
+        schedulePush(cleared);
       }
     }
-  }, [s.inShoppingBy, s.inShoppingAt, persist]);
+  }, [s, activeUid, schedulePush]);
+
+  /* --- lokalna izmena: primeni + sačuvaj + (ako je cloud) odloži push --- */
+  const update = useCallback(
+    (fn: (prev: HouseState) => HouseState) => {
+      const next = fn(sRef.current);
+      applyState(next);
+      schedulePush(next);
+    },
+    [applyState, schedulePush],
+  );
+
+  const patchShift = useCallback(
+    (taskId: string, key: string, patch: Partial<HouseShift>) => {
+      update((prev) => {
+        const idx = prev.shifts.findIndex((x) => x.taskId === taskId && x.key === key);
+        if (idx === -1) {
+          return {
+            ...prev,
+            shifts: [
+              ...prev.shifts,
+              { taskId, key, status: 'open' as const, completedBy: null, completedAt: null, ...patch },
+            ],
+          };
+        }
+        const shifts = [...prev.shifts];
+        shifts[idx] = { ...shifts[idx], ...patch };
+        return { ...prev, shifts };
+      });
+    },
+    [update],
+  );
+
+  /* --- cloud akcije --- */
+
+  const createHouse = useCallback(
+    async (name: string): Promise<boolean> => {
+      const ident = identityRef.current;
+      if (!ident) {
+        setCloudError('Prijavi se da bi napravio/la kuću.');
+        return false;
+      }
+      setCloudBusy(true);
+      setCloudError(null);
+      try {
+        if (!houseIdRef.current) backupLocal(ident.uid, sRef.current);
+        const created = await createCloudHouse(name, ident);
+        saveMetaHouseId(ident.uid, created.houseId);
+        applyHouseId(created.houseId);
+        applyState(created.state);
+        return true;
+      } catch (err) {
+        console.warn('[House] create failed:', err);
+        setCloudError('Nije uspelo da se napravi kuća — proveri vezu i pokušaj ponovo.');
+        return false;
+      } finally {
+        setCloudBusy(false);
+      }
+    },
+    [applyHouseId, applyState],
+  );
+
+  const joinHouse = useCallback(
+    async (code: string): Promise<JoinResult> => {
+      const ident = identityRef.current;
+      if (!ident) {
+        setCloudError('Prijavi se da bi se pridružio/la kući.');
+        return 'error';
+      }
+      if (!code.trim()) {
+        setCloudError('Upiši pozivni kod.');
+        return 'error';
+      }
+      setCloudBusy(true);
+      setCloudError(null);
+      try {
+        const joined = await joinCloudHouse(code, ident);
+        if (!joined) {
+          setCloudError('Kuća sa tim kodom ne postoji. Proveri kod i pokušaj ponovo.');
+          return 'not-found';
+        }
+        if (!houseIdRef.current) backupLocal(ident.uid, sRef.current);
+        saveMetaHouseId(ident.uid, joined.houseId);
+        applyHouseId(joined.houseId);
+        applyState(joined.state);
+        return 'joined';
+      } catch (err) {
+        console.warn('[House] join failed:', err);
+        setCloudError('Nije uspelo pridruživanje — proveri vezu i pokušaj ponovo.');
+        return 'error';
+      } finally {
+        setCloudBusy(false);
+      }
+    },
+    [applyHouseId, applyState],
+  );
+
+  const leaveHouse = useCallback(async (): Promise<void> => {
+    const ident = identityRef.current;
+    const hid = houseIdRef.current;
+    if (!ident || !hid) return;
+    setCloudBusy(true);
+    setCloudError(null);
+    try {
+      await leaveCloudHouse(hid, ident.uid);
+    } catch (err) {
+      console.warn('[House] leave failed:', err);
+      setCloudError('Nije uspelo napuštanje kuće — proveri vezu.');
+    } finally {
+      setCloudBusy(false);
+    }
+    saveMetaHouseId(ident.uid, null);
+    applyHouseId(null);
+    const restored = restoreBackup(ident.uid);
+    applyState(restored);
+    setSyncStatus('local');
+  }, [applyHouseId, applyState]);
+
+  /* --- reads --- */
 
   const memberById = useCallback(
     (id: string) => s.members.find((m) => m.id === id),
@@ -183,37 +505,6 @@ export function HouseProvider({ userId, children }: { userId?: string; children:
     [s.tasks, s.shifts, isUnavailable],
   );
 
-  const update = useCallback(
-    (fn: (prev: HouseState) => HouseState) =>
-      setS((prev) => {
-        const next = fn(prev);
-        persist(next);
-        return next;
-      }),
-    [persist],
-  );
-
-  const patchShift = useCallback(
-    (taskId: string, key: string, patch: Partial<HouseShift>) => {
-      update((prev) => {
-        const idx = prev.shifts.findIndex((x) => x.taskId === taskId && x.key === key);
-        if (idx === -1) {
-          return {
-            ...prev,
-            shifts: [
-              ...prev.shifts,
-              { taskId, key, status: 'open' as const, completedBy: null, completedAt: null, ...patch },
-            ],
-          };
-        }
-        const shifts = [...prev.shifts];
-        shifts[idx] = { ...shifts[idx], ...patch };
-        return { ...prev, shifts };
-      });
-    },
-    [update],
-  );
-
   const value = useMemo<HouseCtx>(() => ({
     s,
     me: s.members.find((m) => m.id === s.currentUserId) ?? s.members[0],
@@ -224,7 +515,7 @@ export function HouseProvider({ userId, children }: { userId?: string; children:
     completeShift: (taskId, key) =>
       patchShift(taskId, key, {
         status: 'done',
-        completedBy: s.currentUserId,
+        completedBy: sRef.current.currentUserId,
         completedAt: new Date().toISOString(),
       }),
     uncompleteShift: (taskId, key) =>
@@ -300,10 +591,25 @@ export function HouseProvider({ userId, children }: { userId?: string; children:
       })),
     resetHouse: () => {
       const fresh = seedHouseState();
-      setS(fresh);
-      persist(fresh);
+      applyState(fresh);
+      if (houseIdRef.current) schedulePush(fresh);
     },
-  }), [s, memberById, isUnavailable, assignmentsFor, update, patchShift, persist]);
+
+    // Cloud
+    identity,
+    setIdentity,
+    houseId,
+    syncStatus,
+    cloudBusy,
+    cloudError,
+    createHouse,
+    joinHouse,
+    leaveHouse,
+  }), [
+    s, memberById, isUnavailable, assignmentsFor, update, patchShift,
+    applyState, schedulePush, identity, setIdentity, houseId, syncStatus,
+    cloudBusy, cloudError, createHouse, joinHouse, leaveHouse,
+  ]);
 
   return <HouseContext.Provider value={value}>{children}</HouseContext.Provider>;
 }

@@ -8,7 +8,7 @@
 - **Fitnes** — rutine, log vežbi, XP/rangovi, dostignuća, leaderboard
 - **Ishrana** — meal plan, makroi
 - **AI** — Gemini integracija (breakdown, uvidi)
-- **Kuća (novo)** — zadaci po smeni sa rotacijom, pasus, deljena lista za kupovinu, deljeni troškovi (pairwise dugovanja), bodovi i "šef kuće"
+- **Kuća (novo)** — zadaci po smeni sa rotacijom, pasus, deljena lista za kupovinu, deljeni troškovi (pairwise dugovanja), bodovi i "šef kuće"; **cloud sync gotov** (Firestore `houses`, realtime, pozivni kod)
 - **Platforma** — Android (Capacitor) kao primarna app + laki web build (Vercel) kao dostupna varijanta
 - **Sync** — Firebase Auth + Firestore, guest mode, 10 jezika, dark/light
 
@@ -16,15 +16,13 @@
 
 ## Faza 1 — Kuća v1.5: pravi cloud (2–3 nedelje)
 
-Kuća trenutno radi lokalno (localStorage). Ovo je najveća preostala rupa.
-
-1. **Firestore kolekcija `houses`** — ceo `HouseState` kao dokument, realtime `onSnapshot` (šema već postoji u `src/house/store.tsx` iza `update()` funkcije — samo zameniti perzistenciju)
-2. **Pravi članovi** — pozivni kod (kao kod grupa) → korisnik se pridružuje sa svog DoIT naloga; ime/emoji iz profila
-3. **Notifikacije** — "tvoj red za iznošenje smeća", "Ana je na pasusu", "Marko je u marketu" (DoIT već ima notifikacioni sistem)
+1. ~~**Firestore kolekcija `houses`**~~ ✅ — ceo `HouseState` kao dokument, realtime `onSnapshot` (`src/house/cloud.ts` + `store.tsx`), debounce upis, LWW po dokumentu
+2. ~~**Pravi članovi**~~ ✅ — pozivni kod (6 znakova, bez zamenjivih), pridruživanje sa DoIT naloga, ime/emoji iz profila; kuća se otkriva po `memberUids` nakon login-a na drugom uređaju; "napusti kuću" (poslednji član briše dokument). E2E testirano: 2 naloga, realtime sync kroz server.
+3. **Notifikacije** (sledeće) — "tvoj red za iznošenje smeća", "Ana je na pasusu", "Marko je u marketu" (DoIT već ima notifikacioni sistem; kuća već ima realtime pretplatu kao okidač)
 4. **Sklapanje sa grupama** — "kuća" = grupa sa tipom `house`; postojeći `Group`/`GroupTask` infrastruktura + rotacija iz Kuće
 5. **Izveštaj troškova** — PDF export (već postoji PDF modul), mesečni pregled "ko je koliko platio"
 
-**Kriterijum uspeha:** dva telefona, ista kuća, lista se menja u realnom vremenu.
+**Kriterijum uspeha:** dva telefona, ista kuća, lista se menja u realnom vremenu. ✅ (ispunjeno — E2E test sa 2 naloga)
 
 ## Faza 2 — Povezivanje modula (2 nedelje)
 
@@ -84,5 +82,5 @@ Gemini je već integrisan — ovo je dublja upotreba:
 ## Čega se NE držati
 
 - Ne praviti još jedan To-Do app — diferencijacija je **kuća + fitnes u jednom**
-- Ne dodavati funkcije pre nego što Faza 1 (cloud Kuća) bude gotova
+- Ne dodavati nove module dok Faza 1 (notifikacije/sklapanje) i Faza 2 (povezivanje) ne budu gotove
 - Ne graditi iOS/Android paralelno — Android prvi, iOS kad web bude stabilan

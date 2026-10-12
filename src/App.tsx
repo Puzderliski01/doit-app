@@ -147,6 +147,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useHouse } from './house/store';
 
 export default function App() {
   // Authentication State
@@ -240,6 +241,21 @@ export default function App() {
     }
     return () => stopBackgroundPoller();
   }, [currentUser?.uid]);
+
+  // House (Kuća) cloud identitet — poveži kuću sa nalogom posle authReady
+  const { setIdentity: setHouseIdentity } = useHouse();
+  useEffect(() => {
+    if (!authReady) return;
+    if (currentUser && !(currentUser as AuthUser).isGuest && !(currentUser as AuthUser).isLocal) {
+      setHouseIdentity({
+        uid: currentUser.uid,
+        displayName: currentUser.displayName ?? null,
+        email: currentUser.email ?? null,
+      });
+    } else {
+      setHouseIdentity(null);
+    }
+  }, [authReady, currentUser, setHouseIdentity]);
 
   const [userEmail, setUserEmail] = useState<string>(() => {
     const localUser = getLocalAuthSession();

@@ -32,7 +32,8 @@ src/
     types.ts        — kuća, članovi, zadaci (rotacija), smene, pasus, lista, troškovi
     dates.ts        — nedelje, rotacije, dodeljivanje smena, formatiranje (sr-Latn-RS)
     seed.ts         — demo kuća "Stan na Vračaru"
-    store.tsx       — HouseProvider (localStorage per-user, "u kupovini sam" istek 2h)
+    store.tsx       — HouseProvider (localStorage per-user + cloud sync, "u kupovini sam" istek 2h)
+    cloud.ts        — Firestore sync: `houses` kolekcija, realtime pretplata, pozivni kod
     HouseView.tsx   — 4 pod-tab: Danas · Zadaci · Lista · Kuća
   components/       — UI komponente (Navbar, MobileNav, TaskCard, FitnessDashboard...)
   utils/            — pomoćne funkcije (storage, notifikacije, AI, PDF...)
@@ -45,11 +46,19 @@ Deljena kuća za 3–5 ljudi: **zadaci po smeni, lista za kupovinu, deljeni tro�
 - **Danas** — tvoji zadaci za danas, šta rade ostali, brzo dodavanje na listu
 - **Zadaci** — nedeljna rotacija (nedeljno / dvonedeljno / svaki dan), završavanje, **pasus** (odmor preskače smene), pregled rotacije
 - **Lista** — deljena lista za kupovinu, "U kupovini sam" (traje 2h), kupljeno/vrati
-- **Kuća** — pozivni kod, prebacivanje identiteta (demo), deljeni troškovi sa pairwise dugovanjima, bodovi i "šef kuće"
+- **Kuća** — pozivni kod, deljeni troškovi sa pairwise dugovanjima, bodovi i "šef kuće"
 
-Demo kuća: **Stan na Vračaru** (Ana 🦩, Marko 🐻, Jelena 🐱). Trenutno radi lokalno (localStorage) — cloud sync (Firebase, kao ostatak app) je sledeći sprint.
+### Sinhronizacija (cloud)
 
-> Detaljan spec: `archive/Project BetterMe/SPEC-MVP.md`
+Kao prijavljeni korisnik kuća živi u Firestore-u (`houses` kolekcija) — sve promene stižu u **realnom vremenu** svim članovima. U Kuća pod-tabu:
+
+- **Napravi novu kuću** — dobijaš pozivni kod (6 znakova) koji pošalješ ukućanima
+- **Pridruži se** — upiši njihov kod i automatski postaješ član
+- **Napusti kuću** — poslednji član koji izađe briše kuću iz clouda
+
+Bez naloga (guest mode) kuća radi lokalno (demo "Stan na Vračaru": Ana 🦩, Marko 🐻, Jelena 🐱) — localStorage samo na tom uređaju.
+
+> Detaljan spec: `docs/HOUSE-SPEC.md` (izvornik: `archive/Project BetterMe/SPEC-MVP.md`)
 
 ## Napomene
 
