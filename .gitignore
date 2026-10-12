@@ -8,3 +8,4 @@ ios/
 *.log
 .env*
 !.env.example
+archive/

@@ -9,6 +9,7 @@ import {
   UserProfile,
   Achievement,
   TimeSlot,
+  WorkoutMood,
 } from '../types';
 
 // 30 ranks with differentiated badges

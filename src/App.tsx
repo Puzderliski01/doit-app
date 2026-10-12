@@ -81,6 +81,7 @@ const FullCalendar = lazy(() => import('./components/FullCalendar').then(m => ({
 const TaskStats = lazy(() => import('./components/TaskStats').then(m => ({ default: m.TaskStats })));
 const TaskTemplates = lazy(() => import('./components/TaskTemplates').then(m => ({ default: m.TaskTemplates })));
 const TimeTracker = lazy(() => import('./components/TimeTracker').then(m => ({ default: m.TimeTracker })));
+const HouseView = lazy(() => import('./house/HouseView').then(m => ({ default: m.HouseView })));
 
 import { 
   auth,
@@ -189,6 +190,7 @@ export default function App() {
       if (saved === 'home') return 'home';
       if (saved === 'settings') return 'settings';
       if (saved === 'groups') return 'groups';
+      if (saved === 'house') return 'house';
     } catch { /* ignore */ }
     return 'home';
   });
@@ -1642,7 +1644,7 @@ export default function App() {
       {/* Main Header Navigation */}
         <Navbar
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={(v) => setCurrentView(v as ViewMode)}
           theme={theme}
           onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           onOpenNewTask={() => {
@@ -1730,7 +1732,7 @@ export default function App() {
                   setShowWorkoutDetail(true);
                 }}
                 onNavigateToView={(view, filter) => {
-                  setCurrentView(view);
+                  setCurrentView(view as ViewMode);
                   if (filter) setStatusFilter(filter);
                 }}
                 onNewTask={() => {
@@ -1740,6 +1742,13 @@ export default function App() {
                 onLogWorkout={() => setShowWorkoutMode(true)}
               />
             </div>
+          )}
+
+          {/* HOUSE VIEW - Kuća: zadaci po smeni, lista za kupovinu, troškovi, bodovi */}
+          {currentView === 'house' && !showWorkoutDetail && !showTrainerProfile && (
+            <Suspense fallback={<div className="flex items-center justify-center p-12"><div className="text-sm text-neutral-400 dark:text-neutral-500">Loading...</div></div>}>
+              <HouseView theme={theme} />
+            </Suspense>
           )}
 
           {/* BROWSE VIEW - Workout/Trainer Cards */}
@@ -2715,7 +2724,7 @@ export default function App() {
         {/* Bottom Mobile Navigation */}
         <MobileNav
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={(v) => setCurrentView(v as ViewMode)}
           onNewTask={() => {
             setEditingTask(null);
             setIsTaskModalOpen(true);

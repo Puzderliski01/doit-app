@@ -84,7 +84,7 @@ export interface Category {
   description?: string;
 }
 
-export type ViewMode = 'home' | 'tasks' | 'fitness' | 'settings' | 'groups' | 'matrix' | 'calendar' | 'browse' | 'meal' | 'rewards';
+export type ViewMode = 'home' | 'tasks' | 'fitness' | 'settings' | 'groups' | 'matrix' | 'calendar' | 'browse' | 'meal' | 'rewards' | 'house';
 
 export type FilterStatus = 'all' | 'pending' | 'completed' | 'today' | 'upcoming' | 'overdue';
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, ListTodo, Dumbbell, Settings, Plus, Moon, Sun, Bell, FileText, ChevronDown, X, Flame, Sparkles, LogOut, User } from 'lucide-react';
+import { Home, ListTodo, Dumbbell, Settings, Plus, Moon, Sun, Bell, FileText, ChevronDown, X, Flame, Sparkles, LogOut, User, House } from 'lucide-react';
 
 interface NavbarProps {
   currentView: string;
@@ -39,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const tabs = [
     { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
     { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-4 h-4" /> },
+    { id: 'house', label: 'Kuća', icon: <House className="w-4 h-4" /> },
     { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-4 h-4" /> },
   ];
 

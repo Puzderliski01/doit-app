@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, ListTodo, Dumbbell, Settings, Plus, X, Sparkles, Flame } from 'lucide-react';
+import { Home, ListTodo, Dumbbell, Settings, Plus, X, Sparkles, Flame, House } from 'lucide-react';
 
 interface MobileNavProps {
   currentView: string;
@@ -23,6 +23,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" /> },
     { id: 'tasks', label: 'Tasks', icon: <ListTodo className="w-5 h-5" /> },
     { id: 'fab', label: '', icon: <Plus className="w-6 h-6" /> },
+    { id: 'house', label: 'Kuća', icon: <House className="w-5 h-5" /> },
     { id: 'fitness', label: 'Fitness', icon: <Dumbbell className="w-5 h-5" /> },
     { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ];
